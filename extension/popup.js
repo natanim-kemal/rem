@@ -1,15 +1,11 @@
-// REM Browser Extension - Popup Script
-
 let currentPriority = 'medium';
 let pageData = { title: '', url: '' };
 
-// Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     await loadPageInfo();
     setupEventListeners();
 });
 
-// Get current tab info
 async function loadPageInfo() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -27,9 +23,7 @@ async function loadPageInfo() {
     }
 }
 
-// Event listeners
 function setupEventListeners() {
-    // Priority buttons
     document.querySelectorAll('.priority-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active'));
@@ -38,18 +32,15 @@ function setupEventListeners() {
         });
     });
 
-    // Save button
     document.getElementById('save-btn').addEventListener('click', saveItem);
 }
 
-// Save to REM
 async function saveItem() {
     const saveBtn = document.getElementById('save-btn');
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
     try {
-        // Get auth token from storage
         const { authToken, convexUrl } = await chrome.storage.sync.get(['authToken', 'convexUrl']);
 
         if (!authToken || !convexUrl) {
@@ -57,7 +48,6 @@ async function saveItem() {
             return;
         }
 
-        // Call Convex HTTP endpoint
         const response = await fetch(`${convexUrl}/api/items`, {
             method: 'POST',
             headers: {
@@ -76,11 +66,9 @@ async function saveItem() {
             throw new Error('Failed to save');
         }
 
-        // Show success
         document.getElementById('main-view').classList.add('hidden');
         document.getElementById('success-view').classList.remove('hidden');
 
-        // Close popup after delay
         setTimeout(() => window.close(), 1500);
 
     } catch (error) {
