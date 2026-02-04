@@ -1,0 +1,19 @@
+# Code Owners - Auto-assign PR reviewers
+
+# Default owner for everything
+* @natanim-kemal
+
+# Flutter app
+/apps/mobile/ @natanim-kemal
+
+# Backend
+/convex/ @natanim-kemal
+
+# Extension
+/extension/ @natanim-kemal
+
+# CI/CD
+/.github/ @natanim-kemal
+
+# Docs
+/docs/ @natanim-kemal
