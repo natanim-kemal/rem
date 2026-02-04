@@ -1,76 +1,15 @@
-# lefthook.yml - Git hooks configuration
-# Install: npm install lefthook --save-dev
-# Setup: npx lefthook install
-
 pre-commit:
   parallel: true
   commands:
-    # Clean TODO/FIXME comments from staged Dart files
-    clean-dart-comments:
-      glob: "*.dart"
-      run: |
-        powershell -Command "
-          $files = git diff --cached --name-only --diff-filter=ACM | Where-Object { $_ -match '\.dart$' }
-          foreach ($file in $files) {
-            if (Test-Path $file) {
-              $content = Get-Content $file -Raw
-              # Remove TODO, FIXME, HACK comments
-              $cleaned = $content -replace '//\s*(TODO|FIXME|HACK|XXX):?[^\r\n]*[\r\n]?', ''
-              # Remove empty comment lines
-              $cleaned = $cleaned -replace '//\s*$[\r\n]?', ''
-              Set-Content $file $cleaned -NoNewline
-              git add $file
-            }
-          }
-        "
-      
-    # Format Dart code
     dart-format:
       glob: "*.dart"
       run: cd apps/mobile && dart format {staged_files}
       
-    # Analyze Dart code
     dart-analyze:
       glob: "*.dart"
       run: cd apps/mobile && dart analyze --fatal-infos {staged_files}
 
-    # Clean JS/TS comments (for extension)
-    clean-js-comments:
-      glob: "*.{js,ts}"
-      run: |
-        powershell -Command "
-          $files = git diff --cached --name-only --diff-filter=ACM | Where-Object { $_ -match '\.(js|ts)$' }
-          foreach ($file in $files) {
-            if (Test-Path $file) {
-              $content = Get-Content $file -Raw
-              # Remove TODO, FIXME comments
-              $cleaned = $content -replace '//\s*(TODO|FIXME|HACK|XXX):?[^\r\n]*[\r\n]?', ''
-              Set-Content $file $cleaned -NoNewline
-              git add $file
-            }
-          }
-        "
-
-# Optional: commit message validation
 commit-msg:
   commands:
     conventional-commit:
-      run: |
-        powershell -Command "
-          $msg = (Get-Content .git/COMMIT_EDITMSG -Raw).Trim()
-          
-          # Check conventional commit format
-          if ($msg -notmatch '^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?:') {
-            Write-Error 'Commit must start with: feat|fix|docs|style|refactor|test|chore'
-            exit 1
-          }
-          
-          # Check lowercase (after the type prefix)
-          $body = $msg -replace '^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?:\s*', ''
-          if ($body -cmatch '[A-Z]') {
-            Write-Error 'Commit message must be all lowercase'
-            exit 1
-          }
-          
-          Write-Host 'Commit message OK ✓'
-        "
+      run: powershell -ExecutionPolicy Bypass -File scripts/validate-commit-msg.ps1
