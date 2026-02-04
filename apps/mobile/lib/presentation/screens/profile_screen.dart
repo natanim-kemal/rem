@@ -73,7 +73,7 @@ class ProfileScreen extends ConsumerWidget {
                             width: 64,
                             height: 64,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => CircleAvatar(
+                            placeholder: (_, _) => CircleAvatar(
                               radius: 32,
                               backgroundColor: context.textTertiary,
                               child: const CupertinoActivityIndicator(),
@@ -130,7 +130,7 @@ class ProfileScreen extends ConsumerWidget {
                     title: 'Notifications',
                     trailing: CupertinoSwitch(
                       value: true,
-                      activeColor: Theme.of(context).colorScheme.primary,
+                      activeTrackColor: Theme.of(context).colorScheme.primary,
                       onChanged: (value) {},
                     ),
                   ),
@@ -139,7 +139,7 @@ class ProfileScreen extends ConsumerWidget {
                     title: 'Dark Mode',
                     trailing: CupertinoSwitch(
                       value: isDarkMode,
-                      activeColor: Theme.of(context).colorScheme.primary,
+                      activeTrackColor: Theme.of(context).colorScheme.primary,
                       onChanged: (value) {
                         themeNotifier.toggleTheme();
                       },

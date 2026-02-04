@@ -40,7 +40,7 @@ class FilterChips extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final filter = filters[index];
           final isSelected = filter == selected;
@@ -58,7 +58,7 @@ class FilterChips extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isSelected
-                      ? theme.colorScheme.onSurface.withOpacity(0.3)
+                      ? theme.colorScheme.onSurface.withValues(alpha: 0.3)
                       : theme.colorScheme.outline,
                   width: isSelected ? 1.5 : 1,
                 ),

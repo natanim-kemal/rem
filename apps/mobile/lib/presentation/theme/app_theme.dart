@@ -207,8 +207,8 @@ class AppTheme {
 extension AppColors on BuildContext {
   Color get textSecondary => Theme.of(this).colorScheme.onSurfaceVariant;
   Color get textTertiary => Theme.of(this).brightness == Brightness.dark
-      ? const Color(0xFF636366)
-      : const Color(0xFFAEAEB2);
+      ? AppTheme._darkTextTertiary
+      : AppTheme._lightTextTertiary;
   Color get divider => Theme.of(this).colorScheme.outline;
   Color get surfaceElevated =>
       Theme.of(this).colorScheme.surfaceContainerHighest;
