@@ -15,12 +15,9 @@ class StatsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Stats',
-                style: Theme.of(context).textTheme.displayMedium,
-              ),
+              Text('Stats', style: Theme.of(context).textTheme.displayMedium),
               const SizedBox(height: 24),
-              
+
               _StatCard(
                 child: Column(
                   children: [
@@ -30,10 +27,7 @@ class StatsScreen extends StatelessWidget {
                       color: Colors.orange,
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      '7',
-                      style: Theme.of(context).textTheme.displayLarge,
-                    ),
+                    Text('7', style: Theme.of(context).textTheme.displayLarge),
                     Text(
                       'Day Streak',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -44,7 +38,7 @@ class StatsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -93,7 +87,7 @@ class StatsScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               Text(
                 'This Week',
                 style: Theme.of(context).textTheme.headlineSmall,
@@ -160,15 +154,12 @@ class _StatItem extends StatelessWidget {
       children: [
         Icon(icon, size: 24, color: AppTheme.accent),
         const SizedBox(height: 8),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
+        Text(value, style: Theme.of(context).textTheme.displaySmall),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: context.textSecondary,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: context.textSecondary),
         ),
       ],
     );
@@ -180,11 +171,7 @@ class _DayBar extends StatelessWidget {
   final double value;
   final bool isToday;
 
-  const _DayBar({
-    required this.day,
-    required this.value,
-    this.isToday = false,
-  });
+  const _DayBar({required this.day, required this.value, this.isToday = false});
 
   @override
   Widget build(BuildContext context) {

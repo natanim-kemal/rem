@@ -15,7 +15,7 @@ class ProfileScreen extends ConsumerWidget {
     final themeNotifier = ref.read(themeModeProvider.notifier);
     final isDarkMode = ref.watch(themeModeProvider) == ThemeMode.dark;
     final authState = ref.watch(authProvider);
-    
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -24,12 +24,9 @@ class ProfileScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Profile',
-                style: Theme.of(context).textTheme.displayMedium,
-              ),
+              Text('Profile', style: Theme.of(context).textTheme.displayMedium),
               const SizedBox(height: 24),
-              
+
               GestureDetector(
                 onTap: () {
                   if (authState.isAuthenticated) {
@@ -67,7 +64,8 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      if (authState.isAuthenticated && authState.imageUrl != null)
+                      if (authState.isAuthenticated &&
+                          authState.imageUrl != null)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(32),
                           child: CachedNetworkImage(
@@ -98,8 +96,8 @@ class ProfileScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              authState.isAuthenticated 
-                                  ? authState.displayName 
+                              authState.isAuthenticated
+                                  ? authState.displayName
                                   : 'Sign in',
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
@@ -108,9 +106,8 @@ class ProfileScreen extends ConsumerWidget {
                               authState.isAuthenticated
                                   ? authState.email ?? 'Synced'
                                   : 'Sync your data across devices',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: context.textSecondary,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: context.textSecondary),
                             ),
                           ],
                         ),
@@ -124,7 +121,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               _SettingsSection(
                 title: 'Preferences',
                 children: [
@@ -157,7 +154,7 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               _SettingsSection(
                 title: 'Data',
                 children: [
@@ -174,7 +171,7 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               _SettingsSection(
                 title: 'About',
                 children: [
@@ -207,10 +204,7 @@ class _SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-  });
+  const _SettingsSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -237,11 +231,7 @@ class _SettingsSection extends StatelessWidget {
               for (int i = 0; i < children.length; i++) ...[
                 children[i],
                 if (i < children.length - 1)
-                  Divider(
-                    height: 1,
-                    indent: 52,
-                    color: context.divider,
-                  ),
+                  Divider(height: 1, indent: 52, color: context.divider),
               ],
             ],
           ),
@@ -271,7 +261,8 @@ class _SettingsTile extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, size: 22),
       title: Text(title),
-      trailing: trailing ??
+      trailing:
+          trailing ??
           (value != null
               ? Row(
                   mainAxisSize: MainAxisSize.min,
@@ -291,12 +282,12 @@ class _SettingsTile extends StatelessWidget {
                   ],
                 )
               : onTap != null
-                  ? Icon(
-                      CupertinoIcons.chevron_right,
-                      size: 16,
-                      color: context.textTertiary,
-                    )
-                  : null),
+              ? Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 16,
+                  color: context.textTertiary,
+                )
+              : null),
       onTap: onTap,
     );
   }

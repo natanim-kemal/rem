@@ -33,7 +33,7 @@ class FilterChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SizedBox(
       height: 36,
       child: ListView.separated(
@@ -50,9 +50,7 @@ class FilterChips extends StatelessWidget {
             onTap: () => onSelected(filter),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(
-                horizontal: icon != null ? 12 : 16,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: icon != null ? 12 : 16),
               decoration: BoxDecoration(
                 color: isSelected
                     ? theme.colorScheme.surface
@@ -82,7 +80,9 @@ class FilterChips extends StatelessWidget {
                     filter,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                       color: isSelected
                           ? theme.colorScheme.onSurface
                           : theme.colorScheme.onSurfaceVariant,

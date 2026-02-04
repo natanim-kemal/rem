@@ -8,11 +8,7 @@ import 'providers/auth_provider.dart';
 import 'core/config/app_config.dart';
 
 void main() {
-  runApp(
-    ProviderScope(
-      child: const RemApp(),
-    ),
-  );
+  runApp(ProviderScope(child: const RemApp()));
 }
 
 class RemApp extends ConsumerWidget {
@@ -21,7 +17,7 @@ class RemApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    
+
     return ClerkAuth(
       config: ClerkAuthConfig(publishableKey: AppConfig.clerkPublishableKey),
       child: MaterialApp(
@@ -62,26 +58,30 @@ class _AuthStateSync extends ConsumerWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final clerkAuth = ClerkAuth.of(context, listen: false);
       final user = clerkAuth.user;
-      
+
       if (user != null) {
         String? token;
         try {
-          final sessionToken = await clerkAuth.sessionToken(templateName: 'convex');
+          final sessionToken = await clerkAuth.sessionToken(
+            templateName: 'convex',
+          );
           token = sessionToken.jwt;
         } catch (e) {
           debugPrint('Error getting Convex token: $e');
         }
-        
+
         final currentState = ref.read(authProvider);
         if (!currentState.isAuthenticated || currentState.userId != user.id) {
-          ref.read(authProvider.notifier).setAuthFromClerk(
-            userId: user.id,
-            token: token ?? '',
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            imageUrl: user.imageUrl,
-          );
+          ref
+              .read(authProvider.notifier)
+              .setAuthFromClerk(
+                userId: user.id,
+                token: token ?? '',
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                imageUrl: user.imageUrl,
+              );
         }
       }
     });

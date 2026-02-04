@@ -24,7 +24,6 @@ class AppTheme {
   static const accent = Color(0xFF007AFF);
   static const destructive = Color(0xFFFF3B30);
 
-
   static TextTheme _buildTextTheme(TextTheme base) {
     return base.copyWith(
       displayLarge: GoogleFonts.dmSans(
@@ -49,10 +48,7 @@ class AppTheme {
         fontSize: 17,
         fontWeight: FontWeight.w600,
       ),
-      titleLarge: GoogleFonts.dmSans(
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-      ),
+      titleLarge: GoogleFonts.dmSans(fontSize: 17, fontWeight: FontWeight.w600),
       titleMedium: GoogleFonts.dmSans(
         fontSize: 16,
         fontWeight: FontWeight.w500,
@@ -69,10 +65,7 @@ class AppTheme {
         fontSize: 13,
         fontWeight: FontWeight.normal,
       ),
-      labelLarge: GoogleFonts.dmSans(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
+      labelLarge: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
       labelSmall: GoogleFonts.dmSans(
         fontSize: 11,
         fontWeight: FontWeight.normal,
@@ -94,10 +87,9 @@ class AppTheme {
       outline: _darkDivider,
       error: destructive,
     ),
-    textTheme: _buildTextTheme(ThemeData.dark().textTheme).apply(
-      bodyColor: _darkTextPrimary,
-      displayColor: _darkTextPrimary,
-    ),
+    textTheme: _buildTextTheme(
+      ThemeData.dark().textTheme,
+    ).apply(bodyColor: _darkTextPrimary, displayColor: _darkTextPrimary),
     appBarTheme: const AppBarTheme(
       backgroundColor: _darkBackground,
       foregroundColor: _darkTextPrimary,
@@ -108,9 +100,7 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: _darkSurface,
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: EdgeInsets.zero,
     ),
     dividerTheme: const DividerThemeData(
@@ -128,9 +118,7 @@ class AppTheme {
     chipTheme: ChipThemeData(
       backgroundColor: Colors.transparent,
       side: BorderSide(color: _darkDivider),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       labelStyle: GoogleFonts.inter(fontSize: 14),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
@@ -142,10 +130,7 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      hintStyle: GoogleFonts.dmSans(
-        fontSize: 16,
-        color: _darkTextSecondary,
-      ),
+      hintStyle: GoogleFonts.dmSans(fontSize: 16, color: _darkTextSecondary),
     ),
     cupertinoOverrideTheme: const CupertinoThemeData(
       brightness: Brightness.dark,
@@ -167,10 +152,9 @@ class AppTheme {
       outline: _lightDivider,
       error: destructive,
     ),
-    textTheme: _buildTextTheme(ThemeData.light().textTheme).apply(
-      bodyColor: _lightTextPrimary,
-      displayColor: _lightTextPrimary,
-    ),
+    textTheme: _buildTextTheme(
+      ThemeData.light().textTheme,
+    ).apply(bodyColor: _lightTextPrimary, displayColor: _lightTextPrimary),
     appBarTheme: const AppBarTheme(
       backgroundColor: _lightBackground,
       foregroundColor: _lightTextPrimary,
@@ -181,9 +165,7 @@ class AppTheme {
     cardTheme: CardThemeData(
       color: _lightSurfaceElevated,
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: EdgeInsets.zero,
     ),
     dividerTheme: const DividerThemeData(
@@ -201,9 +183,7 @@ class AppTheme {
     chipTheme: ChipThemeData(
       backgroundColor: Colors.transparent,
       side: BorderSide(color: _lightDivider),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       labelStyle: GoogleFonts.inter(fontSize: 14),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
@@ -215,10 +195,7 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      hintStyle: GoogleFonts.dmSans(
-        fontSize: 16,
-        color: _lightTextSecondary,
-      ),
+      hintStyle: GoogleFonts.dmSans(fontSize: 16, color: _lightTextSecondary),
     ),
     cupertinoOverrideTheme: const CupertinoThemeData(
       brightness: Brightness.light,

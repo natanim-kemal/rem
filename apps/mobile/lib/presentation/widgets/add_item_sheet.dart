@@ -53,10 +53,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Add Item',
-                  style: theme.textTheme.headlineSmall,
-                ),
+                Text('Add Item', style: theme.textTheme.headlineSmall),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Icon(
@@ -68,10 +65,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
             ),
             const SizedBox(height: 24),
 
-            Text(
-              'URL',
-              style: theme.textTheme.labelLarge,
-            ),
+            Text('URL', style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
             TextField(
               controller: _urlController,
@@ -84,23 +78,15 @@ class _AddItemSheetState extends State<AddItemSheet> {
             ),
             const SizedBox(height: 20),
 
-            Text(
-              'Title (optional)',
-              style: theme.textTheme.labelLarge,
-            ),
+            Text('Title (optional)', style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                hintText: 'Custom title...',
-              ),
+              decoration: const InputDecoration(hintText: 'Custom title...'),
             ),
             const SizedBox(height: 20),
 
-            Text(
-              'Type',
-              style: theme.textTheme.labelLarge,
-            ),
+            Text('Type', style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -135,10 +121,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
             ),
             const SizedBox(height: 20),
 
-            Text(
-              'Priority',
-              style: theme.textTheme.labelLarge,
-            ),
+            Text('Priority', style: theme.textTheme.labelLarge),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -298,10 +281,7 @@ class _PriorityChip extends StatelessWidget {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 6),
               Text(
@@ -309,7 +289,9 @@ class _PriorityChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? color : theme.colorScheme.onSurfaceVariant,
+                  color: isSelected
+                      ? color
+                      : theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

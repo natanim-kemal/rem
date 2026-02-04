@@ -48,18 +48,9 @@ class SearchScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  _RecentSearchItem(
-                    text: 'flutter tutorial',
-                    onTap: () {},
-                  ),
-                  _RecentSearchItem(
-                    text: 'design patterns',
-                    onTap: () {},
-                  ),
-                  _RecentSearchItem(
-                    text: 'productivity',
-                    onTap: () {},
-                  ),
+                  _RecentSearchItem(text: 'flutter tutorial', onTap: () {}),
+                  _RecentSearchItem(text: 'design patterns', onTap: () {}),
+                  _RecentSearchItem(text: 'productivity', onTap: () {}),
                 ],
               ),
             ),
@@ -74,10 +65,7 @@ class _RecentSearchItem extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
 
-  const _RecentSearchItem({
-    required this.text,
-    required this.onTap,
-  });
+  const _RecentSearchItem({required this.text, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

@@ -12,24 +12,35 @@ class ConvexClient {
     _authToken = token;
   }
 
-  Future<dynamic> query(String functionPath, [Map<String, dynamic>? args]) async {
+  Future<dynamic> query(
+    String functionPath, [
+    Map<String, dynamic>? args,
+  ]) async {
     return _call('query', functionPath, args);
   }
 
-  Future<dynamic> mutation(String functionPath, [Map<String, dynamic>? args]) async {
+  Future<dynamic> mutation(
+    String functionPath, [
+    Map<String, dynamic>? args,
+  ]) async {
     return _call('mutation', functionPath, args);
   }
 
-  Future<dynamic> action(String functionPath, [Map<String, dynamic>? args]) async {
+  Future<dynamic> action(
+    String functionPath, [
+    Map<String, dynamic>? args,
+  ]) async {
     return _call('action', functionPath, args);
   }
 
-  Future<dynamic> _call(String type, String path, Map<String, dynamic>? args) async {
+  Future<dynamic> _call(
+    String type,
+    String path,
+    Map<String, dynamic>? args,
+  ) async {
     final uri = Uri.parse('$baseUrl/api/$type');
-    
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+
+    final headers = <String, String>{'Content-Type': 'application/json'};
 
     if (_authToken != null) {
       headers['Authorization'] = 'Bearer $_authToken';
@@ -43,7 +54,7 @@ class ConvexClient {
 
     try {
       final response = await http.post(uri, headers: headers, body: body);
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success') {

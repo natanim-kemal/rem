@@ -14,7 +14,8 @@ class Users extends Table {
   TextColumn get displayName => text().nullable()();
   TextColumn get avatarUrl => text().nullable()();
   BoolColumn get isPremium => boolean().withDefault(const Constant(false))();
-  TextColumn get notificationPreferences => text().withDefault(const Constant('{}'))();
+  TextColumn get notificationPreferences =>
+      text().withDefault(const Constant('{}'))();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
@@ -84,24 +85,29 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase get instance => _instance ??= AppDatabase();
 
   Future<User?> getUserByClerkId(String clerkId) {
-    return (select(users)..where((u) => u.clerkId.equals(clerkId)))
-        .getSingleOrNull();
+    return (select(
+      users,
+    )..where((u) => u.clerkId.equals(clerkId))).getSingleOrNull();
   }
 
   Future<int> upsertUser(UsersCompanion user) {
     return into(users).insertOnConflictUpdate(user);
   }
 
-  Future<List<Item>> getItemsByUserId(String userId, {String? status, String? type}) {
+  Future<List<Item>> getItemsByUserId(
+    String userId, {
+    String? status,
+    String? type,
+  }) {
     var query = select(items)..where((i) => i.userId.equals(userId));
-    
+
     if (status != null) {
       query = query..where((i) => i.status.equals(status));
     }
     if (type != null) {
       query = query..where((i) => i.type.equals(type));
     }
-    
+
     return (query..orderBy([(i) => OrderingTerm.desc(i.createdAt)])).get();
   }
 
@@ -114,7 +120,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<bool> updateItemById(String id, ItemsCompanion updates) {
-    return (update(items)..where((i) => i.id.equals(id))).write(updates).then((rows) => rows > 0);
+    return (update(
+      items,
+    )..where((i) => i.id.equals(id))).write(updates).then((rows) => rows > 0);
   }
 
   Future<int> deleteItem(String id) {
@@ -149,13 +157,15 @@ class AppDatabase extends _$AppDatabase {
     required String operation,
     required String payload,
   }) {
-    return into(syncQueue).insert(SyncQueueCompanion.insert(
-      syncTableName: tableName,
-      recordId: recordId,
-      operation: operation,
-      payload: payload,
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-    ));
+    return into(syncQueue).insert(
+      SyncQueueCompanion.insert(
+        syncTableName: tableName,
+        recordId: recordId,
+        operation: operation,
+        payload: payload,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
   }
 
   Future<int> removeSyncItem(int id) {
@@ -164,14 +174,15 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> markSyncItemFailed(int id, String error) async {
     await (update(syncQueue)..where((s) => s.id.equals(id))).write(
-      SyncQueueCompanion(
-        attempts: const Value(1),
-        lastError: Value(error),
-      ),
+      SyncQueueCompanion(attempts: const Value(1), lastError: Value(error)),
     );
   }
 
-  Future<void> updateItemSyncStatus(String id, {String? convexId, required String syncStatus}) async {
+  Future<void> updateItemSyncStatus(
+    String id, {
+    String? convexId,
+    required String syncStatus,
+  }) async {
     await (update(items)..where((i) => i.id.equals(id))).write(
       ItemsCompanion(
         convexId: convexId != null ? Value(convexId) : const Value.absent(),

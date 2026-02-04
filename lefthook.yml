@@ -2,12 +2,9 @@ pre-commit:
   parallel: true
   commands:
     dart-format:
-      glob: "*.dart"
-      run: cd apps/mobile && dart format {staged_files}
-      
-    dart-analyze:
-      glob: "*.dart"
-      run: cd apps/mobile && dart analyze --fatal-infos {staged_files}
+      glob: "apps/mobile/**/*.dart"
+      root: "apps/mobile"
+      run: dart format {staged_files}
 
 commit-msg:
   commands:

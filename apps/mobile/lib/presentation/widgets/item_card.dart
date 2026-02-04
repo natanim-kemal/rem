@@ -27,7 +27,7 @@ class ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -44,9 +44,7 @@ class ItemCard extends StatelessWidget {
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
                     color: theme.colorScheme.surfaceContainerHighest,
-                    child: const Center(
-                      child: CupertinoActivityIndicator(),
-                    ),
+                    child: const Center(child: CupertinoActivityIndicator()),
                   ),
                   errorWidget: (context, url, error) => Container(
                     color: theme.colorScheme.surfaceContainerHighest,
@@ -58,7 +56,7 @@ class ItemCard extends StatelessWidget {
                   ),
                 ),
               ),
-            
+
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -95,7 +93,7 @@ class ItemCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  
+
                   Text(
                     url,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -104,7 +102,7 @@ class ItemCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  
+
                   if (readTime != null || date != null) ...[
                     const SizedBox(height: 8),
                     Row(

@@ -67,7 +67,7 @@ class AuthNotifier extends Notifier<AuthState> {
     String? imageUrl,
   }) {
     _convex.setAuthToken(token);
-    
+
     state = AuthState(
       isAuthenticated: true,
       isLoading: false,
