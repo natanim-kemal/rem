@@ -58,8 +58,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Check TypeScript syntax
-        run: npx tsc --noEmit --skipLibCheck convex/*.ts || true
+      - name: Type check Convex
+        env:
+          CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT }}
+        run: npx convex codegen
 
   extension:
     name: Extension CI
