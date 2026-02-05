@@ -27,20 +27,20 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     final tagsData = widget.item['tags'];
     List<String> parsedTags = [];
     if (tagsData is List) {
-      parsedTags =
-          tagsData.whereType<String>().where((t) => t.isNotEmpty).toList();
+      parsedTags = tagsData
+          .whereType<String>()
+          .where((t) => t.isNotEmpty)
+          .toList();
     } else if (tagsData is String) {
       if (tagsData.isNotEmpty && tagsData != '[]') {
         parsedTags = [tagsData];
       }
     }
-    _tags =
-        parsedTags
-            .where(
-              (tag) =>
-                  tag.isNotEmpty && tag != '[]' && tag != '[' && tag != ']',
-            )
-            .toList();
+    _tags = parsedTags
+        .where(
+          (tag) => tag.isNotEmpty && tag != '[]' && tag != '[' && tag != ']',
+        )
+        .toList();
   }
 
   Color _getPriorityColor(String priority) {
@@ -263,8 +263,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     final tempTags = List<String>.from(
       _tags
           .where(
-            (tag) =>
-                tag.isNotEmpty && tag != '[]' && tag != '[' && tag != ']',
+            (tag) => tag.isNotEmpty && tag != '[]' && tag != '[' && tag != ']',
           )
           .toList(),
     );
@@ -370,7 +369,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       CupertinoButton(
                         child: const Icon(CupertinoIcons.add),
                         onPressed: () {
-                          final value = textController.text.trim().toLowerCase();
+                          final value = textController.text
+                              .trim()
+                              .toLowerCase();
                           if (value.isNotEmpty && !tempTags.contains(value)) {
                             setModalState(() {
                               tempTags.add(value);
@@ -396,8 +397,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount:
-                              tempTags.where((t) => t.isNotEmpty && t != '[]').length,
+                          itemCount: tempTags
+                              .where((t) => t.isNotEmpty && t != '[]')
+                              .length,
                           itemBuilder: (context, index) {
                             final validTags = tempTags
                                 .where((t) => t.isNotEmpty && t != '[]')
@@ -418,10 +420,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                 ).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outline
-                                      .withOpacity(0.3),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.outline.withOpacity(0.3),
                                 ),
                               ),
                               child: Row(
@@ -429,18 +430,18 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                   Icon(
                                     CupertinoIcons.tag,
                                     size: 16,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       tag,
                                       style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -452,9 +453,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                     child: Icon(
                                       CupertinoIcons.xmark_circle_fill,
                                       size: 20,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                                     onPressed: () {
                                       setModalState(() {
@@ -483,8 +484,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     final actionBackground = hasImage
         ? Colors.black.withValues(alpha: 0.45)
         : theme.colorScheme.surfaceContainerHighest;
-    final actionForeground =
-        hasImage ? Colors.white : theme.colorScheme.onSurface;
+    final actionForeground = hasImage
+        ? Colors.white
+        : theme.colorScheme.onSurface;
 
     return Scaffold(
       body: CustomScrollView(

@@ -76,7 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .split(',')
         .map((tag) => tag.trim())
         .where((tag) => tag.isNotEmpty)
-      .toList();
+        .toList();
   }
 
   @override

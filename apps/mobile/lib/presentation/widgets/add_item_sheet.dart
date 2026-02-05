@@ -312,7 +312,10 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
                 ),
                 const SizedBox(width: 8),
                 CupertinoButton(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   color: theme.colorScheme.primary,
                   borderRadius: BorderRadius.circular(10),
                   onPressed: _addTag,

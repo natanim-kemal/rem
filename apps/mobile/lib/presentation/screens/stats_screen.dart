@@ -48,10 +48,9 @@ class StatsScreen extends ConsumerWidget {
                   Text(
                     error.toString(),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: context.textSecondary),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: context.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -74,10 +73,10 @@ class _StatsBody extends StatelessWidget {
     final total = items.length;
 
     final readItems = items.where((item) => item.status == 'read').toList();
-    final archivedItems =
-        items.where((item) => item.status == 'archived').toList();
-    final unreadItems =
-        items.where((item) => item.status == 'unread').toList();
+    final archivedItems = items
+        .where((item) => item.status == 'archived')
+        .toList();
+    final unreadItems = items.where((item) => item.status == 'unread').toList();
 
     final totalReadMinutes = readItems.fold<int>(
       0,
@@ -96,9 +95,7 @@ class _StatsBody extends StatelessWidget {
 
     final savedByDay = {for (final day in weekDays) day: 0};
     for (final item in items) {
-      final day = _dayKey(
-        DateTime.fromMillisecondsSinceEpoch(item.createdAt),
-      );
+      final day = _dayKey(DateTime.fromMillisecondsSinceEpoch(item.createdAt));
       if (savedByDay.containsKey(day)) {
         savedByDay[day] = (savedByDay[day] ?? 0) + 1;
       }
@@ -108,9 +105,7 @@ class _StatsBody extends StatelessWidget {
     for (final item in readItems) {
       final timestamp = item.readAt ?? item.updatedAt;
       if (timestamp > 0) {
-        readDays.add(
-          _dayKey(DateTime.fromMillisecondsSinceEpoch(timestamp)),
-        );
+        readDays.add(_dayKey(DateTime.fromMillisecondsSinceEpoch(timestamp)));
       }
     }
     final streak = _calculateStreak(readDays, now);
@@ -223,10 +218,7 @@ class _StatsBody extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                _ProgressRow(
-                  label: 'Completion rate',
-                  value: readRate,
-                ),
+                _ProgressRow(label: 'Completion rate', value: readRate),
               ],
             ),
           ),
@@ -234,10 +226,7 @@ class _StatsBody extends StatelessWidget {
           _SectionTitle(title: 'This week'),
           const SizedBox(height: 12),
           _StatCard(
-            child: _WeekChart(
-              savedByDay: savedByDay,
-              now: now,
-            ),
+            child: _WeekChart(savedByDay: savedByDay, now: now),
           ),
           const SizedBox(height: 20),
           _SectionTitle(title: 'Library breakdown'),
@@ -250,30 +239,24 @@ class _StatsBody extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: sortedTypes.isEmpty
-                      ? [
-                          _TypeChip(
-                            label: 'No items yet',
-                            count: 0,
-                          ),
-                        ]
+                      ? [_TypeChip(label: 'No items yet', count: 0)]
                       : sortedTypes
-                          .map(
-                            (entry) => _TypeChip(
-                              label: entry.key,
-                              count: entry.value,
-                            ),
-                          )
-                          .toList(),
+                            .map(
+                              (entry) => _TypeChip(
+                                label: entry.key,
+                                count: entry.value,
+                              ),
+                            )
+                            .toList(),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   sortedTypes.isEmpty
                       ? 'Add a few items to unlock insights.'
                       : 'Most saved: ${sortedTypes.first.key}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: context.textSecondary),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: context.textSecondary),
                 ),
               ],
             ),
@@ -285,20 +268,14 @@ class _StatsBody extends StatelessWidget {
             child: topTags.isEmpty
                 ? Text(
                     'No tags yet. Add tags to see your most used labels.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: context.textSecondary),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: context.textSecondary,
+                    ),
                   )
                 : Column(
                     children: topTags
                         .take(5)
-                        .map(
-                          (tag) => _TagRow(
-                            label: tag.key,
-                            count: tag.value,
-                          ),
-                        )
+                        .map((tag) => _TagRow(label: tag.key, count: tag.value))
                         .toList(),
                   ),
           ),
@@ -318,10 +295,7 @@ class _HeaderRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'stats',
-          style: Theme.of(context).textTheme.displayMedium,
-        ),
+        Text('stats', style: Theme.of(context).textTheme.displayMedium),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
@@ -330,10 +304,9 @@ class _HeaderRow extends StatelessWidget {
           ),
           child: Text(
             total == 0 ? 'Get started' : 'Last 7 days',
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(color: context.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: context.textSecondary),
           ),
         ),
       ],
@@ -397,10 +370,9 @@ class _HeroCard extends StatelessWidget {
                   ),
                   Text(
                     '$savedThisWeek saved • $readThisWeek read this week',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: context.textSecondary),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: context.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -464,10 +436,9 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: context.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: context.textSecondary),
           ),
         ],
       ),
@@ -503,16 +474,12 @@ class _MetricChip extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    value,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text(value, style: Theme.of(context).textTheme.titleMedium),
                   Text(
                     label,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.copyWith(color: context.textSecondary),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: context.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -540,10 +507,9 @@ class _ProgressRow extends StatelessWidget {
           children: [
             Text(
               label,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelMedium
-                  ?.copyWith(color: context.textSecondary),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: context.textSecondary),
             ),
             Text(
               '${(value * 100).round()}%',
@@ -617,9 +583,9 @@ class _DayBar extends StatelessWidget {
       children: [
         Text(
           '$count',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: context.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: context.textSecondary),
         ),
         const SizedBox(height: 6),
         AnimatedContainer(
@@ -663,10 +629,7 @@ class _TypeChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium,
-          ),
+          Text(label, style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(width: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -676,10 +639,9 @@ class _TypeChip extends StatelessWidget {
             ),
             child: Text(
               '$count',
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: AppTheme.accent),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: AppTheme.accent),
             ),
           ),
         ],
@@ -701,17 +663,13 @@ class _TagRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
           ),
           Text(
             '$count',
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(color: context.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: context.textSecondary),
           ),
         ],
       ),
