@@ -21,7 +21,7 @@ class SyncStatusIndicator extends ConsumerWidget {
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: _getBackgroundColor(status).withOpacity(0.1),
+            color: _getBackgroundColor(status).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
