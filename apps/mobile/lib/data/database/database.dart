@@ -91,12 +91,15 @@ class PendingNotifications extends Table {
   TextColumn get itemId => text().nullable()();
   TextColumn get title => text()();
   TextColumn get body => text()();
-  TextColumn get type => text()(); // 'reminder', 'digest', 'streak', 'celebration'
+  TextColumn get type =>
+      text()(); // 'reminder', 'digest', 'streak', 'celebration'
   IntColumn get scheduledAt => integer()();
   IntColumn get createdAt => integer()();
 }
 
-@DriftDatabase(tables: [Users, Items, Tags, SyncQueue, ItemsFts, PendingNotifications])
+@DriftDatabase(
+  tables: [Users, Items, Tags, SyncQueue, ItemsFts, PendingNotifications],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -169,17 +172,21 @@ class AppDatabase extends _$AppDatabase {
     return (select(items)..where((i) => i.id.equals(id))).getSingleOrNull();
   }
 
-  Future<Item?> findDuplicateItem(String userId, String? url, {String? excludeId}) async {
+  Future<Item?> findDuplicateItem(
+    String userId,
+    String? url, {
+    String? excludeId,
+  }) async {
     if (url == null || url.isEmpty) return null;
-    
+
     var query = select(items)
       ..where((i) => i.userId.equals(userId))
       ..where((i) => i.url.equals(url));
-    
+
     if (excludeId != null) {
       query = query..where((i) => i.id.isNotValue(excludeId));
     }
-    
+
     return query.getSingleOrNull();
   }
 
@@ -259,11 +266,13 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Future<void> updateItemSearchIndex(String itemId, String title, String? description, String? url) async {
-    await customStatement(
-      'DELETE FROM items_fts WHERE item_id = ?',
-      [itemId],
-    );
+  Future<void> updateItemSearchIndex(
+    String itemId,
+    String title,
+    String? description,
+    String? url,
+  ) async {
+    await customStatement('DELETE FROM items_fts WHERE item_id = ?', [itemId]);
     await customStatement(
       'INSERT INTO items_fts(item_id, title, description, url) VALUES (?, ?, ?, ?)',
       [itemId, title, description ?? '', url ?? ''],
@@ -271,10 +280,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteItemSearchIndex(String itemId) async {
-    await customStatement(
-      'DELETE FROM items_fts WHERE item_id = ?',
-      [itemId],
-    );
+    await customStatement('DELETE FROM items_fts WHERE item_id = ?', [itemId]);
   }
 
   Future<List<Item>> searchItems(String userId, String query) async {
@@ -327,9 +333,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<int> clearDeliveredPendingNotifications(int beforeTimestamp) {
-    return (delete(pendingNotifications)
-          ..where((n) => n.scheduledAt.isSmallerThanValue(beforeTimestamp)))
-        .go();
+    return (delete(
+      pendingNotifications,
+    )..where((n) => n.scheduledAt.isSmallerThanValue(beforeTimestamp))).go();
   }
 }
 

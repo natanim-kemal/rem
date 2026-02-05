@@ -62,7 +62,7 @@ class SyncEngine {
 
       await _pushLocalChanges();
       await _pullRemoteChanges();
-      
+
       _updateStatus(SyncStatus.idle);
     } catch (e) {
       debugPrint('Sync error: $e');
@@ -177,10 +177,10 @@ class SyncEngine {
   Future<void> _pullRemoteChanges() async {
     try {
       final lastSyncAt = await _getLastSyncTimestamp();
-      
-      final remoteItems = await _convex.query('items:getItemsSince', {
-        'since': lastSyncAt,
-      }) as List<dynamic>?;
+
+      final remoteItems =
+          await _convex.query('items:getItemsSince', {'since': lastSyncAt})
+              as List<dynamic>?;
 
       if (remoteItems == null || remoteItems.isEmpty) return;
 
@@ -197,11 +197,11 @@ class SyncEngine {
   Future<void> _mergeRemoteItem(Map<String, dynamic> remoteItem) async {
     final localId = remoteItem['localId'] as String?;
     final convexId = remoteItem['_id'] as String?;
-    
+
     if (localId == null || convexId == null) return;
 
     final localItem = await _db.getItemById(localId);
-    
+
     if (localItem == null) {
       await _insertRemoteItem(remoteItem);
     } else {
@@ -212,7 +212,7 @@ class SyncEngine {
   Future<void> _insertRemoteItem(Map<String, dynamic> remoteItem) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     final remoteUpdatedAt = remoteItem['updatedAt'] as int? ?? now;
-    
+
     await _db.insertItem(
       ItemsCompanion.insert(
         id: remoteItem['localId'] as String,
@@ -236,13 +236,16 @@ class SyncEngine {
     );
   }
 
-  Future<void> _resolveConflict(Item localItem, Map<String, dynamic> remoteItem) async {
+  Future<void> _resolveConflict(
+    Item localItem,
+    Map<String, dynamic> remoteItem,
+  ) async {
     final localUpdatedAt = localItem.updatedAt;
     final remoteUpdatedAt = remoteItem['updatedAt'] as int? ?? 0;
-    
+
     if (remoteUpdatedAt > localUpdatedAt) {
       final now = DateTime.now().millisecondsSinceEpoch;
-      
+
       await _db.updateItemById(
         localItem.id,
         ItemsCompanion(
@@ -267,8 +270,7 @@ class SyncEngine {
     return 0;
   }
 
-  Future<void> _setLastSyncTimestamp(int timestamp) async {
-  }
+  Future<void> _setLastSyncTimestamp(int timestamp) async {}
 
   Future<String> createItem({
     required String userId,
@@ -284,7 +286,10 @@ class SyncEngine {
   }) async {
     final duplicate = await _db.findDuplicateItem(userId, url);
     if (duplicate != null) {
-      throw DuplicateItemException('Item with this URL already exists', duplicate.id);
+      throw DuplicateItemException(
+        'Item with this URL already exists',
+        duplicate.id,
+      );
     }
 
     final id = DateTime.now().millisecondsSinceEpoch.toString();
@@ -403,10 +408,7 @@ class SyncEngine {
       tableName: 'items',
       recordId: itemId,
       operation: 'update',
-      payload: jsonEncode({
-        'convexId': item.convexId,
-        'priority': priority,
-      }),
+      payload: jsonEncode({'convexId': item.convexId, 'priority': priority}),
     );
 
     _triggerSync();
@@ -431,10 +433,7 @@ class SyncEngine {
       tableName: 'items',
       recordId: itemId,
       operation: 'update',
-      payload: jsonEncode({
-        'convexId': item.convexId,
-        'tags': tags,
-      }),
+      payload: jsonEncode({'convexId': item.convexId, 'tags': tags}),
     );
 
     _triggerSync();

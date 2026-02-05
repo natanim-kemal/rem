@@ -4,11 +4,11 @@ import '../core/services/notification_service.dart';
 final notificationServiceProvider = Provider<NotificationService>((ref) {
   final service = NotificationService();
   service.initialize();
-  
+
   ref.onDispose(() {
     service.dispose();
   });
-  
+
   return service;
 });
 

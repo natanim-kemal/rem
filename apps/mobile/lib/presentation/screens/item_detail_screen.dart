@@ -33,21 +33,18 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
   Widget _buildTagsPreview() {
     final tags = (widget.item['tags'] as List<dynamic>?)?.cast<String>() ?? [];
-    
+
     if (tags.isEmpty) {
       return Text(
         'Add tags...',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
       );
     }
 
     return Text(
-      tags.take(3).join(', ') + (tags.length > 3 ? ' +${tags.length - 3} more' : ''),
-      style: TextStyle(
-        color: Theme.of(context).colorScheme.onSurface,
-      ),
+      tags.take(3).join(', ') +
+          (tags.length > 3 ? ' +${tags.length - 3} more' : ''),
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
@@ -72,7 +69,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Delete Item'),
-        content: const Text('Are you sure you want to delete this item? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to delete this item? This action cannot be undone.',
+        ),
         actions: [
           CupertinoDialogAction(
             isDefaultAction: true,
@@ -95,7 +94,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     try {
       final syncEngine = ref.read(syncEngineProvider);
       final itemId = widget.item['id'] as String?;
-      
+
       if (itemId != null) {
         await syncEngine.deleteItem(itemId);
       }
@@ -124,7 +123,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
   void _showEditPrioritySheet() {
     final currentPriority = widget.item['priority'] as String? ?? 'medium';
-    
+
     showCupertinoModalPopup(
       context: context,
       builder: (context) => CupertinoActionSheet(
@@ -208,14 +207,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
   Future<void> _updatePriority(String priority) async {
     Navigator.pop(context);
-    
+
     final itemId = widget.item['id'] as String?;
     if (itemId == null) return;
 
     try {
       final syncEngine = ref.read(syncEngineProvider);
       await syncEngine.updateItemPriority(itemId, priority);
-      
+
       if (mounted) {
         setState(() {
           widget.item['priority'] = priority;
@@ -242,7 +241,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   void _showEditTagsSheet() {
     final tags = (widget.item['tags'] as List<dynamic>?)?.cast<String>() ?? [];
     final textController = TextEditingController();
-    
+
     showCupertinoModalPopup(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -251,7 +250,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             height: MediaQuery.of(context).size.height * 0.7,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
             ),
             child: Column(
               children: [
@@ -260,7 +261,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outline.withOpacity(0.5),
                       ),
                     ),
                   ),
@@ -325,7 +328,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           controller: textController,
                           placeholder: 'Add a tag...',
                           onSubmitted: (value) {
-                            if (value.trim().isNotEmpty && !tags.contains(value.trim())) {
+                            if (value.trim().isNotEmpty &&
+                                !tags.contains(value.trim())) {
                               setModalState(() {
                                 tags.add(value.trim());
                               });
@@ -355,7 +359,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           child: Text(
                             'No tags yet',
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         )
@@ -370,16 +376,16 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 children: [
                                   const Icon(CupertinoIcons.tag, size: 16),
                                   const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(tags[index]),
-                                  ),
+                                  Expanded(child: Text(tags[index])),
                                   CupertinoButton(
                                     padding: EdgeInsets.zero,
                                     minSize: 0,
@@ -468,9 +474,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     GestureDetector(
                       onTap: _showEditPrioritySheet,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: _getPriorityColor(widget.item['priority'] as String? ?? 'medium').withOpacity(0.15),
+                          color: _getPriorityColor(
+                            widget.item['priority'] as String? ?? 'medium',
+                          ).withOpacity(0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
@@ -480,15 +491,22 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                               width: 6,
                               height: 6,
                               decoration: BoxDecoration(
-                                color: _getPriorityColor(widget.item['priority'] as String? ?? 'medium'),
+                                color: _getPriorityColor(
+                                  widget.item['priority'] as String? ??
+                                      'medium',
+                                ),
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              (widget.item['priority'] as String? ?? 'medium').toUpperCase(),
+                              (widget.item['priority'] as String? ?? 'medium')
+                                  .toUpperCase(),
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: _getPriorityColor(widget.item['priority'] as String? ?? 'medium'),
+                                color: _getPriorityColor(
+                                  widget.item['priority'] as String? ??
+                                      'medium',
+                                ),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -496,7 +514,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                             Icon(
                               CupertinoIcons.chevron_down,
                               size: 10,
-                              color: _getPriorityColor(widget.item['priority'] as String? ?? 'medium'),
+                              color: _getPriorityColor(
+                                widget.item['priority'] as String? ?? 'medium',
+                              ),
                             ),
                           ],
                         ),
@@ -522,12 +542,18 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   text: 'Added ${widget.item['date']}',
                 ),
                 const SizedBox(height: 12),
-                _MetaRow(icon: CupertinoIcons.time, text: widget.item['readTime']),
+                _MetaRow(
+                  icon: CupertinoIcons.time,
+                  text: widget.item['readTime'],
+                ),
                 const SizedBox(height: 16),
                 GestureDetector(
                   onTap: _showEditTagsSheet,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
@@ -540,9 +566,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildTagsPreview(),
-                        ),
+                        Expanded(child: _buildTagsPreview()),
                         Icon(
                           CupertinoIcons.chevron_right,
                           size: 16,

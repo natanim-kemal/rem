@@ -294,7 +294,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
   Future<void> _saveItem() async {
     final url = _urlController.text.trim();
     final title = _titleController.text.trim();
-    
+
     if (title.isEmpty && url.isEmpty && _selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

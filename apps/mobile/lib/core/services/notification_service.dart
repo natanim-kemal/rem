@@ -18,7 +18,8 @@ class NotificationService {
   NotificationService._internal();
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
   StreamSubscription? _foregroundMessageSubscription;
   String? _fcmToken;
@@ -32,7 +33,9 @@ class NotificationService {
 
     await _initializeLocalNotifications();
 
-    _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen(
+      _handleForegroundMessage,
+    );
 
     _fcmToken = await _messaging.getToken();
 
@@ -58,12 +61,13 @@ class NotificationService {
   Future<void> _initializeLocalNotifications() async {
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    
-    const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
-    );
+
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        );
 
     const InitializationSettings initSettings = InitializationSettings(
       android: androidSettings,
@@ -85,7 +89,9 @@ class NotificationService {
     debugPrint('Message data: ${message.data}');
 
     if (message.notification != null) {
-      debugPrint('Message also contained a notification: ${message.notification}');
+      debugPrint(
+        'Message also contained a notification: ${message.notification}',
+      );
       await _showLocalNotification(message);
     }
   }
@@ -94,14 +100,15 @@ class NotificationService {
     final notification = message.notification;
     if (notification == null) return;
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'rem_channel',
-      'REM Notifications',
-      channelDescription: 'Notifications for REM app',
-      importance: Importance.high,
-      priority: Priority.high,
-      showWhen: true,
-    );
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'rem_channel',
+          'REM Notifications',
+          channelDescription: 'Notifications for REM app',
+          importance: Importance.high,
+          priority: Priority.high,
+          showWhen: true,
+        );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
       presentAlert: true,
@@ -127,7 +134,10 @@ class NotificationService {
     debugPrint('Message opened app: ${message.data}');
   }
 
-  Future<void> scheduleDailyReminder({required int hour, required int minute}) async {
+  Future<void> scheduleDailyReminder({
+    required int hour,
+    required int minute,
+  }) async {
     await _localNotifications.cancel(0);
 
     await _localNotifications.zonedSchedule(
@@ -173,7 +183,9 @@ class NotificationService {
   }
 
   Future<void> snoozeNotification({int minutes = 30, String? itemId}) async {
-    final id = itemId != null ? itemId.hashCode : DateTime.now().millisecondsSinceEpoch % 100000;
+    final id = itemId != null
+        ? itemId.hashCode
+        : DateTime.now().millisecondsSinceEpoch % 100000;
 
     await _localNotifications.zonedSchedule(
       id,
