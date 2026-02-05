@@ -28,12 +28,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (_selectedFilter != 'All') {
         if (_selectedFilter == 'Unread' && item.status == 'read') {
           return false;
-        } else if (_selectedFilter != 'Unread' && 
-                   item.type.toLowerCase() != _selectedFilter.toLowerCase()) {
+        } else if (_selectedFilter != 'Unread' &&
+            item.type.toLowerCase() != _selectedFilter.toLowerCase()) {
           return false;
         }
       }
-      
+
       // Filter by search query
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
@@ -44,7 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return false;
         }
       }
-      
+
       return true;
     }).toList();
   }
@@ -53,7 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
     final now = DateTime.now();
     final diff = now.difference(date);
-    
+
     if (diff.inMinutes < 1) return 'Just now';
     if (diff.inHours < 1) return '${diff.inMinutes} min ago';
     if (diff.inDays < 1) return '${diff.inHours} hours ago';
@@ -66,11 +66,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final userId = authState.userId;
-    
+
     if (userId == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final itemsAsync = ref.watch(itemsStreamProvider(userId));
@@ -136,53 +134,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             itemsAsync.when(
               data: (items) {
                 final filteredItems = _filterItems(items);
-                
+
                 if (filteredItems.isEmpty) {
-                  return SliverFillRemaining(child: _EmptyState(hasItems: items.isNotEmpty));
+                  return SliverFillRemaining(
+                    child: _EmptyState(hasItems: items.isNotEmpty),
+                  );
                 }
-                
+
                 return SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final item = filteredItems[index];
-                        return ItemCard(
-                          title: item.title,
-                          url: item.url ?? 'No URL',
-                          type: item.type,
-                          priority: item.priority,
-                          thumbnailUrl: item.thumbnailUrl,
-                          readTime: item.estimatedReadTime != null 
-                            ? '${item.estimatedReadTime} min' 
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final item = filteredItems[index];
+                      return ItemCard(
+                        title: item.title,
+                        url: item.url ?? 'No URL',
+                        type: item.type,
+                        priority: item.priority,
+                        thumbnailUrl: item.thumbnailUrl,
+                        readTime: item.estimatedReadTime != null
+                            ? '${item.estimatedReadTime} min'
                             : null,
-                          date: _formatDate(item.createdAt),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ItemDetailScreen(
-                                  item: {
-                                    'id': item.id,
-                                    'title': item.title,
-                                    'url': item.url,
-                                    'type': item.type,
-                                    'priority': item.priority,
-                                    'description': item.description,
-                                    'thumbnailUrl': item.thumbnailUrl,
-                                    'tags': item.tags.split(',').where((t) => t.isNotEmpty).toList(),
-                                    'status': item.status,
-                                    'createdAt': item.createdAt,
-                                    'convexId': item.convexId,
-                                  },
-                                ),
+                        date: _formatDate(item.createdAt),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ItemDetailScreen(
+                                item: {
+                                  'id': item.id,
+                                  'title': item.title,
+                                  'url': item.url,
+                                  'type': item.type,
+                                  'priority': item.priority,
+                                  'description': item.description,
+                                  'thumbnailUrl': item.thumbnailUrl,
+                                  'tags': item.tags
+                                      .split(',')
+                                      .where((t) => t.isNotEmpty)
+                                      .toList(),
+                                  'status': item.status,
+                                  'createdAt': item.createdAt,
+                                  'convexId': item.convexId,
+                                },
                               ),
-                            );
-                          },
-                        );
-                      },
-                      childCount: filteredItems.length,
-                    ),
+                            ),
+                          );
+                        },
+                      );
+                    }, childCount: filteredItems.length),
                   ),
                 );
               },
@@ -196,8 +196,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(CupertinoIcons.exclamationmark_triangle, 
-                             size: 64, color: context.textTertiary),
+                        Icon(
+                          CupertinoIcons.exclamationmark_triangle,
+                          size: 64,
+                          color: context.textTertiary,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Error loading items',
@@ -206,9 +209,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(height: 8),
                         Text(
                           error.toString(),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: context.textSecondary,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: context.textSecondary),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -226,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 class _EmptyState extends StatelessWidget {
   final bool hasItems;
-  
+
   const _EmptyState({this.hasItems = false});
 
   @override
@@ -245,9 +247,9 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              hasItems 
-                ? 'Try adjusting your search or filters'
-                : 'Tap the + button to save your first item',
+              hasItems
+                  ? 'Try adjusting your search or filters'
+                  : 'Tap the + button to save your first item',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: context.textSecondary),
