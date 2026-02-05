@@ -182,5 +182,4 @@ class ItemCard extends StatelessWidget {
         return CupertinoIcons.link;
     }
   }
-
 }
