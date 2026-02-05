@@ -25,8 +25,7 @@ class AppTheme {
   static const destructive = Color(0xFFFF3B30);
 
   static TextTheme _buildTextTheme(TextTheme base, Color textColor) {
-    // Apply Geist font family to the entire text theme efficiently
-    final geistTheme = GoogleFonts.geistTextTheme(base);
+    final geistTheme = GoogleFonts.dmSansTextTheme(base);
 
     return geistTheme.copyWith(
       displayLarge: geistTheme.displayLarge?.copyWith(
@@ -108,7 +107,7 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: _darkBackground,
-    fontFamily: 'Geist',
+    fontFamily: 'Lora',
     colorScheme: const ColorScheme.dark(
       primary: accent,
       secondary: accent,
@@ -172,7 +171,7 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.light,
     scaffoldBackgroundColor: _lightBackground,
-    fontFamily: 'Geist',
+    fontFamily: 'Lora',
     colorScheme: const ColorScheme.light(
       primary: accent,
       secondary: accent,
