@@ -34,15 +34,15 @@ class _ShellScreenState extends State<ShellScreen> {
 
   void _handleSharedContent(SharedContent content) {
     if (!mounted) return;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AddItemSheet(
         initialUrl: content.type == ShareType.text ? content.text : null,
-        initialFiles: content.type == ShareType.media 
-            ? content.files.map((f) => f.path).toList() 
+        initialFiles: content.type == ShareType.media
+            ? content.files.map((f) => f.path).toList()
             : null,
       ),
     );
