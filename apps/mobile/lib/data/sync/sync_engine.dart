@@ -60,6 +60,13 @@ class SyncEngine {
         return;
       }
 
+      // Ensure user exists in Convex before syncing
+      try {
+        await _convex.mutation('users:getOrCreateUser', {});
+      } catch (e) {
+        debugPrint('Failed to create/get user: $e');
+      }
+
       await _pushLocalChanges();
       await _pullRemoteChanges();
 
@@ -108,9 +115,14 @@ class SyncEngine {
     SyncQueueData syncItem,
     Map<String, dynamic> payload,
   ) async {
+    // Remove null values from payload - Convex optional fields must be omitted, not null
+    final cleanPayload = Map<String, dynamic>.fromEntries(
+      payload.entries.where((e) => e.value != null),
+    );
+
     switch (syncItem.operation) {
       case 'create':
-        final result = await _convex.mutation('items:create', payload);
+        final result = await _convex.mutation('items:createItem', cleanPayload);
         if (result != null) {
           final convexId = result['_id'] as String?;
           if (convexId != null) {
@@ -126,7 +138,10 @@ class SyncEngine {
       case 'update':
         final convexId = payload['convexId'];
         if (convexId != null) {
-          await _convex.mutation('items:update', {'id': convexId, ...payload});
+          await _convex.mutation('items:updateItem', {
+            'itemId': convexId,
+            ...cleanPayload,
+          });
           await _db.updateItemSyncStatus(
             syncItem.recordId,
             syncStatus: 'synced',
@@ -137,7 +152,7 @@ class SyncEngine {
       case 'delete':
         final convexId = payload['convexId'];
         if (convexId != null) {
-          await _convex.mutation('items:remove', {'id': convexId});
+          await _convex.mutation('items:deleteItem', {'itemId': convexId});
         }
         break;
     }
@@ -147,22 +162,9 @@ class SyncEngine {
     SyncQueueData syncItem,
     Map<String, dynamic> payload,
   ) async {
-    switch (syncItem.operation) {
-      case 'create':
-        final result = await _convex.mutation('tags:create', payload);
-        if (result != null) {
-          final convexId = result['_id'] as String?;
-          if (convexId != null) {}
-        }
-        break;
-
-      case 'delete':
-        final convexId = payload['convexId'];
-        if (convexId != null) {
-          await _convex.mutation('tags:remove', {'id': convexId});
-        }
-        break;
-    }
+    // Tags are synced as part of items, skipping separate tag sync
+    debugPrint('Tag sync skipped - tags are synced via items');
+    await _db.removeSyncItem(syncItem.id);
   }
 
   Future<void> _syncUser(
@@ -170,7 +172,7 @@ class SyncEngine {
     Map<String, dynamic> payload,
   ) async {
     if (syncItem.operation == 'update') {
-      await _convex.mutation('users:updatePreferences', payload);
+      await _convex.mutation('users:updateNotificationPreferences', payload);
     }
   }
 
@@ -244,8 +246,6 @@ class SyncEngine {
     final remoteUpdatedAt = remoteItem['updatedAt'] as int? ?? 0;
 
     if (remoteUpdatedAt > localUpdatedAt) {
-      final now = DateTime.now().millisecondsSinceEpoch;
-
       await _db.updateItemById(
         localItem.id,
         ItemsCompanion(
