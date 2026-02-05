@@ -48,30 +48,15 @@ class AppTheme {
         fontSize: 17,
         fontWeight: FontWeight.w600,
       ),
-      titleLarge: GoogleFonts.geist(
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-      ),
-      titleMedium: GoogleFonts.geist(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-      ),
-      bodyLarge: GoogleFonts.geist(
-        fontSize: 17,
-        fontWeight: FontWeight.normal,
-      ),
+      titleLarge: GoogleFonts.geist(fontSize: 17, fontWeight: FontWeight.w600),
+      titleMedium: GoogleFonts.geist(fontSize: 16, fontWeight: FontWeight.w500),
+      bodyLarge: GoogleFonts.geist(fontSize: 17, fontWeight: FontWeight.normal),
       bodyMedium: GoogleFonts.geist(
         fontSize: 15,
         fontWeight: FontWeight.normal,
       ),
-      bodySmall: GoogleFonts.geist(
-        fontSize: 13,
-        fontWeight: FontWeight.normal,
-      ),
-      labelLarge: GoogleFonts.geist(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
+      bodySmall: GoogleFonts.geist(fontSize: 13, fontWeight: FontWeight.normal),
+      labelLarge: GoogleFonts.geist(fontSize: 14, fontWeight: FontWeight.w500),
       labelSmall: GoogleFonts.geist(
         fontSize: 11,
         fontWeight: FontWeight.normal,
@@ -136,10 +121,7 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      hintStyle: GoogleFonts.geist(
-        fontSize: 16,
-        color: _darkTextSecondary,
-      ),
+      hintStyle: GoogleFonts.geist(fontSize: 16, color: _darkTextSecondary),
     ),
     cupertinoOverrideTheme: const CupertinoThemeData(
       brightness: Brightness.dark,
@@ -204,10 +186,7 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      hintStyle: GoogleFonts.geist(
-        fontSize: 16,
-        color: _lightTextSecondary,
-      ),
+      hintStyle: GoogleFonts.geist(fontSize: 16, color: _lightTextSecondary),
     ),
     cupertinoOverrideTheme: const CupertinoThemeData(
       brightness: Brightness.light,
