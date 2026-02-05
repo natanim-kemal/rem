@@ -1,9 +1,21 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:rem/core/services/metadata_service.dart';
 import '../theme/app_theme.dart';
 
 class AddItemSheet extends StatefulWidget {
-  const AddItemSheet({super.key});
+  final String? initialUrl;
+  final String? initialTitle;
+  final List<String>? initialFiles;
+
+  const AddItemSheet({
+    super.key, 
+    this.initialUrl, 
+    this.initialTitle, 
+    this.initialFiles,
+  });
 
   @override
   State<AddItemSheet> createState() => _AddItemSheetState();
@@ -12,8 +24,55 @@ class AddItemSheet extends StatefulWidget {
 class _AddItemSheetState extends State<AddItemSheet> {
   final _urlController = TextEditingController();
   final _titleController = TextEditingController();
+  final _metadataService = MetadataService();
+  
   String _selectedType = 'link';
   String _selectedPriority = 'medium';
+  bool _isLoadingMetadata = false;
+  File? _selectedImage;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialUrl != null) {
+      _urlController.text = widget.initialUrl!;
+      _selectedType = 'link';
+      _fetchMetadata();
+    }
+    if (widget.initialTitle != null) {
+      _titleController.text = widget.initialTitle!;
+    }
+    if (widget.initialFiles != null && widget.initialFiles!.isNotEmpty) {
+      _selectedImage = File(widget.initialFiles!.first);
+      _selectedType = 'image';
+    }
+  }
+
+  Future<void> _fetchMetadata() async {
+    final url = _urlController.text;
+    if (url.isEmpty) return;
+
+    setState(() => _isLoadingMetadata = true);
+    final metadata = await _metadataService.fetchMetadata(url);
+    if (mounted && metadata != null) {
+       if (_titleController.text.isEmpty && metadata.title != null) {
+         _titleController.text = metadata.title!;
+       }
+       // We could also show thumbnail preview here
+    }
+    setState(() => _isLoadingMetadata = false);
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _selectedImage = File(image.path);
+        _selectedType = 'image';
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -65,17 +124,73 @@ class _AddItemSheetState extends State<AddItemSheet> {
             ),
             const SizedBox(height: 24),
 
-            Text('URL', style: theme.textTheme.labelLarge),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _urlController,
-              autofocus: true,
-              keyboardType: TextInputType.url,
-              decoration: InputDecoration(
-                hintText: 'https://...',
-                prefixIcon: const Icon(CupertinoIcons.link, size: 20),
+            if (_selectedType == 'image') ...[
+              Text('Image', style: theme.textTheme.labelLarge),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 160,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                    image: _selectedImage != null
+                        ? DecorationImage(
+                            image: FileImage(_selectedImage!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: _selectedImage == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              CupertinoIcons.camera,
+                              size: 32,
+                              color: theme.colorScheme.primary,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Tap to select image',
+                              style: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
               ),
-            ),
+            ] else ...[
+              Row(
+                children: [
+                  Text('URL', style: theme.textTheme.labelLarge),
+                  if (_isLoadingMetadata) ...[
+                    const SizedBox(width: 8),
+                    const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _urlController,
+                autofocus: widget.initialUrl == null,
+                keyboardType: TextInputType.url,
+                onSubmitted: (_) => _fetchMetadata(),
+                decoration: const InputDecoration(
+                  hintText: 'https://...',
+                  prefixIcon: Icon(CupertinoIcons.link, size: 20),
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
 
             Text('Title (optional)', style: theme.textTheme.labelLarge),

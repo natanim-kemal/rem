@@ -53,12 +53,12 @@ class FilterChips extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: icon != null ? 12 : 16),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? theme.colorScheme.surface
+                    ? theme.colorScheme.surfaceContainerHighest
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isSelected
-                      ? theme.colorScheme.onSurface.withValues(alpha: 0.3)
+                      ? theme.colorScheme.primary.withValues(alpha: 0.6)
                       : theme.colorScheme.outline,
                   width: isSelected ? 1.5 : 1,
                 ),
@@ -71,7 +71,7 @@ class FilterChips extends StatelessWidget {
                       icon,
                       size: 16,
                       color: isSelected
-                          ? theme.colorScheme.onSurface
+                          ? theme.colorScheme.primary
                           : theme.colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 6),
@@ -84,7 +84,7 @@ class FilterChips extends StatelessWidget {
                           ? FontWeight.w600
                           : FontWeight.normal,
                       color: isSelected
-                          ? theme.colorScheme.onSurface
+                          ? theme.colorScheme.primary
                           : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
