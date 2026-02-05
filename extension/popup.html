@@ -4,15 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>rem</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --bg: #1f2937;
-      --surface: #374151;
-      --text: #f9fafb;
-      --text-muted: #9ca3af;
-      --success: #10b981;
+      --bg: #1F1F1F;
+      --surface: #262626;
+      --surface-elevated: #2B2B2B;
+      --text-primary: #F2F2F2;
+      --text-secondary: #B0B0B0;
+      --text-tertiary: #7A7A7A;
+      --divider: #2F2F2F;
+      --accent: #2FBF9A;
+      --destructive: #FF3B30;
+      --priority-high: #FF3B30;
+      --priority-medium: #B0B0B0;
+      --priority-low: #7A7A7A;
     }
 
     * {
@@ -22,122 +30,380 @@
     }
 
     body {
-      width: 320px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      width: 360px;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
-      color: var(--text);
-      padding: 16px;
+      color: var(--text-primary);
+      padding: 20px;
+      line-height: 1.5;
     }
 
     .header {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    .header h1 {
-      font-size: 18px;
-      font-weight: 600;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
     .logo {
       width: 32px;
       height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      border-radius: 8px;
+    }
+
+    .logo svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--accent);
+    }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
     }
 
     .page-info {
       background: var(--surface);
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 16px;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--divider);
     }
 
     .page-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 500;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      line-height: 1.4;
     }
 
     .page-url {
       font-size: 12px;
-      color: var(--text-muted);
+      color: var(--text-tertiary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-weight: 400;
+    }
+
+    .priority-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .priority-selector {
       display: flex;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
 
     .priority-btn {
       flex: 1;
-      padding: 8px;
-      border: none;
-      border-radius: 6px;
+      padding: 10px 8px;
+      border: 1px solid var(--divider);
+      border-radius: 8px;
       font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
       background: var(--surface);
-      color: var(--text-muted);
-      transition: all 0.2s;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .priority-btn:hover {
+      background: var(--surface-elevated);
+      border-color: var(--text-tertiary);
     }
 
     .priority-btn.active {
-      color: var(--text);
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      border-color: var(--text-secondary);
     }
 
-    .priority-btn.high.active { background: #ef4444; }
-    .priority-btn.medium.active { background: #f59e0b; }
-    .priority-btn.low.active { background: #22c55e; }
+    .priority-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .priority-btn[data-priority="high"].active .priority-indicator {
+      background: var(--priority-high);
+    }
+
+    .priority-btn[data-priority="medium"].active .priority-indicator {
+      background: var(--priority-medium);
+    }
+
+    .priority-btn[data-priority="low"].active .priority-indicator {
+      background: var(--priority-low);
+    }
 
     .save-btn {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 10px;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
-      background: var(--primary);
-      color: white;
-      transition: background 0.2s;
+      background: var(--accent);
+      color: var(--bg);
+      transition: all 0.2s ease;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .save-btn:hover {
-      background: var(--primary-dark);
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .save-btn:active {
+      transform: translateY(0);
     }
 
     .save-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
+    }
+
+    .save-btn svg {
+      width: 16px;
+      height: 16px;
     }
 
     .success {
       text-align: center;
-      padding: 24px;
+      padding: 40px 20px;
     }
 
     .success-icon {
-      font-size: 48px;
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      border-radius: 50%;
+    }
+
+    .success-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: var(--accent);
+    }
+
+    .success h2 {
+      font-size: 18px;
+      font-weight: 600;
       margin-bottom: 8px;
     }
 
+    .success p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .auth-view {
+      text-align: center;
+      padding: 30px 20px;
+    }
+
+    .auth-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      border-radius: 50%;
+    }
+
+    .auth-icon svg {
+      width: 28px;
+      height: 28px;
+      stroke: var(--text-secondary);
+    }
+
+    .auth-view h2 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .auth-view p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .auth-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--text-primary);
+      border: 1px solid var(--divider);
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .auth-btn:hover {
+      background: var(--surface-elevated);
+      border-color: var(--text-secondary);
+    }
+
+    .settings-link {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .settings-link:hover {
+      color: var(--text-secondary);
+    }
+
+    .settings-view {
+      padding: 0;
+    }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .back-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: var(--surface);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+    }
+
+    .back-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .settings-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--divider);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .input-group input::placeholder {
+      color: var(--text-tertiary);
+    }
+
     .hidden {
-      display: none;
+      display: none !important;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--divider);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
   <div id="main-view">
     <div class="header">
-      <div class="logo">📚</div>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      </div>
       <h1>Save to rem</h1>
     </div>
 
@@ -146,18 +412,76 @@
       <div id="page-url" class="page-url">-</div>
     </div>
 
+    <div class="priority-label">Priority</div>
     <div class="priority-selector">
-      <button class="priority-btn high" data-priority="high">🔴 High</button>
-      <button class="priority-btn medium active" data-priority="medium">🟡 Medium</button>
-      <button class="priority-btn low" data-priority="low">🟢 Low</button>
+      <button class="priority-btn" data-priority="high">
+        <span class="priority-indicator"></span>
+        High
+      </button>
+      <button class="priority-btn active" data-priority="medium">
+        <span class="priority-indicator"></span>
+        Medium
+      </button>
+      <button class="priority-btn" data-priority="low">
+        <span class="priority-indicator"></span>
+        Low
+      </button>
     </div>
 
-    <button id="save-btn" class="save-btn">Save to Vault</button>
+    <button id="save-btn" class="save-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+        <polyline points="7 3 7 8 15 8"></polyline>
+      </svg>
+      Save to Vault
+    </button>
+  </div>
+
+  <div id="auth-view" class="auth-view hidden">
+    <div class="auth-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+    <h2>Authentication Required</h2>
+    <p>Please sign in to rem to save items from the web.</p>
+    <button id="auth-btn" class="auth-btn">Sign In</button>
+    <div class="settings-link" id="open-settings">Configure Extension</div>
+  </div>
+
+  <div id="settings-view" class="settings-view hidden">
+    <div class="settings-header">
+      <button id="back-btn" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <h2>Extension Settings</h2>
+    </div>
+
+    <div class="input-group">
+      <label for="convex-url">Convex URL</label>
+      <input type="text" id="convex-url" placeholder="https://your-app.convex.cloud">
+    </div>
+
+    <div class="input-group">
+      <label for="auth-token">Auth Token</label>
+      <input type="password" id="auth-token" placeholder="Your Clerk session token">
+    </div>
+
+    <button id="save-settings-btn" class="save-btn">Save Settings</button>
   </div>
 
   <div id="success-view" class="success hidden">
-    <div class="success-icon">✅</div>
-    <p>Saved to rem!</p>
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <h2>Saved to rem</h2>
+    <p>Your item is now in the vault.</p>
   </div>
 
   <script src="popup.js"></script>
