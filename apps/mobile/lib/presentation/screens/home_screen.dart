@@ -98,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                 child: custom.SearchBar(
                   hintText: 'Search your vault...',
                   onChanged: (value) {},

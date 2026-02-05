@@ -15,9 +15,23 @@ class StatsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Stats', style: Theme.of(context).textTheme.displayMedium),
-              const SizedBox(height: 24),
-
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Opacity(
+                    opacity: 0,
+                    child: Text(
+                      'rem',
+                      style: Theme.of(context).textTheme.displayMedium,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(CupertinoIcons.bell),
+                    onPressed: () {},
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               _StatCard(
                 child: Column(
                   children: [
