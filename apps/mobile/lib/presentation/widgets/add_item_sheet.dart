@@ -11,9 +11,9 @@ class AddItemSheet extends StatefulWidget {
   final List<String>? initialFiles;
 
   const AddItemSheet({
-    super.key, 
-    this.initialUrl, 
-    this.initialTitle, 
+    super.key,
+    this.initialUrl,
+    this.initialTitle,
     this.initialFiles,
   });
 
@@ -25,7 +25,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
   final _urlController = TextEditingController();
   final _titleController = TextEditingController();
   final _metadataService = MetadataService();
-  
+
   String _selectedType = 'link';
   String _selectedPriority = 'medium';
   bool _isLoadingMetadata = false;
@@ -55,10 +55,10 @@ class _AddItemSheetState extends State<AddItemSheet> {
     setState(() => _isLoadingMetadata = true);
     final metadata = await _metadataService.fetchMetadata(url);
     if (mounted && metadata != null) {
-       if (_titleController.text.isEmpty && metadata.title != null) {
-         _titleController.text = metadata.title!;
-       }
-       // We could also show thumbnail preview here
+      if (_titleController.text.isEmpty && metadata.title != null) {
+        _titleController.text = metadata.title!;
+      }
+      // We could also show thumbnail preview here
     }
     setState(() => _isLoadingMetadata = false);
   }
