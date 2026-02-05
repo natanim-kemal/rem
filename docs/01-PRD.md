@@ -1,4 +1,4 @@
-# REM - Product Requirements Document
+# rem - Product Requirements Document
 
 > **Read Everything Minder** - Your intelligent content consumption vault
 
@@ -7,7 +7,7 @@
 ## 1. Executive Summary
 
 ### Vision
-REM is a cross-platform application that transforms passive content saving into active content consumption through intelligent, proactive notifications. It unifies links, images, videos, and books into a single queue and ensures users actually engage with their saved content.
+rem is a cross-platform application that transforms passive content saving into active content consumption through intelligent, proactive notifications. It unifies links, images, videos, and books into a single queue and ensures users actually engage with their saved content.
 
 ### Problem Statement
 People save content with good intentions but rarely return to consume it:
@@ -245,7 +245,7 @@ US-021: As a user, I want to celebrate clearing my queue
 | **Monetization** | Freemium model |
 | **Architecture** | Offline-first (sync when online) |
 | **Social features** | Yes - share stashes with friends |
-| **Voice input** | Yes - "Hey REM, remind me to read this @ 4pm" |
+| **Voice input** | Yes - "Hey rem, remind me to read this @ 4pm" |
 
 ---
 
@@ -329,16 +329,16 @@ US-021: As a user, I want to celebrate clearing my queue
 
 ### Supported Commands
 ```
-"Hey REM, remind me to read this later"
-"Hey REM, save this for tomorrow at 4pm"
-"Hey REM, snooze this for 2 hours"
-"Hey REM, mark as read"
-"Hey REM, what's in my stash?"
+"Hey rem, remind me to read this later"
+"Hey rem, save this for tomorrow at 4pm"
+"Hey rem, snooze this for 2 hours"
+"Hey rem, mark as read"
+"Hey rem, what's in my stash?"
 ```
 
 ### Implementation
 - **Platform**: Google Speech-to-Text / on-device ML Kit
-- **Trigger**: Wake word "Hey REM" or in-app mic button
+- **Trigger**: Wake word "Hey rem" or in-app mic button
 - **NLU**: Parse intent + time expressions
 - **Feedback**: Audio confirmation + haptic
 

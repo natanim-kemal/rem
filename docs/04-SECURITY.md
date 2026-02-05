@@ -1,6 +1,6 @@
-# REM - Security Guidelines
+# rem - Security Guidelines
 
-> Security best practices and implementation guidelines for the REM application (Convex + Clerk)
+> Security best practices and implementation guidelines for the rem application (Convex + Clerk)
 
 ---
 

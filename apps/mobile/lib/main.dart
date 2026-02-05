@@ -21,7 +21,7 @@ class RemApp extends ConsumerWidget {
     return ClerkAuth(
       config: ClerkAuthConfig(publishableKey: AppConfig.clerkPublishableKey),
       child: MaterialApp(
-        title: 'REM',
+        title: 'rem',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,

@@ -29,7 +29,7 @@ class AuthScreen extends ConsumerWidget {
               const SizedBox(height: 20),
 
               Text(
-                'REM',
+                'rem',
                 style: theme.textTheme.displayLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: -1,

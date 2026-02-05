@@ -44,7 +44,7 @@ async function saveItem() {
         const { authToken, convexUrl } = await chrome.storage.sync.get(['authToken', 'convexUrl']);
 
         if (!authToken || !convexUrl) {
-            alert('Please log in to REM first');
+            alert('Please log in to rem first');
             return;
         }
 

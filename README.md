@@ -9,7 +9,7 @@ Your intelligent content consumption vault
 
 Stop letting saved links become digital graveyards. rem turns your "read later" list into a "read now" habit with smart reminders and beautiful organization.
 
-## Why REM?
+## Why rem?
 
 We all save content with the best intentions. Articles to read, videos to watch, books to finish. But without accountability, they disappear into the void.
 
@@ -50,7 +50,7 @@ Auto-categorization sorts your content by type (articles, videos, images, books)
 
 ## How It Works
 
-1. **See something interesting?** Tap share and choose REM
+1. **See something interesting?** Tap share and choose rem
 2. **Preview appears** with title, image, and description
 3. **Get reminded** based on your schedule and priorities
 4. **Mark as read** when done or archive to save for later

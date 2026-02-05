@@ -1,7 +1,7 @@
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
         id: 'save-to-rem',
-        title: 'Save to REM',
+        title: 'Save to rem',
         contexts: ['page', 'link', 'image']
     });
 });
@@ -26,7 +26,7 @@ async function saveToRem(url, title, type) {
         const { authToken, convexUrl } = await chrome.storage.sync.get(['authToken', 'convexUrl']);
 
         if (!authToken || !convexUrl) {
-            showNotification('Please log in to REM', 'error');
+            showNotification('Please log in to rem', 'error');
             return;
         }
 
@@ -45,7 +45,7 @@ async function saveToRem(url, title, type) {
         });
 
         if (response.ok) {
-            showNotification('Saved to REM!', 'success');
+            showNotification('Saved to rem!', 'success');
         } else {
             throw new Error('Save failed');
         }

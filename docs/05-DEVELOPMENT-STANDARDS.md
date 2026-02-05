@@ -1,6 +1,6 @@
-# REM - Development Standards
+# rem - Development Standards
 
-> Code style, testing, and development practices for the REM application (Flutter + Convex)
+> Code style, testing, and development practices for the rem application (Flutter + Convex)
 
 ---
 

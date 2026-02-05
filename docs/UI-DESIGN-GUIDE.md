@@ -1,4 +1,4 @@
-# REM UI Design Guide
+# rem UI Design Guide
 
 > Living document for UI components and design decisions
 
@@ -110,9 +110,9 @@ shadowBlur: 8px
 
 **Home Screen Variation:**
 ```
-[REM] ----------------------- [Filter] [Notif]
+[rem] ----------------------- [Filter] [Notif]
 ```
-- Left-aligned large title "REM"
+- Left-aligned large title "rem"
 - Right action icons
 
 **Dimensions:**
@@ -216,7 +216,7 @@ internalPadding: 12px
 - **Inactive**: Outlined border, transparent fill
 - **Active**: Filled with theme.surface, darker border
 
-**REM Filters:**
+**rem Filters:**
 | Chip | Icon |
 |------|------|
 | All | none |
@@ -269,7 +269,7 @@ scrollPadding: 16px (left/right edges)
 | Source | 14px Regular, theme.textSecondary |
 | Metadata | 13px Regular, theme.textTertiary, dot-separated |
 
-**REM Metadata:**
+**rem Metadata:**
 - Priority indicator (subtle)
 - Estimated read time
 - Date saved

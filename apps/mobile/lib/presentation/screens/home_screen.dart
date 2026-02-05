@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'REM',
+                      'rem',
                       style: Theme.of(context).textTheme.displayMedium,
                     ),
                     Row(

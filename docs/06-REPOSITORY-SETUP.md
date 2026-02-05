@@ -1,6 +1,6 @@
-# REM - Repository Setup Guide
+# rem - Repository Setup Guide
 
-> Step-by-step guide to initialize the REM repository with Flutter + Convex
+> Step-by-step guide to initialize the rem repository with Flutter + Convex
 
 ---
 
@@ -269,7 +269,7 @@ class RemApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'REM',
+      title: 'rem',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       routerConfig: _router,
@@ -395,7 +395,7 @@ CLERK_PUBLISHABLE_KEY=pk_test_xxx
 ### README.md
 
 ```markdown
-# REM - Read Everything Minder
+# rem - Read Everything Minder
 
 > Your intelligent content consumption vault
 

@@ -1,6 +1,6 @@
-# REM - System Architecture
+# rem - System Architecture
 
-> Technical architecture and system design for the REM application (Flutter + Convex)
+> Technical architecture and system design for the rem application (Flutter + Convex)
 
 ---
 
@@ -79,7 +79,7 @@
 |---------|---------|----------|
 | **Push Notifications** | Reminders | Firebase Cloud Messaging |
 | **AI/ML** | Categorization, summaries | Google Gemini API |
-| **Voice Recognition** | "Hey REM" commands | Google Speech-to-Text / ML Kit |
+| **Voice Recognition** | "Hey rem" commands | Google Speech-to-Text / ML Kit |
 | **Analytics** | Usage tracking | PostHog / Firebase Analytics |
 | **Error Tracking** | Crash reporting | Sentry / Crashlytics |
 

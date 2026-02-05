@@ -1,6 +1,6 @@
-# REM - CI/CD Pipeline Documentation
+# rem - CI/CD Pipeline Documentation
 
-> Continuous Integration and Deployment workflows for the REM application (Flutter + Convex)
+> Continuous Integration and Deployment workflows for the rem application (Flutter + Convex)
 
 ---
 
