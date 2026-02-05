@@ -24,42 +24,82 @@ class AppTheme {
   static const accent = Color(0xFF2FBF9A);
   static const destructive = Color(0xFFFF3B30);
 
-  static TextTheme _buildTextTheme(TextTheme base) {
-    return GoogleFonts.geistTextTheme(base).copyWith(
-      displayLarge: GoogleFonts.geist(
+  static TextTheme _buildTextTheme(TextTheme base, Color textColor) {
+    // Apply Geist font family to the entire text theme efficiently
+    final geistTheme = GoogleFonts.geistTextTheme(base);
+
+    return geistTheme.copyWith(
+      displayLarge: geistTheme.displayLarge?.copyWith(
         fontSize: 34,
         fontWeight: FontWeight.bold,
         letterSpacing: -0.5,
+        color: textColor,
       ),
-      displayMedium: GoogleFonts.geist(
+      displayMedium: geistTheme.displayMedium?.copyWith(
         fontSize: 28,
         fontWeight: FontWeight.bold,
         letterSpacing: -0.5,
+        color: textColor,
       ),
-      displaySmall: GoogleFonts.geist(
+      displaySmall: geistTheme.displaySmall?.copyWith(
         fontSize: 22,
         fontWeight: FontWeight.bold,
+        color: textColor,
       ),
-      headlineMedium: GoogleFonts.geist(
+      headlineMedium: geistTheme.headlineMedium?.copyWith(
         fontSize: 20,
         fontWeight: FontWeight.w600,
+        color: textColor,
       ),
-      headlineSmall: GoogleFonts.geist(
+      headlineSmall: geistTheme.headlineSmall?.copyWith(
         fontSize: 17,
         fontWeight: FontWeight.w600,
+        color: textColor,
       ),
-      titleLarge: GoogleFonts.geist(fontSize: 17, fontWeight: FontWeight.w600),
-      titleMedium: GoogleFonts.geist(fontSize: 16, fontWeight: FontWeight.w500),
-      bodyLarge: GoogleFonts.geist(fontSize: 17, fontWeight: FontWeight.normal),
-      bodyMedium: GoogleFonts.geist(
+      titleLarge: geistTheme.titleLarge?.copyWith(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        color: textColor,
+      ),
+      titleMedium: geistTheme.titleMedium?.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: textColor,
+      ),
+      titleSmall: geistTheme.titleSmall?.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: textColor,
+      ),
+      bodyLarge: geistTheme.bodyLarge?.copyWith(
+        fontSize: 17,
+        fontWeight: FontWeight.normal,
+        color: textColor,
+      ),
+      bodyMedium: geistTheme.bodyMedium?.copyWith(
         fontSize: 15,
         fontWeight: FontWeight.normal,
+        color: textColor,
       ),
-      bodySmall: GoogleFonts.geist(fontSize: 13, fontWeight: FontWeight.normal),
-      labelLarge: GoogleFonts.geist(fontSize: 14, fontWeight: FontWeight.w500),
-      labelSmall: GoogleFonts.geist(
+      bodySmall: geistTheme.bodySmall?.copyWith(
+        fontSize: 13,
+        fontWeight: FontWeight.normal,
+        color: textColor,
+      ),
+      labelLarge: geistTheme.labelLarge?.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: textColor,
+      ),
+      labelMedium: geistTheme.labelMedium?.copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: textColor,
+      ),
+      labelSmall: geistTheme.labelSmall?.copyWith(
         fontSize: 11,
         fontWeight: FontWeight.normal,
+        color: textColor,
       ),
     );
   }
@@ -68,6 +108,7 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: _darkBackground,
+    fontFamily: 'Geist',
     colorScheme: const ColorScheme.dark(
       primary: accent,
       secondary: accent,
@@ -78,9 +119,7 @@ class AppTheme {
       outline: _darkDivider,
       error: destructive,
     ),
-    textTheme: _buildTextTheme(
-      ThemeData.dark().textTheme,
-    ).apply(bodyColor: _darkTextPrimary, displayColor: _darkTextPrimary),
+    textTheme: _buildTextTheme(ThemeData.dark().textTheme, _darkTextPrimary),
     appBarTheme: const AppBarTheme(
       backgroundColor: _darkBackground,
       foregroundColor: _darkTextPrimary,
@@ -110,7 +149,7 @@ class AppTheme {
       backgroundColor: Colors.transparent,
       side: BorderSide(color: _darkDivider),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      labelStyle: GoogleFonts.geist(fontSize: 14),
+      labelStyle: const TextStyle(fontSize: 14),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -121,7 +160,7 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      hintStyle: GoogleFonts.geist(fontSize: 16, color: _darkTextSecondary),
+      hintStyle: TextStyle(fontSize: 16, color: _darkTextSecondary),
     ),
     cupertinoOverrideTheme: const CupertinoThemeData(
       brightness: Brightness.dark,
@@ -133,6 +172,7 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.light,
     scaffoldBackgroundColor: _lightBackground,
+    fontFamily: 'Geist',
     colorScheme: const ColorScheme.light(
       primary: accent,
       secondary: accent,
@@ -143,9 +183,7 @@ class AppTheme {
       outline: _lightDivider,
       error: destructive,
     ),
-    textTheme: _buildTextTheme(
-      ThemeData.light().textTheme,
-    ).apply(bodyColor: _lightTextPrimary, displayColor: _lightTextPrimary),
+    textTheme: _buildTextTheme(ThemeData.light().textTheme, _lightTextPrimary),
     appBarTheme: const AppBarTheme(
       backgroundColor: _lightBackground,
       foregroundColor: _lightTextPrimary,
@@ -175,7 +213,7 @@ class AppTheme {
       backgroundColor: Colors.transparent,
       side: BorderSide(color: _lightDivider),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      labelStyle: GoogleFonts.geist(fontSize: 14),
+      labelStyle: const TextStyle(fontSize: 14),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -186,7 +224,7 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      hintStyle: GoogleFonts.geist(fontSize: 16, color: _lightTextSecondary),
+      hintStyle: TextStyle(fontSize: 16, color: _lightTextSecondary),
     ),
     cupertinoOverrideTheme: const CupertinoThemeData(
       brightness: Brightness.light,

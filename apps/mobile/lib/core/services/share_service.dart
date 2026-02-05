@@ -19,39 +19,48 @@ class ShareService {
   StreamSubscription? _mediaSub;
 
   void initialize() {
+    // Listen to all shared content (media + text) while app is in memory
     _mediaSub = ReceiveSharingIntent.instance.getMediaStream().listen(
       (List<SharedMediaFile> value) {
         if (value.isEmpty) return;
 
-        if (value.first.type == SharedMediaType.text ||
-            value.first.type == SharedMediaType.url) {
+        final firstFile = value.first;
+        final isTextOrUrl =
+            firstFile.type == SharedMediaType.text ||
+            firstFile.type == SharedMediaType.url;
+
+        if (isTextOrUrl) {
           _controller.add(
             SharedContent(
-              text: value.first.path,
+              text: firstFile.path,
               type: ShareType.text,
               files: value,
             ),
           );
-          return;
+        } else {
+          _controller.add(SharedContent(files: value, type: ShareType.media));
         }
-
-        _controller.add(SharedContent(files: value, type: ShareType.media));
       },
       onError: (err) {
         debugPrint('getMediaStream error: $err');
       },
     );
 
+    // Get initial content when app is opened from terminated state
     ReceiveSharingIntent.instance.getInitialMedia().then((
       List<SharedMediaFile> value,
     ) {
       if (value.isEmpty) return;
 
-      if (value.first.type == SharedMediaType.text ||
-          value.first.type == SharedMediaType.url) {
+      final firstFile = value.first;
+      final isTextOrUrl =
+          firstFile.type == SharedMediaType.text ||
+          firstFile.type == SharedMediaType.url;
+
+      if (isTextOrUrl) {
         _controller.add(
           SharedContent(
-            text: value.first.path,
+            text: firstFile.path,
             type: ShareType.text,
             files: value,
           ),
