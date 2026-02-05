@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:rem/data/sync/sync_engine.dart';
 import 'package:rem/providers/data_providers.dart';
 import '../theme/app_theme.dart';
 
@@ -17,6 +16,18 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _isDeleting = false;
+  
+  // Local mutable state copied from widget
+  late String _priority;
+  late List<String> _tags;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Initialize local state from widget
+    _priority = widget.item['priority'] as String? ?? 'medium';
+    _tags = List<String>.from((widget.item['tags'] as List<dynamic>?)?.cast<String>() ?? []);
+  }
 
   Color _getPriorityColor(String priority) {
     switch (priority) {
@@ -32,9 +43,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   Widget _buildTagsPreview() {
-    final tags = (widget.item['tags'] as List<dynamic>?)?.cast<String>() ?? [];
-
-    if (tags.isEmpty) {
+    if (_tags.isEmpty) {
       return Text(
         'Add tags...',
         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -42,8 +51,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     }
 
     return Text(
-      tags.take(3).join(', ') +
-          (tags.length > 3 ? ' +${tags.length - 3} more' : ''),
+      _tags.take(3).join(', ') +
+          (_tags.length > 3 ? ' +${_tags.length - 3} more' : ''),
       style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -122,8 +131,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   void _showEditPrioritySheet() {
-    final currentPriority = widget.item['priority'] as String? ?? 'medium';
-
     showCupertinoModalPopup(
       context: context,
       builder: (context) => CupertinoActionSheet(
@@ -144,7 +151,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 ),
                 const SizedBox(width: 8),
                 const Text('High'),
-                if (currentPriority == 'high') ...[
+                if (_priority == 'high') ...[
                   const SizedBox(width: 8),
                   const Icon(CupertinoIcons.checkmark, size: 16),
                 ],
@@ -166,7 +173,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 ),
                 const SizedBox(width: 8),
                 const Text('Medium'),
-                if (currentPriority == 'medium') ...[
+                if (_priority == 'medium') ...[
                   const SizedBox(width: 8),
                   const Icon(CupertinoIcons.checkmark, size: 16),
                 ],
@@ -188,7 +195,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 ),
                 const SizedBox(width: 8),
                 const Text('Low'),
-                if (currentPriority == 'low') ...[
+                if (_priority == 'low') ...[
                   const SizedBox(width: 8),
                   const Icon(CupertinoIcons.checkmark, size: 16),
                 ],
@@ -217,7 +224,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
       if (mounted) {
         setState(() {
-          widget.item['priority'] = priority;
+          _priority = priority;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -239,7 +246,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   void _showEditTagsSheet() {
-    final tags = (widget.item['tags'] as List<dynamic>?)?.cast<String>() ?? [];
+    final tempTags = List<String>.from(_tags);
     final textController = TextEditingController();
 
     showCupertinoModalPopup(
@@ -263,7 +270,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       bottom: BorderSide(
                         color: Theme.of(
                           context,
-                        ).colorScheme.outline.withOpacity(0.5),
+                        ).colorScheme.outline.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -289,13 +296,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           if (itemId != null) {
                             try {
                               final syncEngine = ref.read(syncEngineProvider);
-                              await syncEngine.updateItemTags(itemId, tags);
+                              await syncEngine.updateItemTags(itemId, tempTags);
                               if (mounted) {
                                 setState(() {
-                                  widget.item['tags'] = tags;
+                                  _tags = tempTags;
                                 });
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                Navigator.of(this.context).pop();
+                                ScaffoldMessenger.of(this.context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Tags updated'),
                                     behavior: SnackBarBehavior.floating,
@@ -304,7 +311,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                               }
                             } catch (e) {
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                ScaffoldMessenger.of(this.context).showSnackBar(
                                   SnackBar(
                                     content: Text('Failed to update tags: $e'),
                                     behavior: SnackBarBehavior.floating,
@@ -329,9 +336,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           placeholder: 'Add a tag...',
                           onSubmitted: (value) {
                             if (value.trim().isNotEmpty &&
-                                !tags.contains(value.trim())) {
+                                !tempTags.contains(value.trim())) {
                               setModalState(() {
-                                tags.add(value.trim());
+                                tempTags.add(value.trim());
                               });
                               textController.clear();
                             }
@@ -342,9 +349,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         child: const Icon(CupertinoIcons.add),
                         onPressed: () {
                           final value = textController.text.trim();
-                          if (value.isNotEmpty && !tags.contains(value)) {
+                          if (value.isNotEmpty && !tempTags.contains(value)) {
                             setModalState(() {
-                              tags.add(value);
+                              tempTags.add(value);
                             });
                             textController.clear();
                           }
@@ -354,7 +361,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   ),
                 ),
                 Expanded(
-                  child: tags.isEmpty
+                  child: tempTags.isEmpty
                       ? Center(
                           child: Text(
                             'No tags yet',
@@ -367,7 +374,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: tags.length,
+                          itemCount: tempTags.length,
                           itemBuilder: (context, index) {
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
@@ -385,10 +392,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                 children: [
                                   const Icon(CupertinoIcons.tag, size: 16),
                                   const SizedBox(width: 8),
-                                  Expanded(child: Text(tags[index])),
+                                  Expanded(child: Text(tempTags[index])),
                                   CupertinoButton(
                                     padding: EdgeInsets.zero,
-                                    minSize: 0,
                                     child: const Icon(
                                       CupertinoIcons.xmark,
                                       size: 16,
@@ -396,7 +402,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                     ),
                                     onPressed: () {
                                       setModalState(() {
-                                        tags.removeAt(index);
+                                        tempTags.removeAt(index);
                                       });
                                     },
                                   ),
@@ -417,7 +423,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasImage = widget.item['thumbnail'] != null;
+    final hasImage = widget.item['thumbnailUrl'] != null;
 
     return Scaffold(
       body: CustomScrollView(
@@ -428,7 +434,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             flexibleSpace: hasImage
                 ? FlexibleSpaceBar(
                     background: Image.network(
-                      widget.item['thumbnail'],
+                      widget.item['thumbnailUrl'],
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) => Container(
                         color: theme.colorScheme.surfaceContainerHighest,
@@ -464,7 +470,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 Row(
                   children: [
                     Text(
-                      widget.item['type'].toString().toUpperCase(),
+                      (widget.item['type'] as String? ?? '').toUpperCase(),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.primary,
                         letterSpacing: 1.2,
@@ -479,9 +485,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getPriorityColor(
-                            widget.item['priority'] as String? ?? 'medium',
-                          ).withOpacity(0.15),
+                          color: _getPriorityColor(_priority).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
@@ -491,22 +495,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                               width: 6,
                               height: 6,
                               decoration: BoxDecoration(
-                                color: _getPriorityColor(
-                                  widget.item['priority'] as String? ??
-                                      'medium',
-                                ),
+                                color: _getPriorityColor(_priority),
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              (widget.item['priority'] as String? ?? 'medium')
-                                  .toUpperCase(),
+                              _priority.toUpperCase(),
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: _getPriorityColor(
-                                  widget.item['priority'] as String? ??
-                                      'medium',
-                                ),
+                                color: _getPriorityColor(_priority),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -514,9 +511,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                             Icon(
                               CupertinoIcons.chevron_down,
                               size: 10,
-                              color: _getPriorityColor(
-                                widget.item['priority'] as String? ?? 'medium',
-                              ),
+                              color: _getPriorityColor(_priority),
                             ),
                           ],
                         ),
@@ -539,13 +534,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 const SizedBox(height: 12),
                 _MetaRow(
                   icon: CupertinoIcons.calendar,
-                  text: 'Added ${widget.item['date']}',
+                  text: 'Added ${widget.item['createdAt'] != null ? _formatDate(widget.item['createdAt'] as int) : ''}',
                 ),
                 const SizedBox(height: 12),
-                _MetaRow(
-                  icon: CupertinoIcons.time,
-                  text: widget.item['readTime'],
-                ),
+                if (widget.item['estimatedReadTime'] != null)
+                  _MetaRow(
+                    icon: CupertinoIcons.time,
+                    text: '${widget.item['estimatedReadTime']} min read',
+                  ),
                 const SizedBox(height: 16),
                 GestureDetector(
                   onTap: _showEditTagsSheet,
@@ -594,6 +590,19 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         ],
       ),
     );
+  }
+  
+  String _formatDate(int timestamp) {
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes} min ago';
+    if (diff.inDays < 1) return '${diff.inHours} hours ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    return '${date.month}/${date.day}/${date.year}';
   }
 }
 
