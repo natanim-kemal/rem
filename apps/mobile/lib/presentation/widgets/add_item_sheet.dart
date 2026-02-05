@@ -34,6 +34,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
   String _selectedPriority = 'medium';
   bool _isLoadingMetadata = false;
   File? _selectedImage;
+  String? _thumbnailUrl;
 
   @override
   void initState() {
@@ -62,7 +63,12 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
       if (_titleController.text.isEmpty && metadata.title != null) {
         _titleController.text = metadata.title!;
       }
-      // We could also show thumbnail preview here
+      // Store thumbnail URL from metadata
+      if (metadata.image != null && metadata.image!.isNotEmpty) {
+        setState(() {
+          _thumbnailUrl = metadata.image;
+        });
+      }
     }
     setState(() => _isLoadingMetadata = false);
   }
@@ -331,7 +337,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
         title: title.isNotEmpty ? title : (url.isNotEmpty ? url : 'Image'),
         url: url.isNotEmpty ? url : null,
         description: null,
-        thumbnailUrl: localImagePath,
+        thumbnailUrl: localImagePath ?? _thumbnailUrl,
         priority: _selectedPriority,
         tags: [],
       );
@@ -345,7 +351,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
           ),
         );
       }
-    } on DuplicateItemException catch (e) {
+    } on DuplicateItemException {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
