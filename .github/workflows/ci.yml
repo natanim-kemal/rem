@@ -28,6 +28,26 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create Firebase options
+        run: |
+          cat > lib/firebase_options.dart << 'EOF'
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+          import 'package:flutter/foundation.dart'
+              show defaultTargetPlatform, TargetPlatform;
+
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform {
+              // Return stub options for CI
+              return const FirebaseOptions(
+                apiKey: 'ci-api-key',
+                appId: 'ci-app-id',
+                messagingSenderId: 'ci-sender-id',
+                projectId: 'ci-project',
+              );
+            }
+          }
+          EOF
+
       - name: Generate code
         run: dart run build_runner build --delete-conflicting-outputs
 
