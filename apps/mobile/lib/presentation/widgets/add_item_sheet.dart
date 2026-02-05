@@ -1,11 +1,15 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rem/core/services/metadata_service.dart';
+import 'package:rem/data/sync/sync_engine.dart';
+import 'package:rem/providers/auth_provider.dart';
+import 'package:rem/providers/data_providers.dart';
 import '../theme/app_theme.dart';
 
-class AddItemSheet extends StatefulWidget {
+class AddItemSheet extends ConsumerStatefulWidget {
   final String? initialUrl;
   final String? initialTitle;
   final List<String>? initialFiles;
@@ -18,10 +22,10 @@ class AddItemSheet extends StatefulWidget {
   });
 
   @override
-  State<AddItemSheet> createState() => _AddItemSheetState();
+  ConsumerState<AddItemSheet> createState() => _AddItemSheetState();
 }
 
-class _AddItemSheetState extends State<AddItemSheet> {
+class _AddItemSheetState extends ConsumerState<AddItemSheet> {
   final _urlController = TextEditingController();
   final _titleController = TextEditingController();
   final _metadataService = MetadataService();
@@ -287,14 +291,86 @@ class _AddItemSheetState extends State<AddItemSheet> {
     );
   }
 
-  void _saveItem() {
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Item saved to vault'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> _saveItem() async {
+    final url = _urlController.text.trim();
+    final title = _titleController.text.trim();
+    
+    if (title.isEmpty && url.isEmpty && _selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a URL or select an image'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final authState = ref.read(authProvider);
+    if (!authState.isAuthenticated || authState.userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to save items'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final syncEngine = ref.read(syncEngineProvider);
+
+    try {
+      // Copy image to app storage if selected
+      String? localImagePath;
+      if (_selectedImage != null) {
+        localImagePath = _selectedImage!.path;
+      }
+
+      await syncEngine.createItem(
+        userId: authState.userId!,
+        type: _selectedType,
+        title: title.isNotEmpty ? title : (url.isNotEmpty ? url : 'Image'),
+        url: url.isNotEmpty ? url : null,
+        description: null,
+        thumbnailUrl: localImagePath,
+        priority: _selectedPriority,
+        tags: [],
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Item saved to vault'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } on DuplicateItemException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('This item already exists in your vault'),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'View',
+              onPressed: () {
+                Navigator.pop(context);
+                // TODO: Navigate to existing item
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save item: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }
 
