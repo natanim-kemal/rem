@@ -4,6 +4,7 @@ import '../widgets/search_bar.dart' as custom;
 import '../widgets/filter_chips.dart';
 import '../widgets/item_card.dart';
 import '../theme/app_theme.dart';
+import 'item_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -63,7 +64,14 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           slivers: [
+            CupertinoSliverRefreshControl(
+              onRefresh: () async {
+                await Future.delayed(const Duration(seconds: 1));
+                if (mounted) setState(() {});
+              },
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -86,7 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -97,7 +104,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             SliverToBoxAdapter(
               child: FilterChips(
                 filters: const [
@@ -114,26 +120,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
-
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 16),
+            ),
             if (_items.isEmpty)
               SliverFillRemaining(child: _EmptyState())
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: ItemCard(
-                        title: _items[index]['title'],
-                        url: _items[index]['url'],
-                        type: _items[index]['type'],
-                        priority: _items[index]['priority'],
-                        thumbnailUrl: _items[index]['thumbnail'],
-                        readTime: _items[index]['readTime'],
-                        date: _items[index]['date'],
-                        onTap: () {},
-                      ),
+                    (context, index) => ItemCard(
+                      title: _items[index]['title'],
+                      url: _items[index]['url'],
+                      type: _items[index]['type'],
+                      priority: _items[index]['priority'],
+                      thumbnailUrl: _items[index]['thumbnail'],
+                      readTime: _items[index]['readTime'],
+                      date: _items[index]['date'],
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ItemDetailScreen(item: _items[index]),
+                          ),
+                        );
+                      },
                     ),
                     childCount: _items.length,
                   ),
@@ -164,9 +177,10 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Tap the + button to save your first item',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: context.textSecondary),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: context.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
