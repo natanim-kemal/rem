@@ -8,7 +8,6 @@ class MetadataService {
       final document = MetadataFetch.responseToDocument(response);
       return MetadataParser.parse(document);
     } catch (e) {
-      // Fallback or log error
       return null;
     }
   }

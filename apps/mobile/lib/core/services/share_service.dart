@@ -19,7 +19,6 @@ class ShareService {
   StreamSubscription? _mediaSub;
 
   void initialize() {
-    // Listen to all shared content (media + text) while app is in memory
     _mediaSub = ReceiveSharingIntent.instance.getMediaStream().listen(
       (List<SharedMediaFile> value) {
         if (value.isEmpty) return;
@@ -46,7 +45,6 @@ class ShareService {
       },
     );
 
-    // Get initial content when app is opened from terminated state
     ReceiveSharingIntent.instance.getInitialMedia().then((
       List<SharedMediaFile> value,
     ) {
