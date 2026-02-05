@@ -1,65 +1,80 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/database/database.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/data_providers.dart';
 import '../widgets/search_bar.dart' as custom;
 import '../widgets/filter_chips.dart';
 import '../widgets/item_card.dart';
+import '../widgets/sync_status_indicator.dart';
 import '../theme/app_theme.dart';
 import 'item_detail_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _selectedFilter = 'All';
+  String _searchQuery = '';
 
-  final List<Map<String, dynamic>> _items = [
-    {
-      'title': 'The Future of AI in Mobile Development',
-      'url': 'medium.com',
-      'type': 'link',
-      'priority': 'high',
-      'readTime': '8 min',
-      'date': '2 hours ago',
-      'thumbnail':
-          'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800',
-    },
-    {
-      'title': 'Beautiful UI Design Patterns',
-      'url': 'dribbble.com',
-      'type': 'image',
-      'priority': 'medium',
-      'readTime': '3 min',
-      'date': 'Yesterday',
-      'thumbnail':
-          'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800',
-    },
-    {
-      'title': 'Flutter State Management Guide',
-      'url': 'flutter.dev',
-      'type': 'link',
-      'priority': 'low',
-      'readTime': '15 min',
-      'date': '3 days ago',
-      'thumbnail': null,
-    },
-    {
-      'title': 'Minimalist Architecture in 2024',
-      'url': 'archdaily.com',
-      'type': 'image',
-      'priority': 'high',
-      'readTime': '5 min',
-      'date': '4 days ago',
-      'thumbnail':
-          'https://images.unsplash.com/photo-1486718448742-163732cd1544?auto=format&fit=crop&q=80&w=800',
-    },
-  ];
+  List<Item> _filterItems(List<Item> items) {
+    return items.where((item) {
+      // Filter by status/type
+      if (_selectedFilter != 'All') {
+        if (_selectedFilter == 'Unread' && item.status == 'read') {
+          return false;
+        } else if (_selectedFilter != 'Unread' && 
+                   item.type.toLowerCase() != _selectedFilter.toLowerCase()) {
+          return false;
+        }
+      }
+      
+      // Filter by search query
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final titleMatch = item.title.toLowerCase().contains(query);
+        final urlMatch = item.url?.toLowerCase().contains(query) ?? false;
+        final tagsMatch = item.tags.toLowerCase().contains(query);
+        if (!titleMatch && !urlMatch && !tagsMatch) {
+          return false;
+        }
+      }
+      
+      return true;
+    }).toList();
+  }
+
+  String _formatDate(int timestamp) {
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes} min ago';
+    if (diff.inDays < 1) return '${diff.inHours} hours ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    return '${date.month}/${date.day}/${date.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final userId = authState.userId;
+    
+    if (userId == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final itemsAsync = ref.watch(itemsStreamProvider(userId));
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -70,8 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers: [
             CupertinoSliverRefreshControl(
               onRefresh: () async {
-                await Future.delayed(const Duration(seconds: 1));
-                if (mounted) setState(() {});
+                final syncEngine = ref.read(syncEngineProvider);
+                await syncEngine.syncNow();
               },
             ),
             SliverToBoxAdapter(
@@ -84,14 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'rem',
                       style: Theme.of(context).textTheme.displayMedium,
                     ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(CupertinoIcons.bell),
-                          onPressed: () {},
-                        ),
-                      ],
-                    ),
+                    const SyncStatusIndicator(),
                   ],
                 ),
               ),
@@ -101,7 +109,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                 child: custom.SearchBar(
                   hintText: 'Search your vault...',
-                  onChanged: (value) {},
+                  onChanged: (value) {
+                    setState(() => _searchQuery = value);
+                  },
                   onFilterTap: () {},
                 ),
               ),
@@ -123,35 +133,90 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
-            if (_items.isEmpty)
-              SliverFillRemaining(child: _EmptyState())
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => ItemCard(
-                      title: _items[index]['title'],
-                      url: _items[index]['url'],
-                      type: _items[index]['type'],
-                      priority: _items[index]['priority'],
-                      thumbnailUrl: _items[index]['thumbnail'],
-                      readTime: _items[index]['readTime'],
-                      date: _items[index]['date'],
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                ItemDetailScreen(item: _items[index]),
-                          ),
+            itemsAsync.when(
+              data: (items) {
+                final filteredItems = _filterItems(items);
+                
+                if (filteredItems.isEmpty) {
+                  return SliverFillRemaining(child: _EmptyState(hasItems: items.isNotEmpty));
+                }
+                
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final item = filteredItems[index];
+                        return ItemCard(
+                          title: item.title,
+                          url: item.url ?? 'No URL',
+                          type: item.type,
+                          priority: item.priority,
+                          thumbnailUrl: item.thumbnailUrl,
+                          readTime: item.estimatedReadTime != null 
+                            ? '${item.estimatedReadTime} min' 
+                            : null,
+                          date: _formatDate(item.createdAt),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ItemDetailScreen(
+                                  item: {
+                                    'id': item.id,
+                                    'title': item.title,
+                                    'url': item.url,
+                                    'type': item.type,
+                                    'priority': item.priority,
+                                    'description': item.description,
+                                    'thumbnailUrl': item.thumbnailUrl,
+                                    'tags': item.tags.split(',').where((t) => t.isNotEmpty).toList(),
+                                    'status': item.status,
+                                    'createdAt': item.createdAt,
+                                    'convexId': item.convexId,
+                                  },
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
+                      childCount: filteredItems.length,
                     ),
-                    childCount: _items.length,
+                  ),
+                );
+              },
+              loading: () => const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (error, stack) => SliverFillRemaining(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(CupertinoIcons.exclamationmark_triangle, 
+                             size: 64, color: context.textTertiary),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error loading items',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          error.toString(),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: context.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -160,6 +225,10 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _EmptyState extends StatelessWidget {
+  final bool hasItems;
+  
+  const _EmptyState({this.hasItems = false});
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -171,12 +240,14 @@ class _EmptyState extends StatelessWidget {
             Icon(CupertinoIcons.tray, size: 64, color: context.textTertiary),
             const SizedBox(height: 16),
             Text(
-              'Your vault is empty',
+              hasItems ? 'No items match your filters' : 'Your vault is empty',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Tap the + button to save your first item',
+              hasItems 
+                ? 'Try adjusting your search or filters'
+                : 'Tap the + button to save your first item',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: context.textSecondary),
