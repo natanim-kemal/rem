@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:sqlite3/sqlite3.dart';
 
 part 'database.g.dart';
 
@@ -74,12 +75,65 @@ class SyncQueue extends Table {
   TextColumn get lastError => text().nullable()();
 }
 
-@DriftDatabase(tables: [Users, Items, Tags, SyncQueue])
+class ItemsFts extends Table {
+  TextColumn get itemId => text()();
+  TextColumn get title => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get url => text().nullable()();
+
+  @override
+  String get tableName => 'items_fts';
+}
+
+class PendingNotifications extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get userId => text()();
+  TextColumn get itemId => text().nullable()();
+  TextColumn get title => text()();
+  TextColumn get body => text()();
+  TextColumn get type => text()(); // 'reminder', 'digest', 'streak', 'celebration'
+  IntColumn get scheduledAt => integer()();
+  IntColumn get createdAt => integer()();
+}
+
+@DriftDatabase(tables: [Users, Items, Tags, SyncQueue, ItemsFts, PendingNotifications])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+      await customStatement('''
+        CREATE VIRTUAL TABLE IF NOT EXISTS items_fts USING fts5(
+          item_id UNINDEXED,
+          title,
+          description,
+          url,
+          tokenize='porter'
+        );
+      ''');
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        await customStatement('''
+          CREATE VIRTUAL TABLE IF NOT EXISTS items_fts USING fts5(
+            item_id UNINDEXED,
+            title,
+            description,
+            url,
+            tokenize='porter'
+          );
+        ''');
+      }
+      if (from < 3) {
+        await m.createTable(pendingNotifications);
+      }
+    },
+  );
 
   static AppDatabase? _instance;
   static AppDatabase get instance => _instance ??= AppDatabase();
@@ -113,6 +167,20 @@ class AppDatabase extends _$AppDatabase {
 
   Future<Item?> getItemById(String id) {
     return (select(items)..where((i) => i.id.equals(id))).getSingleOrNull();
+  }
+
+  Future<Item?> findDuplicateItem(String userId, String? url, {String? excludeId}) async {
+    if (url == null || url.isEmpty) return null;
+    
+    var query = select(items)
+      ..where((i) => i.userId.equals(userId))
+      ..where((i) => i.url.equals(url));
+    
+    if (excludeId != null) {
+      query = query..where((i) => i.id.isNotValue(excludeId));
+    }
+    
+    return query.getSingleOrNull();
   }
 
   Future<int> insertItem(ItemsCompanion item) {
@@ -189,6 +257,79 @@ class AppDatabase extends _$AppDatabase {
         syncStatus: Value(syncStatus),
       ),
     );
+  }
+
+  Future<void> updateItemSearchIndex(String itemId, String title, String? description, String? url) async {
+    await customStatement(
+      'DELETE FROM items_fts WHERE item_id = ?',
+      [itemId],
+    );
+    await customStatement(
+      'INSERT INTO items_fts(item_id, title, description, url) VALUES (?, ?, ?, ?)',
+      [itemId, title, description ?? '', url ?? ''],
+    );
+  }
+
+  Future<void> deleteItemSearchIndex(String itemId) async {
+    await customStatement(
+      'DELETE FROM items_fts WHERE item_id = ?',
+      [itemId],
+    );
+  }
+
+  Future<List<Item>> searchItems(String userId, String query) async {
+    final results = await customSelect(
+      'SELECT item_id FROM items_fts WHERE items_fts MATCH ? ORDER BY rank',
+      variables: [Variable(query)],
+    ).get();
+
+    final itemIds = results.map((r) => r.read<String>('item_id')).toList();
+
+    if (itemIds.isEmpty) return [];
+
+    return (select(items)
+          ..where((i) => i.userId.equals(userId))
+          ..where((i) => i.id.isIn(itemIds)))
+        .get();
+  }
+
+  // Pending notification methods
+  Future<int> addPendingNotification({
+    required String userId,
+    String? itemId,
+    required String title,
+    required String body,
+    required String type,
+    required int scheduledAt,
+  }) {
+    return into(pendingNotifications).insert(
+      PendingNotificationsCompanion.insert(
+        userId: userId,
+        itemId: Value(itemId),
+        title: title,
+        body: body,
+        type: type,
+        scheduledAt: scheduledAt,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+  }
+
+  Future<List<PendingNotification>> getPendingNotifications(String userId) {
+    return (select(pendingNotifications)
+          ..where((n) => n.userId.equals(userId))
+          ..orderBy([(n) => OrderingTerm.asc(n.scheduledAt)]))
+        .get();
+  }
+
+  Future<int> deletePendingNotification(int id) {
+    return (delete(pendingNotifications)..where((n) => n.id.equals(id))).go();
+  }
+
+  Future<int> clearDeliveredPendingNotifications(int beforeTimestamp) {
+    return (delete(pendingNotifications)
+          ..where((n) => n.scheduledAt.isSmallerThanValue(beforeTimestamp)))
+        .go();
   }
 }
 
