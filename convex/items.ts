@@ -135,6 +135,50 @@ export const createItem = mutation({
     },
 });
 
+export const updateItem = mutation({
+    args: {
+        itemId: v.id("items"),
+        title: v.optional(v.string()),
+        description: v.optional(v.string()),
+        priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
+        tags: v.optional(v.array(v.string())),
+        status: v.optional(v.union(v.literal("unread"), v.literal("read"), v.literal("archived"))),
+    },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthenticated");
+
+        const item = await ctx.db.get(args.itemId);
+        if (!item) throw new Error("Item not found");
+
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .first();
+
+        if (!user || item.userId !== user._id) {
+            throw new Error("Not authorized");
+        }
+
+        const updateData: any = {
+            updatedAt: Date.now(),
+        };
+
+        if (args.title !== undefined) updateData.title = args.title;
+        if (args.description !== undefined) updateData.description = args.description;
+        if (args.priority !== undefined) updateData.priority = args.priority;
+        if (args.tags !== undefined) updateData.tags = args.tags;
+        if (args.status !== undefined) {
+            updateData.status = args.status;
+            if (args.status === "read") {
+                updateData.readAt = Date.now();
+            }
+        }
+
+        await ctx.db.patch(args.itemId, updateData);
+    },
+});
+
 export const markAsRead = mutation({
     args: { itemId: v.id("items") },
     handler: async (ctx, args) => {
