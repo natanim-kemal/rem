@@ -27,16 +27,16 @@ class ProfileScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Text(
+                    'profile',
+                    style: Theme.of(context).textTheme.displayMedium,
+                  ),
                   Opacity(
                     opacity: 0,
-                    child: Text(
-                      'rem',
-                      style: Theme.of(context).textTheme.displayMedium,
+                    child: IconButton(
+                      icon: const Icon(CupertinoIcons.bell),
+                      onPressed: () {},
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(CupertinoIcons.bell),
-                    onPressed: () {},
                   ),
                 ],
               ),

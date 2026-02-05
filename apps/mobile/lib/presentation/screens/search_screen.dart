@@ -18,17 +18,11 @@ class SearchScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Opacity(
-                    opacity: 0,
-                    child: Text(
-                      'rem',
-                      style: Theme.of(context).textTheme.displayMedium,
-                    ),
+                  Text(
+                    'search',
+                    style: Theme.of(context).textTheme.displayMedium,
                   ),
-                  IconButton(
-                    icon: const Icon(CupertinoIcons.bell),
-                    onPressed: () {},
-                  ),
+                  const SizedBox(width: 48, height: 48),
                 ],
               ),
             ),

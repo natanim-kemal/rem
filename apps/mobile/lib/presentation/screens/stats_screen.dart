@@ -18,16 +18,16 @@ class StatsScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Text(
+                    'stats',
+                    style: Theme.of(context).textTheme.displayMedium,
+                  ),
                   Opacity(
                     opacity: 0,
-                    child: Text(
-                      'rem',
-                      style: Theme.of(context).textTheme.displayMedium,
+                    child: IconButton(
+                      icon: const Icon(CupertinoIcons.bell),
+                      onPressed: () {},
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(CupertinoIcons.bell),
-                    onPressed: () {},
                   ),
                 ],
               ),
