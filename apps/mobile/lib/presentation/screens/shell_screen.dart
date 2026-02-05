@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
 import 'stats_screen.dart';
@@ -7,15 +8,16 @@ import 'profile_screen.dart';
 import '../widgets/add_item_sheet.dart';
 
 import '../../core/services/share_service.dart';
+import '../../providers/notification_provider.dart';
 
-class ShellScreen extends StatefulWidget {
+class ShellScreen extends ConsumerStatefulWidget {
   const ShellScreen({super.key});
 
   @override
-  State<ShellScreen> createState() => _ShellScreenState();
+  ConsumerState<ShellScreen> createState() => _ShellScreenState();
 }
 
-class _ShellScreenState extends State<ShellScreen> {
+class _ShellScreenState extends ConsumerState<ShellScreen> {
   int _currentIndex = 0;
   final _shareService = ShareService();
 
@@ -24,6 +26,7 @@ class _ShellScreenState extends State<ShellScreen> {
     super.initState();
     _shareService.initialize();
     _shareService.contentStream.listen(_handleSharedContent);
+    ref.read(notificationServiceProvider);
   }
 
   @override

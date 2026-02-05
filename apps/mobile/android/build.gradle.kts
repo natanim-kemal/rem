@@ -6,23 +6,21 @@ allprojects {
         google()
         mavenCentral()
     }
+}
 
+subprojects {
     afterEvaluate {
         tasks.withType(JavaCompile::class.java).configureEach {
             sourceCompatibility = JavaVersion.VERSION_17.toString()
             targetCompatibility = JavaVersion.VERSION_17.toString()
         }
-    }
 
-    tasks.withType<KotlinCompile>().configureEach {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+        tasks.withType<KotlinCompile>().configureEach {
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_17)
+            }
         }
-    }
-}
 
-subprojects {
-    afterEvaluate {
         extensions.findByName("android")?.let { androidExt ->
             @Suppress("UNCHECKED_CAST")
             (androidExt as? com.android.build.api.dsl.CommonExtension<*, *, *, *, *, *>)?.apply {
@@ -30,6 +28,13 @@ subprojects {
                     sourceCompatibility = JavaVersion.VERSION_17
                     targetCompatibility = JavaVersion.VERSION_17
                 }
+            }
+        }
+
+        extensions.findByName("kotlin")?.let { kotlinExt ->
+            @Suppress("UNCHECKED_CAST")
+            (kotlinExt as? org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension)?.apply {
+                jvmToolchain(17)
             }
         }
     }
