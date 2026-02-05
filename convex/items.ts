@@ -211,3 +211,29 @@ export const searchItems = query({
             .take(20);
     },
 });
+
+export const getItemsSince = query({
+    args: { since: v.optional(v.number()) },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthenticated");
+
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .first();
+
+        if (!user) throw new Error("User not found");
+
+        let query = ctx.db
+            .query("items")
+            .withIndex("by_user_status", (q) => q.eq("userId", user._id))
+            .order("desc");
+
+        if (args.since && args.since > 0) {
+            query = query.filter((q) => q.gt(q.field("updatedAt"), args.since as number));
+        }
+
+        return await query.take(100);
+    },
+});
