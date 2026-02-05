@@ -16,17 +16,19 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _isDeleting = false;
-  
+
   // Local mutable state copied from widget
   late String _priority;
   late List<String> _tags;
-  
+
   @override
   void initState() {
     super.initState();
     // Initialize local state from widget
     _priority = widget.item['priority'] as String? ?? 'medium';
-    _tags = List<String>.from((widget.item['tags'] as List<dynamic>?)?.cast<String>() ?? []);
+    _tags = List<String>.from(
+      (widget.item['tags'] as List<dynamic>?)?.cast<String>() ?? [],
+    );
   }
 
   Color _getPriorityColor(String priority) {
@@ -485,7 +487,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getPriorityColor(_priority).withValues(alpha: 0.15),
+                          color: _getPriorityColor(
+                            _priority,
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
@@ -534,7 +538,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 const SizedBox(height: 12),
                 _MetaRow(
                   icon: CupertinoIcons.calendar,
-                  text: 'Added ${widget.item['createdAt'] != null ? _formatDate(widget.item['createdAt'] as int) : ''}',
+                  text:
+                      'Added ${widget.item['createdAt'] != null ? _formatDate(widget.item['createdAt'] as int) : ''}',
                 ),
                 const SizedBox(height: 12),
                 if (widget.item['estimatedReadTime'] != null)
@@ -591,12 +596,12 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       ),
     );
   }
-  
+
   String _formatDate(int timestamp) {
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
     final now = DateTime.now();
     final diff = now.difference(date);
-    
+
     if (diff.inMinutes < 1) return 'Just now';
     if (diff.inHours < 1) return '${diff.inMinutes} min ago';
     if (diff.inDays < 1) return '${diff.inHours} hours ago';
