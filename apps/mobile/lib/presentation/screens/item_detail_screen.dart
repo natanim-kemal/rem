@@ -16,9 +16,9 @@ class ItemDetailScreen extends StatelessWidget {
     if (canLaunch) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not launch URL')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not launch URL')));
     }
   }
 
@@ -38,14 +38,25 @@ class ItemDetailScreen extends StatelessWidget {
                     background: Image.network(
                       item['thumbnail'],
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(color: theme.colorScheme.surfaceContainerHighest),
+                      errorBuilder: (_, _, _) => Container(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                      ),
                     ),
                   )
                 : null,
             actions: [
-              IconButton(onPressed: () {}, icon: const Icon(CupertinoIcons.heart)),
-              IconButton(onPressed: () {}, icon: const Icon(CupertinoIcons.share)),
-              IconButton(onPressed: () {}, icon: const Icon(CupertinoIcons.trash)),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(CupertinoIcons.heart),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(CupertinoIcons.share),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(CupertinoIcons.trash),
+              ),
             ],
           ),
           SliverPadding(
@@ -77,10 +88,7 @@ class ItemDetailScreen extends StatelessWidget {
                   text: 'Added ${item['date']}',
                 ),
                 const SizedBox(height: 12),
-                _MetaRow(
-                  icon: CupertinoIcons.time,
-                  text: item['readTime'],
-                ),
+                _MetaRow(icon: CupertinoIcons.time, text: item['readTime']),
                 const SizedBox(height: 32),
                 FilledButton.icon(
                   onPressed: () => _launchUrl(context),
@@ -121,15 +129,21 @@ class _MetaRow extends StatelessWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: 20,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: isLink ? AppTheme.accent : Theme.of(context).colorScheme.onSurface,
-                    decoration: isLink ? TextDecoration.underline : null,
-                  ),
+                color: isLink
+                    ? AppTheme.accent
+                    : Theme.of(context).colorScheme.onSurface,
+                decoration: isLink ? TextDecoration.underline : null,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
