@@ -5,68 +5,74 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   AppTheme._();
 
-  static const _lightBackground = Color(0xFFFFFFFF);
-  static const _lightSurface = Color(0xFFF5F5F7);
-  static const _lightSurfaceElevated = Color(0xFFFFFFFF);
-  static const _lightTextPrimary = Color(0xFF000000);
-  static const _lightTextSecondary = Color(0xFF86868B);
-  static const _lightTextTertiary = Color(0xFFAEAEB2);
-  static const _lightDivider = Color(0xFFE5E5EA);
+  static const _lightBackground = Color(0xFFF8F7F4);
+  static const _lightSurface = Color(0xFFFFFFFF);
+  static const _lightSurfaceElevated = Color(0xFFF2F2EF);
+  static const _lightTextPrimary = Color(0xFF1E1E1E);
+  static const _lightTextSecondary = Color(0xFF6E6E6E);
+  static const _lightTextTertiary = Color(0xFF9A9A9A);
+  static const _lightDivider = Color(0xFFE5E3DE);
 
-  static const _darkBackground = Color(0xFF000000);
-  static const _darkSurface = Color(0xFF1C1C1E);
-  static const _darkSurfaceElevated = Color(0xFF2C2C2E);
-  static const _darkTextPrimary = Color(0xFFFFFFFF);
-  static const _darkTextSecondary = Color(0xFF8E8E93);
-  static const _darkTextTertiary = Color(0xFF636366);
-  static const _darkDivider = Color(0xFF38383A);
+  static const _darkBackground = Color(0xFF1F1F1F);
+  static const _darkSurface = Color(0xFF262626);
+  static const _darkSurfaceElevated = Color(0xFF2B2B2B);
+  static const _darkTextPrimary = Color(0xFFF2F2F2);
+  static const _darkTextSecondary = Color(0xFFB0B0B0);
+  static const _darkTextTertiary = Color(0xFF7A7A7A);
+  static const _darkDivider = Color(0xFF2F2F2F);
 
-  static const accent = Color(0xFF007AFF);
+  static const accent = Color(0xFF2FBF9A);
   static const destructive = Color(0xFFFF3B30);
 
   static TextTheme _buildTextTheme(TextTheme base) {
-    return base.copyWith(
-      displayLarge: GoogleFonts.dmSans(
+    return GoogleFonts.geistTextTheme(base).copyWith(
+      displayLarge: GoogleFonts.geist(
         fontSize: 34,
         fontWeight: FontWeight.bold,
         letterSpacing: -0.5,
       ),
-      displayMedium: GoogleFonts.dmSans(
+      displayMedium: GoogleFonts.geist(
         fontSize: 28,
         fontWeight: FontWeight.bold,
         letterSpacing: -0.5,
       ),
-      displaySmall: GoogleFonts.dmSans(
+      displaySmall: GoogleFonts.geist(
         fontSize: 22,
         fontWeight: FontWeight.bold,
       ),
-      headlineMedium: GoogleFonts.dmSans(
+      headlineMedium: GoogleFonts.geist(
         fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
-      headlineSmall: GoogleFonts.dmSans(
+      headlineSmall: GoogleFonts.geist(
         fontSize: 17,
         fontWeight: FontWeight.w600,
       ),
-      titleLarge: GoogleFonts.dmSans(fontSize: 17, fontWeight: FontWeight.w600),
-      titleMedium: GoogleFonts.dmSans(
+      titleLarge: GoogleFonts.geist(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+      ),
+      titleMedium: GoogleFonts.geist(
         fontSize: 16,
         fontWeight: FontWeight.w500,
       ),
-      bodyLarge: GoogleFonts.dmSans(
+      bodyLarge: GoogleFonts.geist(
         fontSize: 17,
         fontWeight: FontWeight.normal,
       ),
-      bodyMedium: GoogleFonts.dmSans(
+      bodyMedium: GoogleFonts.geist(
         fontSize: 15,
         fontWeight: FontWeight.normal,
       ),
-      bodySmall: GoogleFonts.dmSans(
+      bodySmall: GoogleFonts.geist(
         fontSize: 13,
         fontWeight: FontWeight.normal,
       ),
-      labelLarge: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w500),
-      labelSmall: GoogleFonts.dmSans(
+      labelLarge: GoogleFonts.geist(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
+      labelSmall: GoogleFonts.geist(
         fontSize: 11,
         fontWeight: FontWeight.normal,
       ),
@@ -119,7 +125,7 @@ class AppTheme {
       backgroundColor: Colors.transparent,
       side: BorderSide(color: _darkDivider),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      labelStyle: GoogleFonts.inter(fontSize: 14),
+      labelStyle: GoogleFonts.geist(fontSize: 14),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -130,7 +136,10 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      hintStyle: GoogleFonts.dmSans(fontSize: 16, color: _darkTextSecondary),
+      hintStyle: GoogleFonts.geist(
+        fontSize: 16,
+        color: _darkTextSecondary,
+      ),
     ),
     cupertinoOverrideTheme: const CupertinoThemeData(
       brightness: Brightness.dark,
@@ -184,7 +193,7 @@ class AppTheme {
       backgroundColor: Colors.transparent,
       side: BorderSide(color: _lightDivider),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      labelStyle: GoogleFonts.inter(fontSize: 14),
+      labelStyle: GoogleFonts.geist(fontSize: 14),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -195,7 +204,10 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      hintStyle: GoogleFonts.dmSans(fontSize: 16, color: _lightTextSecondary),
+      hintStyle: GoogleFonts.geist(
+        fontSize: 16,
+        color: _lightTextSecondary,
+      ),
     ),
     cupertinoOverrideTheme: const CupertinoThemeData(
       brightness: Brightness.light,

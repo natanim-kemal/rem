@@ -6,6 +6,8 @@ import 'stats_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/add_item_sheet.dart';
 
+import '../../core/services/share_service.dart';
+
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
 
@@ -15,6 +17,36 @@ class ShellScreen extends StatefulWidget {
 
 class _ShellScreenState extends State<ShellScreen> {
   int _currentIndex = 0;
+  final _shareService = ShareService();
+
+  @override
+  void initState() {
+    super.initState();
+    _shareService.initialize();
+    _shareService.contentStream.listen(_handleSharedContent);
+  }
+
+  @override
+  void dispose() {
+    _shareService.dispose();
+    super.dispose();
+  }
+
+  void _handleSharedContent(SharedContent content) {
+    if (!mounted) return;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddItemSheet(
+        initialUrl: content.type == ShareType.text ? content.text : null,
+        initialFiles: content.type == ShareType.media 
+            ? content.files.map((f) => f.path).toList() 
+            : null,
+      ),
+    );
+  }
 
   final _screens = const [
     HomeScreen(),
