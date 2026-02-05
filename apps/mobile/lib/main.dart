@@ -7,7 +7,6 @@ import 'presentation/screens/shell_screen.dart';
 import 'presentation/theme/app_theme.dart';
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
-import 'providers/notification_provider.dart';
 import 'core/config/app_config.dart';
 
 void main() async {
