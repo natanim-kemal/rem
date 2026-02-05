@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'home_screen.dart';
-import 'search_screen.dart';
 import 'stats_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/add_item_sheet.dart';
@@ -53,14 +52,13 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   final _screens = const [
     HomeScreen(),
-    SearchScreen(),
     SizedBox(),
     StatsScreen(),
     ProfileScreen(),
   ];
 
   void _onNavTap(int index) {
-    if (index == 2) {
+    if (index == 1) {
       _showAddSheet();
     } else {
       setState(() => _currentIndex = index);
@@ -80,7 +78,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex == 2 ? 0 : _currentIndex,
+        index: _currentIndex == 1 ? 0 : _currentIndex,
         children: _screens,
       ),
       extendBody: true,
@@ -130,33 +128,26 @@ class _FloatingNavBar extends StatelessWidget {
                 onTap: () => onTap(0),
               ),
               _NavItem(
-                icon: CupertinoIcons.search,
-                activeIcon: CupertinoIcons.search,
-                label: 'Search',
-                isActive: currentIndex == 1,
-                onTap: () => onTap(1),
-              ),
-              _NavItem(
                 icon: CupertinoIcons.plus_circle,
                 activeIcon: CupertinoIcons.plus_circle_fill,
                 label: 'Add',
-                isActive: currentIndex == 2,
-                onTap: () => onTap(2),
+                isActive: currentIndex == 1,
+                onTap: () => onTap(1),
                 isCenter: true,
               ),
               _NavItem(
                 icon: CupertinoIcons.chart_bar,
                 activeIcon: CupertinoIcons.chart_bar_fill,
                 label: 'Stats',
-                isActive: currentIndex == 3,
-                onTap: () => onTap(3),
+                isActive: currentIndex == 2,
+                onTap: () => onTap(2),
               ),
               _NavItem(
                 icon: CupertinoIcons.person,
                 activeIcon: CupertinoIcons.person_fill,
                 label: 'Profile',
-                isActive: currentIndex == 4,
-                onTap: () => onTap(4),
+                isActive: currentIndex == 3,
+                onTap: () => onTap(3),
               ),
             ],
           ),

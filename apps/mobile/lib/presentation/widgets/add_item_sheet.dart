@@ -28,6 +28,7 @@ class AddItemSheet extends ConsumerStatefulWidget {
 class _AddItemSheetState extends ConsumerState<AddItemSheet> {
   final _urlController = TextEditingController();
   final _titleController = TextEditingController();
+  final _tagController = TextEditingController();
   final _metadataService = MetadataService();
 
   String _selectedType = 'link';
@@ -35,6 +36,8 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
   bool _isLoadingMetadata = false;
   File? _selectedImage;
   String? _thumbnailUrl;
+  final List<String> _tags = [];
+  final FocusNode _tagFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -63,7 +66,6 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
       if (_titleController.text.isEmpty && metadata.title != null) {
         _titleController.text = metadata.title!;
       }
-      // Store thumbnail URL from metadata
       if (metadata.image != null && metadata.image!.isNotEmpty) {
         setState(() {
           _thumbnailUrl = metadata.image;
@@ -88,7 +90,25 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
   void dispose() {
     _urlController.dispose();
     _titleController.dispose();
+    _tagController.dispose();
+    _tagFocusNode.dispose();
     super.dispose();
+  }
+
+  void _addTag() {
+    final tag = _tagController.text.trim().toLowerCase();
+    if (tag.isNotEmpty && !_tags.contains(tag)) {
+      setState(() {
+        _tags.add(tag);
+        _tagController.clear();
+      });
+    }
+  }
+
+  void _removeTag(String tag) {
+    setState(() {
+      _tags.remove(tag);
+    });
   }
 
   @override
@@ -272,13 +292,65 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+
+            Text('Tags', style: theme.textTheme.labelLarge),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _tagController,
+                    focusNode: _tagFocusNode,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _addTag(),
+                    decoration: const InputDecoration(
+                      hintText: 'Add a tag...',
+                      prefixIcon: Icon(CupertinoIcons.tag, size: 20),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CupertinoButton(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(10),
+                  onPressed: _addTag,
+                  child: const Icon(
+                    CupertinoIcons.add,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+            if (_tags.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _tags.map((tag) {
+                  return Chip(
+                    label: Text(tag),
+                    deleteIcon: const Icon(CupertinoIcons.xmark, size: 16),
+                    onDeleted: () => _removeTag(tag),
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                    side: BorderSide(color: theme.colorScheme.outline),
+                    labelStyle: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                      fontSize: 14,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
             const SizedBox(height: 32),
 
             SizedBox(
               width: double.infinity,
               height: 50,
               child: CupertinoButton(
-                color: AppTheme.accent,
+                color: theme.colorScheme.primary,
                 borderRadius: BorderRadius.circular(12),
                 onPressed: _saveItem,
                 child: const Text(
@@ -325,7 +397,6 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
     final syncEngine = ref.read(syncEngineProvider);
 
     try {
-      // Copy image to app storage if selected
       String? localImagePath;
       if (_selectedImage != null) {
         localImagePath = _selectedImage!.path;
@@ -339,15 +410,37 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
         description: null,
         thumbnailUrl: localImagePath ?? _thumbnailUrl,
         priority: _selectedPriority,
-        tags: [],
+        tags: _tags,
       );
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Item saved to vault'),
+          SnackBar(
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  CupertinoIcons.checkmark_circle_fill,
+                  color: const Color(0xFF34C759),
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Saved to vault',
+                  style: TextStyle(
+                    color: const Color(0xFF34C759),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            margin: const EdgeInsets.only(bottom: 24),
           ),
         );
       }
@@ -361,7 +454,6 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
               label: 'View',
               onPressed: () {
                 Navigator.pop(context);
-                // TODO: Navigate to existing item
               },
             ),
           ),
@@ -405,12 +497,12 @@ class _TypeChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
-                ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                ? theme.colorScheme.surfaceContainerHighest
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isSelected
-                  ? theme.colorScheme.primary
+                  ? theme.colorScheme.onSurface
                   : theme.colorScheme.outline,
             ),
           ),
@@ -420,7 +512,7 @@ class _TypeChip extends StatelessWidget {
                 icon,
                 size: 20,
                 color: isSelected
-                    ? theme.colorScheme.primary
+                    ? theme.colorScheme.onSurface
                     : theme.colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 4),
@@ -430,7 +522,7 @@ class _TypeChip extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   color: isSelected
-                      ? theme.colorScheme.primary
+                      ? theme.colorScheme.onSurface
                       : theme.colorScheme.onSurfaceVariant,
                 ),
               ),

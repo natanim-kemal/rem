@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,7 +25,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   List<Item> _filterItems(List<Item> items) {
     return items.where((item) {
-      // Filter by status/type
       if (_selectedFilter != 'All') {
         if (_selectedFilter == 'Unread' && item.status == 'read') {
           return false;
@@ -34,7 +34,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
       }
 
-      // Filter by search query
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
         final titleMatch = item.title.toLowerCase().contains(query);
@@ -60,6 +59,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays} days ago';
     return '${date.month}/${date.day}/${date.year}';
+  }
+
+  List<String> _parseTags(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return [];
+    if (trimmed.startsWith('[')) {
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is List) {
+          return decoded.whereType<String>().toList();
+        }
+      } catch (_) {}
+    }
+    return trimmed
+        .split(',')
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty)
+      .toList();
   }
 
   @override
@@ -169,10 +186,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   'priority': item.priority,
                                   'description': item.description,
                                   'thumbnailUrl': item.thumbnailUrl,
-                                  'tags': item.tags
-                                      .split(',')
-                                      .where((t) => t.isNotEmpty)
-                                      .toList(),
+                                  'tags': _parseTags(item.tags),
                                   'status': item.status,
                                   'createdAt': item.createdAt,
                                   'convexId': item.convexId,

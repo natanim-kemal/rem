@@ -42,8 +42,17 @@ class ItemCard extends StatelessWidget {
           ),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Container(
+              width: 3,
+              height: 36,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: _getPriorityColor(),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,6 +189,19 @@ class ItemCard extends StatelessWidget {
         return CupertinoIcons.doc_text;
       default:
         return CupertinoIcons.link;
+    }
+  }
+
+  Color _getPriorityColor() {
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return const Color(0xFFFF3B30);
+      case 'medium':
+        return const Color(0xFFFF9500);
+      case 'low':
+        return const Color(0xFF34C759);
+      default:
+        return const Color(0xFFFF9500);
     }
   }
 }

@@ -17,18 +17,30 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _isDeleting = false;
 
-  // Local mutable state copied from widget
   late String _priority;
   late List<String> _tags;
 
   @override
   void initState() {
     super.initState();
-    // Initialize local state from widget
     _priority = widget.item['priority'] as String? ?? 'medium';
-    _tags = List<String>.from(
-      (widget.item['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-    );
+    final tagsData = widget.item['tags'];
+    List<String> parsedTags = [];
+    if (tagsData is List) {
+      parsedTags =
+          tagsData.whereType<String>().where((t) => t.isNotEmpty).toList();
+    } else if (tagsData is String) {
+      if (tagsData.isNotEmpty && tagsData != '[]') {
+        parsedTags = [tagsData];
+      }
+    }
+    _tags =
+        parsedTags
+            .where(
+              (tag) =>
+                  tag.isNotEmpty && tag != '[]' && tag != '[' && tag != ']',
+            )
+            .toList();
   }
 
   Color _getPriorityColor(String priority) {
@@ -248,7 +260,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   void _showEditTagsSheet() {
-    final tempTags = List<String>.from(_tags);
+    final tempTags = List<String>.from(
+      _tags
+          .where(
+            (tag) =>
+                tag.isNotEmpty && tag != '[]' && tag != '[' && tag != ']',
+          )
+          .toList(),
+    );
     final textController = TextEditingController();
 
     showCupertinoModalPopup(
@@ -337,10 +356,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           controller: textController,
                           placeholder: 'Add a tag...',
                           onSubmitted: (value) {
-                            if (value.trim().isNotEmpty &&
-                                !tempTags.contains(value.trim())) {
+                            final cleanValue = value.trim().toLowerCase();
+                            if (cleanValue.isNotEmpty &&
+                                !tempTags.contains(cleanValue)) {
                               setModalState(() {
-                                tempTags.add(value.trim());
+                                tempTags.add(cleanValue);
                               });
                               textController.clear();
                             }
@@ -350,7 +370,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       CupertinoButton(
                         child: const Icon(CupertinoIcons.add),
                         onPressed: () {
-                          final value = textController.text.trim();
+                          final value = textController.text.trim().toLowerCase();
                           if (value.isNotEmpty && !tempTags.contains(value)) {
                             setModalState(() {
                               tempTags.add(value);
@@ -376,35 +396,69 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: tempTags.length,
+                          itemCount:
+                              tempTags.where((t) => t.isNotEmpty && t != '[]').length,
                           itemBuilder: (context, index) {
+                            final validTags = tempTags
+                                .where((t) => t.isNotEmpty && t != '[]')
+                                .toList();
+                            if (index >= validTags.length) {
+                              return const SizedBox.shrink();
+                            }
+                            final tag = validTags[index];
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
-                                vertical: 8,
+                                vertical: 10,
                               ),
                               decoration: BoxDecoration(
                                 color: Theme.of(
                                   context,
                                 ).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outline
+                                      .withOpacity(0.3),
+                                ),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(CupertinoIcons.tag, size: 16),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(tempTags[index])),
+                                  Icon(
+                                    CupertinoIcons.tag,
+                                    size: 16,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      tag,
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
                                   CupertinoButton(
                                     padding: EdgeInsets.zero,
-                                    child: const Icon(
-                                      CupertinoIcons.xmark,
-                                      size: 16,
-                                      color: CupertinoColors.destructiveRed,
+                                    minSize: 0,
+                                    child: Icon(
+                                      CupertinoIcons.xmark_circle_fill,
+                                      size: 20,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
                                     ),
                                     onPressed: () {
                                       setModalState(() {
-                                        tempTags.removeAt(index);
+                                        tempTags.remove(tag);
                                       });
                                     },
                                   ),
@@ -426,6 +480,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasImage = widget.item['thumbnailUrl'] != null;
+    final actionBackground = hasImage
+        ? Colors.black.withValues(alpha: 0.45)
+        : theme.colorScheme.surfaceContainerHighest;
+    final actionForeground =
+        hasImage ? Colors.white : theme.colorScheme.onSurface;
 
     return Scaffold(
       body: CustomScrollView(
@@ -433,24 +492,55 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           SliverAppBar.large(
             expandedHeight: hasImage ? 300 : null,
             pinned: true,
+            backgroundColor: theme.colorScheme.surface,
+            surfaceTintColor: Colors.transparent,
+            iconTheme: IconThemeData(color: actionForeground),
+            actionsIconTheme: IconThemeData(color: actionForeground),
             flexibleSpace: hasImage
                 ? FlexibleSpaceBar(
-                    background: Image.network(
-                      widget.item['thumbnailUrl'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                      ),
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          widget.item['thumbnailUrl'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                          ),
+                        ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.7),
+                                Colors.black.withValues(alpha: 0.25),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.4, 0.7],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   )
                 : null,
             actions: [
               IconButton(
                 onPressed: () {},
+                style: IconButton.styleFrom(
+                  backgroundColor: actionBackground,
+                  foregroundColor: actionForeground,
+                ),
                 icon: const Icon(CupertinoIcons.heart),
               ),
               IconButton(
                 onPressed: () {},
+                style: IconButton.styleFrom(
+                  backgroundColor: actionBackground,
+                  foregroundColor: actionForeground,
+                ),
                 icon: const Icon(CupertinoIcons.share),
               ),
               if (_isDeleting)
@@ -461,6 +551,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               else
                 IconButton(
                   onPressed: _deleteItem,
+                  style: IconButton.styleFrom(
+                    backgroundColor: actionBackground,
+                    foregroundColor: actionForeground,
+                  ),
                   icon: const Icon(CupertinoIcons.trash),
                 ),
             ],
@@ -588,7 +682,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     foregroundColor: theme.colorScheme.onPrimary,
                   ),
                 ),
-                const SizedBox(height: 100), // Bottom padding
+                const SizedBox(height: 100),
               ]),
             ),
           ),
@@ -643,7 +737,7 @@ class _MetaRow extends StatelessWidget {
                 color: isLink
                     ? AppTheme.accent
                     : Theme.of(context).colorScheme.onSurface,
-                decoration: isLink ? TextDecoration.underline : null,
+                decoration: null,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
