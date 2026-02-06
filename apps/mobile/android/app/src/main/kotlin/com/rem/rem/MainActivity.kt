@@ -1,4 +1,4 @@
-package dev.rem.rem
+package com.rem.rem
 
 import io.flutter.embedding.android.FlutterActivity
 
