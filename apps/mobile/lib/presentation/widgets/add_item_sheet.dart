@@ -420,30 +420,39 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  CupertinoIcons.checkmark_circle_fill,
-                  color: const Color(0xFF34C759),
-                  size: 20,
+            content: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF34C759).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  'Saved to vault',
-                  style: TextStyle(
-                    color: const Color(0xFF34C759),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      CupertinoIcons.checkmark_circle_fill,
+                      color: const Color(0xFF34C759),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Saved to vault',
+                      style: TextStyle(
+                        color: const Color(0xFF34C759),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
             backgroundColor: Colors.transparent,
             elevation: 0,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 2),
-            margin: const EdgeInsets.only(bottom: 24),
+            margin: const EdgeInsets.only(bottom: 40),
           ),
         );
       }

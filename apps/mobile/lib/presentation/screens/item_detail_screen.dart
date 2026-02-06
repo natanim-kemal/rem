@@ -302,11 +302,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                         onPressed: () => Navigator.pop(context),
                         child: const Text('Cancel'),
                       ),
-                      const Text(
+                      Text(
                         'Edit Tags',
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          decoration: TextDecoration.none,
                         ),
                       ),
                       CupertinoButton(
@@ -386,13 +388,52 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 Expanded(
                   child: tempTags.isEmpty
                       ? Center(
-                          child: Text(
-                            'No tags yet',
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Icon(
+                                  CupertinoIcons.tag,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'No tags yet',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                      decoration: TextDecoration.none,
+                                    ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Add a few to organize this item',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                      decoration: TextDecoration.none,
+                                    ),
+                              ),
+                            ],
                           ),
                         )
                       : ListView.builder(
@@ -420,9 +461,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                 ).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.outline.withOpacity(0.3),
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outline
+                                      .withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Row(
@@ -445,11 +487,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   CupertinoButton(
                                     padding: EdgeInsets.zero,
-                                    minSize: 0,
+                                    minimumSize: Size.zero,
                                     child: Icon(
                                       CupertinoIcons.xmark_circle_fill,
                                       size: 20,
@@ -562,16 +606,17 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Row(
                   children: [
                     Text(
                       (widget.item['type'] as String? ?? '').toUpperCase(),
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: theme.textTheme.labelMedium?.copyWith(
                         color: theme.colorScheme.primary,
-                        letterSpacing: 1.2,
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -579,38 +624,38 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       onTap: _showEditPrioritySheet,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: _getPriorityColor(
                             _priority,
                           ).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 6,
-                              height: 6,
+                              width: 8,
+                              height: 8,
                               decoration: BoxDecoration(
                                 color: _getPriorityColor(_priority),
                                 shape: BoxShape.circle,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 6),
                             Text(
                               _priority.toUpperCase(),
-                              style: theme.textTheme.labelSmall?.copyWith(
+                              style: theme.textTheme.labelMedium?.copyWith(
                                 color: _getPriorityColor(_priority),
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 6),
                             Icon(
                               CupertinoIcons.chevron_down,
-                              size: 10,
+                              size: 12,
                               color: _getPriorityColor(_priority),
                             ),
                           ],
@@ -619,54 +664,56 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   widget.item['title'] ?? 'No Title',
-                  style: theme.textTheme.headlineMedium,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 _MetaRow(
                   icon: CupertinoIcons.link,
                   text: widget.item['url'] ?? '',
                   onTap: () => _launchUrl(context),
                   isLink: true,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 _MetaRow(
                   icon: CupertinoIcons.calendar,
                   text:
                       'Added ${widget.item['createdAt'] != null ? _formatDate(widget.item['createdAt'] as int) : ''}',
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 if (widget.item['estimatedReadTime'] != null)
                   _MetaRow(
                     icon: CupertinoIcons.time,
                     text: '${widget.item['estimatedReadTime']} min read',
                   ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 GestureDetector(
                   onTap: _showEditTagsSheet,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 8,
+                      vertical: 12,
                     ),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           CupertinoIcons.tag,
-                          size: 16,
+                          size: 18,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 12),
                         Expanded(child: _buildTagsPreview()),
                         Icon(
                           CupertinoIcons.chevron_right,
-                          size: 16,
+                          size: 18,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ],
@@ -676,8 +723,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 const SizedBox(height: 32),
                 FilledButton.icon(
                   onPressed: () => _launchUrl(context),
-                  icon: const Icon(CupertinoIcons.compass),
-                  label: const Text('Open Original'),
+                  icon: const Icon(CupertinoIcons.compass, size: 20),
+                  label: const Text('Open Original', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: theme.colorScheme.primary,
