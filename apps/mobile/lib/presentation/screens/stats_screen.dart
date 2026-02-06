@@ -420,7 +420,7 @@ class _MetricCard extends StatelessWidget {
         border: Border.all(color: context.divider.withValues(alpha: 0.5)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 36,
@@ -432,10 +432,15 @@ class _MetricCard extends StatelessWidget {
             child: Icon(icon, size: 18, color: tone),
           ),
           const SizedBox(height: 12),
-          Text(value, style: Theme.of(context).textTheme.displaySmall),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
           const SizedBox(height: 4),
           Text(
             label,
+            textAlign: TextAlign.center,
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: context.textSecondary),
