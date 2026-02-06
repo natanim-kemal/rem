@@ -298,7 +298,95 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
-  // Pending notification methods
+  Future<List<Item>> getItemsPaginated(
+    String userId, {
+    String? status,
+    String? type,
+    String? searchQuery,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    List<String>? searchItemIds;
+
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final results = await customSelect(
+        'SELECT item_id FROM items_fts WHERE items_fts MATCH ? ORDER BY rank',
+        variables: [Variable(searchQuery)],
+      ).get();
+      searchItemIds = results.map((r) => r.read<String>('item_id')).toList();
+
+      if (searchItemIds.isEmpty) return [];
+    }
+
+    var query = select(items)..where((i) => i.userId.equals(userId));
+
+    if (status != null) {
+      query = query..where((i) => i.status.equals(status));
+    }
+    if (type != null) {
+      query = query..where((i) => i.type.equals(type));
+    }
+    if (searchItemIds != null && searchItemIds.isNotEmpty) {
+      final ids = searchItemIds!;
+      query = query..where((i) => i.id.isIn(ids));
+    }
+
+    return (query
+          ..orderBy([(i) => OrderingTerm.desc(i.createdAt)])
+          ..limit(limit, offset: offset))
+        .get();
+  }
+
+  Future<int> getItemsCount(
+    String userId, {
+    String? status,
+    String? type,
+    String? searchQuery,
+  }) async {
+    List<String>? searchItemIds;
+
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final results = await customSelect(
+        'SELECT item_id FROM items_fts WHERE items_fts MATCH ?',
+        variables: [Variable(searchQuery)],
+      ).get();
+      searchItemIds = results.map((r) => r.read<String>('item_id')).toList();
+
+      if (searchItemIds.isEmpty) return 0;
+    }
+
+    var query = select(items)..where((i) => i.userId.equals(userId));
+
+    if (status != null) {
+      query = query..where((i) => i.status.equals(status));
+    }
+    if (type != null) {
+      query = query..where((i) => i.type.equals(type));
+    }
+    if (searchItemIds != null && searchItemIds.isNotEmpty) {
+      final ids = searchItemIds!;
+      query = query..where((i) => i.id.isIn(ids));
+    }
+
+    final countExpr = countAll();
+    final countQuery = selectOnly(items)..addColumns([countExpr]);
+    countQuery.where(items.userId.equals(userId));
+
+    if (status != null) {
+      countQuery.where(items.status.equals(status));
+    }
+    if (type != null) {
+      countQuery.where(items.type.equals(type));
+    }
+    if (searchItemIds != null && searchItemIds.isNotEmpty) {
+      final ids = searchItemIds!;
+      countQuery.where(items.id.isIn(ids));
+    }
+
+    final result = await countQuery.getSingle();
+    return result.read(countExpr) ?? 0;
+  }
+
   Future<int> addPendingNotification({
     required String userId,
     String? itemId,
