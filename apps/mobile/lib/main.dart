@@ -4,6 +4,7 @@ import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'presentation/screens/shell_screen.dart';
+import 'presentation/screens/auth_screen.dart';
 import 'presentation/theme/app_theme.dart';
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
@@ -55,7 +56,7 @@ class _AuthStateSync extends ConsumerWidget {
             ref.read(authProvider.notifier).signOut();
           }
         });
-        return const ShellScreen();
+        return const AuthScreen();
       },
     );
   }
