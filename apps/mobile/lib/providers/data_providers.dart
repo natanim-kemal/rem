@@ -147,34 +147,39 @@ class PaginatedItemsResult {
   });
 }
 
-final paginatedItemsProvider = FutureProvider.family<PaginatedItemsResult, PaginatedItemsParams>((
-  ref,
-  params,
-) async {
-  final db = ref.watch(databaseProvider);
+final paginatedItemsProvider =
+    FutureProvider.family<PaginatedItemsResult, PaginatedItemsParams>((
+      ref,
+      params,
+    ) async {
+      final db = ref.watch(databaseProvider);
 
-  final offset = params.page * params.pageSize;
+      final offset = params.page * params.pageSize;
 
-  final items = await db.getItemsPaginated(
-    params.userId,
-    status: params.status,
-    type: params.type,
-    searchQuery: params.searchQuery?.isNotEmpty == true ? params.searchQuery : null,
-    limit: params.pageSize,
-    offset: offset,
-  );
+      final items = await db.getItemsPaginated(
+        params.userId,
+        status: params.status,
+        type: params.type,
+        searchQuery: params.searchQuery?.isNotEmpty == true
+            ? params.searchQuery
+            : null,
+        limit: params.pageSize,
+        offset: offset,
+      );
 
-  final totalCount = await db.getItemsCount(
-    params.userId,
-    status: params.status,
-    type: params.type,
-    searchQuery: params.searchQuery?.isNotEmpty == true ? params.searchQuery : null,
-  );
+      final totalCount = await db.getItemsCount(
+        params.userId,
+        status: params.status,
+        type: params.type,
+        searchQuery: params.searchQuery?.isNotEmpty == true
+            ? params.searchQuery
+            : null,
+      );
 
-  return PaginatedItemsResult(
-    items: items,
-    totalCount: totalCount,
-    hasMore: offset + items.length < totalCount,
-    page: params.page,
-  );
-});
+      return PaginatedItemsResult(
+        items: items,
+        totalCount: totalCount,
+        hasMore: offset + items.length < totalCount,
+        page: params.page,
+      );
+    });

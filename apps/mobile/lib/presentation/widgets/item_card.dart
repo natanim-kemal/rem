@@ -153,7 +153,7 @@ class ItemCard extends StatelessWidget {
                           ),
                         ),
                       )
-                      : const SizedBox.shrink(),
+                    : const SizedBox.shrink(),
               ),
             ] else ...[
               const SizedBox(width: 10),

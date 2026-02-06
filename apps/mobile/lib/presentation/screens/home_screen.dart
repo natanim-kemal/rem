@@ -150,7 +150,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _allItems.addAll(result.items);
       } else {
         final existingIds = _allItems.map((i) => i.id).toSet();
-        final newItems = result.items.where((item) => !existingIds.contains(item.id));
+        final newItems = result.items.where(
+          (item) => !existingIds.contains(item.id),
+        );
         _allItems.addAll(newItems);
       }
       _hasMore = result.hasMore;
@@ -200,7 +202,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
     final result = paginatedAsync.value;
     if (result != null) {
-      final key = '$_selectedFilter|$_searchQuery|${result.page}|$_refreshToken';
+      final key =
+          '$_selectedFilter|$_searchQuery|${result.page}|$_refreshToken';
       if (_lastHandledKey != key) {
         _lastHandledKey = key;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -282,8 +285,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             else if (_allItems.isEmpty)
               SliverFillRemaining(
                 child: _EmptyState(
-                  hasSearchOrFilter: _searchQuery.isNotEmpty || _selectedFilter != 'All',
-                  error: paginatedAsync.hasError ? paginatedAsync.error.toString() : null,
+                  hasSearchOrFilter:
+                      _searchQuery.isNotEmpty || _selectedFilter != 'All',
+                  error: paginatedAsync.hasError
+                      ? paginatedAsync.error.toString()
+                      : null,
                 ),
               )
             else
@@ -296,9 +302,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         if (_hasMore && isLoading) {
                           return const Padding(
                             padding: EdgeInsets.all(16.0),
-                            child: Center(
-                              child: CupertinoActivityIndicator(),
-                            ),
+                            child: Center(child: CupertinoActivityIndicator()),
                           );
                         }
                         return const SizedBox.shrink();
@@ -339,7 +343,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         },
                       );
                     },
-                    childCount: _allItems.length + (_hasMore && isLoading ? 1 : 0),
+                    childCount:
+                        _allItems.length + (_hasMore && isLoading ? 1 : 0),
                   ),
                 ),
               ),
@@ -367,14 +372,18 @@ class _EmptyState extends StatelessWidget {
             Icon(CupertinoIcons.tray, size: 64, color: context.textTertiary),
             const SizedBox(height: 16),
             Text(
-              hasSearchOrFilter ? 'No items match your filters' : 'Your vault is empty',
+              hasSearchOrFilter
+                  ? 'No items match your filters'
+                  : 'Your vault is empty',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             if (error != null) ...[
               const SizedBox(height: 8),
               Text(
                 error!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.textSecondary),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: context.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
