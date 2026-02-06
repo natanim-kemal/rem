@@ -27,10 +27,11 @@ class ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isXSource = _isXSource(url);
     final hasNetworkThumbnail =
         thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
-    final hasAssetThumbnail = !hasNetworkThumbnail && _isXSource(url);
-    final hasThumbnail = hasNetworkThumbnail || hasAssetThumbnail;
+    final hasAssetThumbnail = isXSource;
+    final hasThumbnail = hasAssetThumbnail || hasNetworkThumbnail;
 
     return InkWell(
       onTap: onTap,
@@ -124,7 +125,14 @@ class ItemCard extends StatelessWidget {
               const SizedBox(width: 14),
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: hasNetworkThumbnail
+                child: hasAssetThumbnail
+                    ? Image.asset(
+                        'assets/images/x-img.png',
+                        width: 82,
+                        height: 82,
+                        fit: BoxFit.cover,
+                      )
+                    : hasNetworkThumbnail
                     ? CachedNetworkImage(
                         imageUrl: thumbnailUrl!,
                         width: 82,
@@ -145,12 +153,7 @@ class ItemCard extends StatelessWidget {
                           ),
                         ),
                       )
-                    : Image.asset(
-                        'assets/images/x-img.png',
-                        width: 82,
-                        height: 82,
-                        fit: BoxFit.cover,
-                      ),
+                      : const SizedBox.shrink(),
               ),
             ] else ...[
               const SizedBox(width: 10),
