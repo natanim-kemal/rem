@@ -35,7 +35,6 @@ jobs:
 
           class DefaultFirebaseOptions {
             static FirebaseOptions get currentPlatform {
-              // Return stub options for CI
               return const FirebaseOptions(
                 apiKey: 'ci-api-key',
                 appId: 'ci-app-id',
