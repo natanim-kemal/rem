@@ -27,7 +27,7 @@ class ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasNetworkThumbnail = thumbnailUrl != null;
+    final hasNetworkThumbnail = thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
     final hasAssetThumbnail = !hasNetworkThumbnail && _isXSource(url);
     final hasThumbnail = hasNetworkThumbnail || hasAssetThumbnail;
 
@@ -146,6 +146,7 @@ class ItemCard extends StatelessWidget {
                       )
                     : Image.asset(
                         'assets/images/x-img.png',
+                        package: 'rem',
                         width: 82,
                         height: 82,
                         fit: BoxFit.cover,

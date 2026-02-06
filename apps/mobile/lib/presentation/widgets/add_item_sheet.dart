@@ -44,7 +44,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
     super.initState();
     if (widget.initialUrl != null) {
       _urlController.text = widget.initialUrl!;
-      _selectedType = 'link';
+      _selectedType = _isYouTubeUrl(widget.initialUrl!) ? 'video' : 'link';
       _fetchMetadata();
     }
     if (widget.initialTitle != null) {
@@ -69,6 +69,11 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
       if (metadata.image != null && metadata.image!.isNotEmpty) {
         setState(() {
           _thumbnailUrl = metadata.image;
+        });
+      }
+      if (_selectedType == 'link' && _isYouTubeUrl(url)) {
+        setState(() {
+          _selectedType = 'video';
         });
       }
     }
@@ -398,6 +403,8 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
     }
 
     final syncEngine = ref.read(syncEngineProvider);
+    final resolvedType =
+        _selectedType == 'link' && _isYouTubeUrl(url) ? 'video' : _selectedType;
 
     try {
       String? localImagePath;
@@ -407,7 +414,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
 
       await syncEngine.createItem(
         userId: authState.userId!,
-        type: _selectedType,
+        type: resolvedType,
         title: title.isNotEmpty ? title : (url.isNotEmpty ? url : 'Image'),
         url: url.isNotEmpty ? url : null,
         description: null,
@@ -484,6 +491,20 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
         );
       }
     }
+  }
+
+  bool _isYouTubeUrl(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return false;
+    var uri = Uri.tryParse(trimmed);
+    if (uri == null || uri.host.isEmpty) {
+      uri = Uri.tryParse('https://$trimmed');
+    }
+    final host = uri?.host.toLowerCase() ?? '';
+    return host == 'youtube.com' ||
+        host.endsWith('.youtube.com') ||
+        host == 'youtu.be' ||
+        host.endsWith('.youtu.be');
   }
 }
 
