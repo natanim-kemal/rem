@@ -60,7 +60,6 @@ class SyncEngine {
         return;
       }
 
-      // Ensure user exists in Convex before syncing
       try {
         await _convex.mutation('users:getOrCreateUser', {});
       } catch (e) {
@@ -115,7 +114,6 @@ class SyncEngine {
     SyncQueueData syncItem,
     Map<String, dynamic> payload,
   ) async {
-    // Remove null values from payload - Convex optional fields must be omitted, not null
     final cleanPayload = Map<String, dynamic>.fromEntries(
       payload.entries.where((e) => e.value != null),
     );
@@ -162,7 +160,6 @@ class SyncEngine {
     SyncQueueData syncItem,
     Map<String, dynamic> payload,
   ) async {
-    // Tags are synced as part of items, skipping separate tag sync
     debugPrint('Tag sync skipped - tags are synced via items');
     await _db.removeSyncItem(syncItem.id);
   }

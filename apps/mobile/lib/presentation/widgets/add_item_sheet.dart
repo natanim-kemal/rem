@@ -308,6 +308,10 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
                     controller: _tagController,
                     focusNode: _tagFocusNode,
                     textInputAction: TextInputAction.done,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    spellCheckConfiguration:
+                        const SpellCheckConfiguration.disabled(),
                     onSubmitted: (_) => _addTag(),
                     decoration: const InputDecoration(
                       hintText: 'Add a tag...',
@@ -425,6 +429,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
       );
 
       if (mounted) {
+        ref.read(homeRefreshProvider.notifier).bump();
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

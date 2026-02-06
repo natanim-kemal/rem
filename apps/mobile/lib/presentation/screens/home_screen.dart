@@ -22,30 +22,91 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _selectedFilter = 'All';
   String _searchQuery = '';
+  int _currentPage = 0;
+  final List<Item> _allItems = [];
+  bool _isLoading = false;
+  bool _hasMore = true;
+  String? _lastHandledKey;
+  int _refreshToken = 0;
+  int _lastItemCount = 0;
 
-  List<Item> _filterItems(List<Item> items) {
-    return items.where((item) {
-      if (_selectedFilter != 'All') {
-        if (_selectedFilter == 'Unread' && item.status == 'read') {
-          return false;
-        } else if (_selectedFilter != 'Unread' &&
-            item.type.toLowerCase() != _selectedFilter.toLowerCase()) {
-          return false;
-        }
-      }
+  final ScrollController _scrollController = ScrollController();
 
-      if (_searchQuery.isNotEmpty) {
-        final query = _searchQuery.toLowerCase();
-        final titleMatch = item.title.toLowerCase().contains(query);
-        final urlMatch = item.url?.toLowerCase().contains(query) ?? false;
-        final tagsMatch = item.tags.toLowerCase().contains(query);
-        if (!titleMatch && !urlMatch && !tagsMatch) {
-          return false;
-        }
-      }
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
 
-      return true;
-    }).toList();
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_hasMore || _isLoading) return;
+    if (_allItems.isEmpty) return;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    const threshold = 200.0;
+
+    if (maxScroll - currentScroll <= threshold) {
+      _loadMore();
+    }
+  }
+
+  void _loadMore() {
+    if (!_hasMore || _isLoading) return;
+    setState(() {
+      _currentPage++;
+      _isLoading = true;
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() {
+      _searchQuery = value;
+      _currentPage = 0;
+      _allItems.clear();
+      _hasMore = true;
+      _isLoading = true;
+      _lastHandledKey = null;
+    });
+  }
+
+  void _onFilterChanged(String filter) {
+    setState(() {
+      _selectedFilter = filter;
+      _currentPage = 0;
+      _allItems.clear();
+      _hasMore = true;
+      _isLoading = true;
+      _lastHandledKey = null;
+    });
+  }
+
+  String? _getStatusFilter() {
+    if (_selectedFilter == 'Unread') return 'unread';
+    return null;
+  }
+
+  String? _getTypeFilter() {
+    switch (_selectedFilter) {
+      case 'Links':
+        return 'link';
+      case 'Images':
+        return 'image';
+      case 'Videos':
+        return 'video';
+      case 'Books':
+        return 'book';
+      case 'Notes':
+        return 'note';
+      default:
+        return null;
+    }
   }
 
   String _formatDate(int timestamp) {
@@ -79,29 +140,99 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .toList();
   }
 
+  void _handlePaginationResult(PaginatedItemsResult result) {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+      if (_currentPage == 0) {
+        _allItems.clear();
+        _allItems.addAll(result.items);
+      } else {
+        final existingIds = _allItems.map((i) => i.id).toSet();
+        final newItems = result.items.where((item) => !existingIds.contains(item.id));
+        _allItems.addAll(newItems);
+      }
+      _hasMore = result.hasMore;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final userId = authState.userId;
+    final manualRefreshToken = ref.watch(homeRefreshProvider);
 
     if (userId == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final itemsAsync = ref.watch(itemsStreamProvider(userId));
+    final params = PaginatedItemsParams(
+      userId: userId,
+      status: _getStatusFilter(),
+      type: _getTypeFilter(),
+      searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+      page: _currentPage,
+      pageSize: 20,
+      refreshToken: _refreshToken + manualRefreshToken,
+    );
+
+    final paginatedAsync = ref.watch(paginatedItemsProvider(params));
+    ref.listen<AsyncValue<int>>(itemsCountStreamProvider(userId), (
+      previous,
+      next,
+    ) {
+      if (!mounted) return;
+      final nextValue = next.value;
+      if (nextValue == null) return;
+      final prevValue = previous?.value ?? _lastItemCount;
+      _lastItemCount = nextValue;
+      if (nextValue > prevValue) {
+        setState(() {
+          _currentPage = 0;
+          _allItems.clear();
+          _hasMore = true;
+          _isLoading = true;
+          _lastHandledKey = null;
+          _refreshToken++;
+        });
+      }
+    });
+    final result = paginatedAsync.value;
+    if (result != null) {
+      final key = '$_selectedFilter|$_searchQuery|${result.page}|$_refreshToken';
+      if (_lastHandledKey != key) {
+        _lastHandledKey = key;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _handlePaginationResult(result);
+        });
+      }
+    }
+    final isLoading = _isLoading || paginatedAsync.isLoading;
 
     return Scaffold(
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
+          controller: _scrollController,
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
           ),
           slivers: [
             CupertinoSliverRefreshControl(
               onRefresh: () async {
+                setState(() {
+                  _currentPage = 0;
+                  _allItems.clear();
+                  _hasMore = true;
+                  _isLoading = true;
+                  _lastHandledKey = null;
+                  _refreshToken++;
+                });
                 final syncEngine = ref.read(syncEngineProvider);
                 await syncEngine.syncNow();
+                ref.invalidate(paginatedItemsProvider);
               },
             ),
             SliverToBoxAdapter(
@@ -124,9 +255,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                 child: custom.SearchBar(
                   hintText: 'Search your vault...',
-                  onChanged: (value) {
-                    setState(() => _searchQuery = value);
-                  },
+                  onChanged: _onSearchChanged,
                   onFilterTap: () {},
                 ),
               ),
@@ -142,27 +271,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   'Books',
                 ],
                 selected: _selectedFilter,
-                onSelected: (filter) {
-                  setState(() => _selectedFilter = filter);
-                },
+                onSelected: _onFilterChanged,
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
-            itemsAsync.when(
-              data: (items) {
-                final filteredItems = _filterItems(items);
+            if (_allItems.isEmpty && isLoading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_allItems.isEmpty)
+              SliverFillRemaining(
+                child: _EmptyState(
+                  hasSearchOrFilter: _searchQuery.isNotEmpty || _selectedFilter != 'All',
+                  error: paginatedAsync.hasError ? paginatedAsync.error.toString() : null,
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (index >= _allItems.length) {
+                        if (_hasMore && isLoading) {
+                          return const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Center(
+                              child: CupertinoActivityIndicator(),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }
 
-                if (filteredItems.isEmpty) {
-                  return SliverFillRemaining(
-                    child: _EmptyState(hasItems: items.isNotEmpty),
-                  );
-                }
-
-                return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final item = filteredItems[index];
+                      final item = _allItems[index];
                       return ItemCard(
                         title: item.title,
                         url: item.url ?? 'No URL',
@@ -196,43 +338,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           );
                         },
                       );
-                    }, childCount: filteredItems.length),
-                  ),
-                );
-              },
-              loading: () => const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (error, stack) => SliverFillRemaining(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          CupertinoIcons.exclamationmark_triangle,
-                          size: 64,
-                          color: context.textTertiary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading items',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          error.toString(),
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: context.textSecondary),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                    },
+                    childCount: _allItems.length + (_hasMore && isLoading ? 1 : 0),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -241,9 +351,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _EmptyState extends StatelessWidget {
-  final bool hasItems;
+  final bool hasSearchOrFilter;
+  final String? error;
 
-  const _EmptyState({this.hasItems = false});
+  const _EmptyState({this.hasSearchOrFilter = false, this.error});
 
   @override
   Widget build(BuildContext context) {
@@ -256,12 +367,20 @@ class _EmptyState extends StatelessWidget {
             Icon(CupertinoIcons.tray, size: 64, color: context.textTertiary),
             const SizedBox(height: 16),
             Text(
-              hasItems ? 'No items match your filters' : 'Your vault is empty',
+              hasSearchOrFilter ? 'No items match your filters' : 'Your vault is empty',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
+            if (error != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                error!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
             const SizedBox(height: 8),
             Text(
-              hasItems
+              hasSearchOrFilter
                   ? 'Try adjusting your search or filters'
                   : 'Tap the + button to save your first item',
               style: Theme.of(

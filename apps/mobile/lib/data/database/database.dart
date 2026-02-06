@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'database.g.dart';
 
@@ -90,8 +91,7 @@ class PendingNotifications extends Table {
   TextColumn get itemId => text().nullable()();
   TextColumn get title => text()();
   TextColumn get body => text()();
-  TextColumn get type =>
-      text()(); // 'reminder', 'digest', 'streak', 'celebration'
+  TextColumn get type => text()();
   IntColumn get scheduledAt => integer()();
   IntColumn get createdAt => integer()();
 }
@@ -103,14 +103,15 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (Migrator m) async {
       await m.createAll();
+      await customStatement('DROP TABLE IF EXISTS items_fts');
       await customStatement('''
-        CREATE VIRTUAL TABLE IF NOT EXISTS items_fts USING fts5(
+        CREATE VIRTUAL TABLE items_fts USING fts5(
           item_id UNINDEXED,
           title,
           description,
@@ -118,11 +119,34 @@ class AppDatabase extends _$AppDatabase {
           tokenize='porter'
         );
       ''');
+      await customStatement('''
+        INSERT INTO items_fts(item_id, title, description, url)
+        SELECT id, title, coalesce(description, ''), coalesce(url, '') FROM items;
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS items_ai AFTER INSERT ON items BEGIN
+          INSERT INTO items_fts(item_id, title, description, url)
+          VALUES (new.id, new.title, coalesce(new.description, ''), coalesce(new.url, ''));
+        END;
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS items_au AFTER UPDATE ON items BEGIN
+          DELETE FROM items_fts WHERE item_id = old.id;
+          INSERT INTO items_fts(item_id, title, description, url)
+          VALUES (new.id, new.title, coalesce(new.description, ''), coalesce(new.url, ''));
+        END;
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS items_ad AFTER DELETE ON items BEGIN
+          DELETE FROM items_fts WHERE item_id = old.id;
+        END;
+      ''');
     },
     onUpgrade: (Migrator m, int from, int to) async {
       if (from < 2) {
+        await customStatement('DROP TABLE IF EXISTS items_fts');
         await customStatement('''
-          CREATE VIRTUAL TABLE IF NOT EXISTS items_fts USING fts5(
+          CREATE VIRTUAL TABLE items_fts USING fts5(
             item_id UNINDEXED,
             title,
             description,
@@ -134,11 +158,47 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         await m.createTable(pendingNotifications);
       }
+      if (from < 4) {
+        await customStatement('DROP TABLE IF EXISTS items_fts');
+        await customStatement('''
+          CREATE VIRTUAL TABLE items_fts USING fts5(
+            item_id UNINDEXED,
+            title,
+            description,
+            url,
+            tokenize='porter'
+          );
+        ''');
+        await customStatement('''
+          INSERT INTO items_fts(item_id, title, description, url)
+          SELECT id, title, coalesce(description, ''), coalesce(url, '') FROM items;
+        ''');
+        await customStatement('''
+          CREATE TRIGGER IF NOT EXISTS items_ai AFTER INSERT ON items BEGIN
+            INSERT INTO items_fts(item_id, title, description, url)
+            VALUES (new.id, new.title, coalesce(new.description, ''), coalesce(new.url, ''));
+          END;
+        ''');
+        await customStatement('''
+          CREATE TRIGGER IF NOT EXISTS items_au AFTER UPDATE ON items BEGIN
+            DELETE FROM items_fts WHERE item_id = old.id;
+            INSERT INTO items_fts(item_id, title, description, url)
+            VALUES (new.id, new.title, coalesce(new.description, ''), coalesce(new.url, ''));
+          END;
+        ''');
+        await customStatement('''
+          CREATE TRIGGER IF NOT EXISTS items_ad AFTER DELETE ON items BEGIN
+            DELETE FROM items_fts WHERE item_id = old.id;
+          END;
+        ''');
+      }
     },
   );
 
   static AppDatabase? _instance;
   static AppDatabase get instance => _instance ??= AppDatabase();
+
+  static const _ftsReindexKey = 'fts_reindex_done_v1';
 
   Future<User?> getUserByClerkId(String clerkId) {
     return (select(
@@ -148,6 +208,27 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> upsertUser(UsersCompanion user) {
     return into(users).insertOnConflictUpdate(user);
+  }
+
+  Stream<int> watchItemsCount(String userId) {
+    final countExpr = countAll();
+    final query = selectOnly(items)..addColumns([countExpr]);
+    query.where(items.userId.equals(userId));
+    return query.watchSingle().map((row) => row.read(countExpr) ?? 0);
+  }
+
+  Future<void> ensureFtsReindexOnce() async {
+    final prefs = await SharedPreferences.getInstance();
+    final alreadyDone = prefs.getBool(_ftsReindexKey) ?? false;
+    if (alreadyDone) return;
+
+    await customStatement('DELETE FROM items_fts');
+    await customStatement('''
+      INSERT INTO items_fts(item_id, title, description, url)
+      SELECT id, title, coalesce(description, ''), coalesce(url, '') FROM items;
+    ''');
+
+    await prefs.setBool(_ftsReindexKey, true);
   }
 
   Future<List<Item>> getItemsByUserId(
@@ -327,7 +408,7 @@ class AppDatabase extends _$AppDatabase {
       query = query..where((i) => i.type.equals(type));
     }
     if (searchItemIds != null && searchItemIds.isNotEmpty) {
-      final ids = searchItemIds!;
+      final ids = searchItemIds;
       query = query..where((i) => i.id.isIn(ids));
     }
 
@@ -364,7 +445,7 @@ class AppDatabase extends _$AppDatabase {
       query = query..where((i) => i.type.equals(type));
     }
     if (searchItemIds != null && searchItemIds.isNotEmpty) {
-      final ids = searchItemIds!;
+      final ids = searchItemIds;
       query = query..where((i) => i.id.isIn(ids));
     }
 
@@ -379,7 +460,7 @@ class AppDatabase extends _$AppDatabase {
       countQuery.where(items.type.equals(type));
     }
     if (searchItemIds != null && searchItemIds.isNotEmpty) {
-      final ids = searchItemIds!;
+      final ids = searchItemIds;
       countQuery.where(items.id.isIn(ids));
     }
 
