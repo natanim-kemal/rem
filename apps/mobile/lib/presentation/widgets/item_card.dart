@@ -27,7 +27,9 @@ class ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasThumbnail = thumbnailUrl != null;
+    final hasNetworkThumbnail = thumbnailUrl != null;
+    final hasAssetThumbnail = !hasNetworkThumbnail && _isXSource(url);
+    final hasThumbnail = hasNetworkThumbnail || hasAssetThumbnail;
 
     return InkWell(
       onTap: onTap,
@@ -121,24 +123,33 @@ class ItemCard extends StatelessWidget {
               const SizedBox(width: 14),
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: CachedNetworkImage(
-                  imageUrl: thumbnailUrl!,
-                  width: 82,
-                  height: 82,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: const Center(child: CupertinoActivityIndicator()),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: Icon(
-                      _getTypeIcon(),
-                      size: 30,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
+                child: hasNetworkThumbnail
+                    ? CachedNetworkImage(
+                        imageUrl: thumbnailUrl!,
+                        width: 82,
+                        height: 82,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: const Center(
+                            child: CupertinoActivityIndicator(),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            _getTypeIcon(),
+                            size: 30,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      )
+                    : Image.asset(
+                        'assets/images/x-img.png',
+                        width: 82,
+                        height: 82,
+                        fit: BoxFit.cover,
+                      ),
               ),
             ] else ...[
               const SizedBox(width: 10),
@@ -203,5 +214,19 @@ class ItemCard extends StatelessWidget {
       default:
         return const Color(0xFFFF9500);
     }
+  }
+
+  bool _isXSource(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return false;
+    var uri = Uri.tryParse(trimmed);
+    if (uri == null || uri.host.isEmpty) {
+      uri = Uri.tryParse('https://$trimmed');
+    }
+    final host = uri?.host.toLowerCase() ?? '';
+    return host == 'x.com' ||
+        host.endsWith('.x.com') ||
+        host == 'twitter.com' ||
+        host.endsWith('.twitter.com');
   }
 }
