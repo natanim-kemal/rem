@@ -355,10 +355,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       Expanded(
                         child: CupertinoTextField(
                           controller: textController,
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          spellCheckConfiguration:
-                              const SpellCheckConfiguration.disabled(),
                           placeholder: 'Add a tag...',
                           onSubmitted: (value) {
                             final cleanValue = value.trim().toLowerCase();
