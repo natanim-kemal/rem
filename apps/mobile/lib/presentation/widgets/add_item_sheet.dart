@@ -403,8 +403,9 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
     }
 
     final syncEngine = ref.read(syncEngineProvider);
-    final resolvedType =
-        _selectedType == 'link' && _isYouTubeUrl(url) ? 'video' : _selectedType;
+    final resolvedType = _selectedType == 'link' && _isYouTubeUrl(url)
+        ? 'video'
+        : _selectedType;
 
     try {
       String? localImagePath;
