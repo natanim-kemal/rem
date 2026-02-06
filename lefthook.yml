@@ -5,6 +5,8 @@ pre-commit:
       glob: "apps/mobile/**/*.dart"
       root: "apps/mobile"
       run: dart format {staged_files}
+    no-comments-in-added:
+      run: powershell -ExecutionPolicy Bypass -File scripts/no-comments-in-added.ps1
 
 commit-msg:
   commands:
