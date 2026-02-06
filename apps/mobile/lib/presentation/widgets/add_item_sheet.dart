@@ -422,7 +422,10 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
           SnackBar(
             content: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF34C759).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),

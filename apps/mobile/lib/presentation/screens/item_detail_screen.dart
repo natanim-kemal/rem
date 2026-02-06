@@ -395,24 +395,22 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                 width: 56,
                                 height: 56,
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Icon(
                                   CupertinoIcons.tag,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               const SizedBox(height: 12),
                               Text(
                                 'No tags yet',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
+                                style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(
                                       color: Theme.of(
                                         context,
@@ -423,9 +421,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                               const SizedBox(height: 6),
                               Text(
                                 'Add a few to organize this item',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: Theme.of(
                                         context,
@@ -461,10 +457,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                 ).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outline
-                                      .withValues(alpha: 0.3),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.outline.withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Row(
@@ -724,7 +719,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 FilledButton.icon(
                   onPressed: () => _launchUrl(context),
                   icon: const Icon(CupertinoIcons.compass, size: 20),
-                  label: const Text('Open Original', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  label: const Text(
+                    'Open Original',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: theme.colorScheme.primary,
