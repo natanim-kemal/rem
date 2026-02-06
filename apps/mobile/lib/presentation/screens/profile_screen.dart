@@ -31,13 +31,7 @@ class ProfileScreen extends ConsumerWidget {
                     'profile',
                     style: Theme.of(context).textTheme.displayMedium,
                   ),
-                  Opacity(
-                    opacity: 0,
-                    child: IconButton(
-                      icon: const Icon(CupertinoIcons.bell),
-                      onPressed: () {},
-                    ),
-                  ),
+                  const SizedBox(width: 120),
                 ],
               ),
               const SizedBox(height: 16),
@@ -47,7 +41,10 @@ class ProfileScreen extends ConsumerWidget {
                     showCupertinoModalPopup(
                       context: context,
                       builder: (context) => CupertinoActionSheet(
-                        title: Text('Signed in as ${authState.displayName}'),
+                        title: Text(
+                          'Signed in as ${authState.displayName}',
+                          style: const TextStyle(fontSize: 15),
+                        ),
                         actions: [
                           CupertinoActionSheetAction(
                             isDestructiveAction: true,
@@ -55,12 +52,18 @@ class ProfileScreen extends ConsumerWidget {
                               ref.read(authProvider.notifier).signOut();
                               Navigator.pop(context);
                             },
-                            child: const Text('Sign Out'),
+                            child: const Text(
+                              'Sign Out',
+                              style: TextStyle(fontSize: 15),
+                            ),
                           ),
                         ],
                         cancelButton: CupertinoActionSheetAction(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(fontSize: 15),
+                          ),
                         ),
                       ),
                     );

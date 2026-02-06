@@ -209,7 +209,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
                     const SizedBox(
                       width: 12,
                       height: 12,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CupertinoActivityIndicator(radius: 6),
                     ),
                   ],
                 ],

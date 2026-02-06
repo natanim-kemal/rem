@@ -148,7 +148,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     showCupertinoModalPopup(
       context: context,
       builder: (context) => CupertinoActionSheet(
-        title: const Text('Change Priority'),
+        title: const Text('Change Priority', style: TextStyle(fontSize: 15)),
         actions: [
           CupertinoActionSheetAction(
             onPressed: () => _updatePriority('high'),
@@ -164,7 +164,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text('High'),
+                const Text('High', style: TextStyle(fontSize: 15)),
                 if (_priority == 'high') ...[
                   const SizedBox(width: 8),
                   const Icon(CupertinoIcons.checkmark, size: 16),
@@ -186,7 +186,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text('Medium'),
+                const Text('Medium', style: TextStyle(fontSize: 15)),
                 if (_priority == 'medium') ...[
                   const SizedBox(width: 8),
                   const Icon(CupertinoIcons.checkmark, size: 16),
@@ -208,7 +208,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text('Low'),
+                const Text('Low', style: TextStyle(fontSize: 15)),
                 if (_priority == 'low') ...[
                   const SizedBox(width: 8),
                   const Icon(CupertinoIcons.checkmark, size: 16),
@@ -220,7 +220,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         cancelButton: CupertinoActionSheetAction(
           isDefaultAction: true,
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text('Cancel', style: TextStyle(fontSize: 15)),
         ),
       ),
     );

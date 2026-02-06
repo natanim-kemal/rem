@@ -166,7 +166,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final manualRefreshToken = ref.watch(homeRefreshProvider);
 
     if (userId == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: CupertinoActivityIndicator()));
     }
 
     final params = PaginatedItemsParams(
@@ -280,7 +280,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
             if (_allItems.isEmpty && isLoading)
               const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(child: CupertinoActivityIndicator()),
               )
             else if (_allItems.isEmpty)
               SliverFillRemaining(

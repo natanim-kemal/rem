@@ -17,7 +17,7 @@ class StatsScreen extends ConsumerWidget {
     final userId = authState.userId;
 
     if (userId == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: Center(child: CupertinoActivityIndicator()));
     }
 
     final itemsAsync = ref.watch(itemsStreamProvider(userId));
@@ -27,7 +27,7 @@ class StatsScreen extends ConsumerWidget {
         bottom: false,
         child: itemsAsync.when(
           data: (items) => _StatsBody(items: items),
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: CupertinoActivityIndicator()),
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -296,17 +296,23 @@ class _HeaderRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text('stats', style: Theme.of(context).textTheme.displayMedium),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: context.surfaceElevated,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            total == 0 ? 'Get started' : 'Last 7 days',
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(color: context.textSecondary),
+        SizedBox(
+          width: 120,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: context.surfaceElevated,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                total == 0 ? 'Get started' : 'Last 7 days',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(color: context.textSecondary),
+              ),
+            ),
           ),
         ),
       ],
