@@ -143,6 +143,7 @@ export const updateItem = mutation({
         priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
         tags: v.optional(v.array(v.string())),
         status: v.optional(v.union(v.literal("unread"), v.literal("read"), v.literal("archived"))),
+        snoozedUntil: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
@@ -173,6 +174,9 @@ export const updateItem = mutation({
             if (args.status === "read") {
                 updateData.readAt = Date.now();
             }
+        }
+        if (args.snoozedUntil !== undefined) {
+            updateData.snoozedUntil = args.snoozedUntil;
         }
 
         await ctx.db.patch(args.itemId, updateData);

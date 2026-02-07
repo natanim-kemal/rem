@@ -8,6 +8,8 @@ import '../widgets/add_item_sheet.dart';
 
 import '../../core/services/share_service.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/data_providers.dart';
+import '../../data/sync/sync_engine.dart';
 
 class ShellScreen extends ConsumerStatefulWidget {
   const ShellScreen({super.key});
@@ -25,7 +27,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     super.initState();
     _shareService.initialize();
     _shareService.contentStream.listen(_handleSharedContent);
-    ref.read(notificationServiceProvider);
+    final notificationService = ref.read(notificationServiceProvider);
+    notificationService.onAction = _handleNotificationAction;
+    ref.read(syncEngineProvider);
   }
 
   @override
@@ -48,6 +52,47 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             : null,
       ),
     );
+  }
+
+  Future<void> _handleNotificationAction(String? payload) async {
+    if (payload == null || payload.isEmpty) return;
+    final data = Uri.splitQueryString(payload);
+    final itemId = data['itemId'] ?? payload;
+    final action = data['action'];
+
+    final db = ref.read(databaseProvider);
+    final syncEngine = ref.read(syncEngineProvider);
+
+    final item = await db.getItemById(itemId);
+    if (item == null && itemId.isNotEmpty) {
+      final byConvex = await db.getItemByConvexId(itemId);
+      if (byConvex != null) {
+        await _applyNotificationAction(byConvex.id, action, syncEngine);
+      }
+      return;
+    }
+
+    await _applyNotificationAction(itemId, action, syncEngine);
+  }
+
+  Future<void> _applyNotificationAction(
+    String itemId,
+    String? action,
+    SyncEngine syncEngine,
+  ) async {
+    switch (action) {
+      case 'mark_read':
+        await syncEngine.updateItemStatus(itemId, 'read');
+        break;
+      case 'snooze_30':
+        await syncEngine.snoozeItem(itemId, const Duration(minutes: 30));
+        break;
+      case 'lower_priority':
+        await syncEngine.updateItemPriority(itemId, 'low');
+        break;
+      default:
+        break;
+    }
   }
 
   final _screens = const [

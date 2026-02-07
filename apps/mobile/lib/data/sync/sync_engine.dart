@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
 import '../database/database.dart';
+import '../models/notification_preferences.dart';
 import '../../core/services/convex_client.dart';
 
 enum SyncStatus { idle, syncing, error, offline }
@@ -11,6 +12,8 @@ enum SyncStatus { idle, syncing, error, offline }
 class SyncEngine {
   final AppDatabase _db;
   final ConvexClient _convex;
+
+  ConvexClient get convex => _convex;
 
   Timer? _syncTimer;
   StreamSubscription? _connectivitySubscription;
@@ -432,6 +435,64 @@ class SyncEngine {
       operation: 'update',
       payload: jsonEncode({'convexId': item.convexId, 'tags': tags}),
     );
+
+    _triggerSync();
+  }
+
+  Future<void> snoozeItem(String itemId, Duration duration) async {
+    final item = await _db.getItemById(itemId);
+    if (item == null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final snoozedUntil = now + duration.inMilliseconds;
+
+    await _db.updateItemById(
+      itemId,
+      ItemsCompanion(
+        snoozedUntil: Value(snoozedUntil),
+        updatedAt: Value(now),
+        syncStatus: const Value('pending'),
+      ),
+    );
+
+    await _db.addToSyncQueue(
+      tableName: 'items',
+      recordId: itemId,
+      operation: 'update',
+      payload: jsonEncode({
+        'convexId': item.convexId,
+        'snoozedUntil': snoozedUntil,
+      }),
+    );
+
+    _triggerSync();
+  }
+
+  Future<void> updateNotificationPreferences(
+    String userId,
+    NotificationPreferences preferences,
+  ) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    final user = await _db.getUserByClerkId(userId);
+    if (user != null) {
+      await _db.upsertUser(
+        UsersCompanion(
+          id: Value(user.id),
+          notificationPreferences: Value(jsonEncode(preferences.toJson())),
+          updatedAt: Value(now),
+        ),
+      );
+    }
+
+    if (user != null) {
+      await _db.addToSyncQueue(
+        tableName: 'users',
+        recordId: userId,
+        operation: 'update',
+        payload: jsonEncode(preferences.toJson()),
+      );
+    }
 
     _triggerSync();
   }

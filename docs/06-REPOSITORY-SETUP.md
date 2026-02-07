@@ -152,6 +152,16 @@ export default defineSchema({
     clerkId: v.string(),
     email: v.string(),
     displayName: v.optional(v.string()),
+    notificationPreferences: v.optional(
+      v.object({
+        enabled: v.boolean(),
+        dailyDigestTime: v.string(),
+        maxPerDay: v.number(),
+        quietHoursStart: v.string(),
+        quietHoursEnd: v.string(),
+        timezoneOffsetMinutes: v.optional(v.number()),
+      })
+    ),
     createdAt: v.number(),
   }).index("by_clerk_id", ["clerkId"]),
 
@@ -164,6 +174,7 @@ export default defineSchema({
     priority: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
     tags: v.array(v.string()),
     remindCount: v.number(),
+    snoozedUntil: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

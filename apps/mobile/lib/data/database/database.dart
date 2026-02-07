@@ -252,6 +252,12 @@ class AppDatabase extends _$AppDatabase {
     return (select(items)..where((i) => i.id.equals(id))).getSingleOrNull();
   }
 
+  Future<Item?> getItemByConvexId(String convexId) {
+    return (select(items)
+          ..where((i) => i.convexId.equals(convexId)))
+        .getSingleOrNull();
+  }
+
   Future<Item?> findDuplicateItem(
     String userId,
     String? url, {

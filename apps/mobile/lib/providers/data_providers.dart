@@ -24,6 +24,25 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
   return engine;
 });
 
+final userByClerkIdProvider = FutureProvider.family<User?, String>((
+  ref,
+  clerkId,
+) async {
+  if (clerkId.isEmpty) return null;
+  final db = ref.watch(databaseProvider);
+  return db.getUserByClerkId(clerkId);
+});
+
+final notificationHistoryProvider = FutureProvider.family<List<dynamic>, int>((
+  ref,
+  limit,
+) async {
+  final convex = ref.watch(convexClientProvider);
+  return await convex.query('notifications:getNotificationHistory', {
+    'limit': limit,
+  }) as List<dynamic>;
+});
+
 class HomeRefreshNotifier extends Notifier<int> {
   @override
   int build() => 0;

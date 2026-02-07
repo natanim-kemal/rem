@@ -199,6 +199,35 @@ http.route({
 export default http;
 ```
 
+---
+
+## 5. Notification Scheduling (Server Push)
+
+### Goals
+- Deliver notifications with app closed
+- Enforce priority cadence (3/2/1 per day)
+- Respect quiet hours + per-user daily cap
+- Skip read/archived items; honor snoozes
+
+### Flow
+1. Mobile app registers FCM token via `users:registerPushToken`.
+2. Convex cron runs every 30 minutes.
+3. For each user with notifications enabled:
+   - Filter unread, not snoozed items
+   - Enforce per-item daily limit and priority cooldown
+   - Enforce user daily cap; if cap reached, create digest entry
+4. Dispatch via FCM; log to `notificationLog`.
+
+### Actionable Notification Payloads
+- `action: mark_read` -> `items:markAsRead`
+- `action: snooze_30m` -> `items:snoozeItem`
+- `action: lower_priority` -> `items:updateItem`
+
+### Data Inputs
+- `items.lastRemindedAt`, `items.remindCount`, `items.snoozedUntil`
+- `users.notificationPreferences` (quiet hours, max/day, timezone offset)
+- `notificationLog` (per-item daily limits + cooldowns)
+
 ### Flutter Convex Client
 
 ```dart

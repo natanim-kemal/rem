@@ -47,6 +47,17 @@ class NotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
   }
 
+  Future<bool> ensurePermissions() async {
+    final settings = await _messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+
+    return settings.authorizationStatus == AuthorizationStatus.authorized;
+  }
+
   Future<void> _requestPermission() async {
     NotificationSettings settings = await _messaging.requestPermission(
       alert: true,
@@ -80,8 +91,17 @@ class NotificationService {
     );
   }
 
+  void Function(String? payload)? onAction;
+
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('Notification tapped: ${response.payload}');
+    final payload = response.payload;
+    final actionId = response.actionId;
+    if (payload != null && actionId != null && actionId.isNotEmpty) {
+      onAction?.call('itemId=$payload&action=$actionId');
+    } else {
+      onAction?.call(payload);
+    }
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
@@ -108,6 +128,11 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
           showWhen: true,
+          actions: [
+            AndroidNotificationAction('mark_read', 'Mark Read'),
+            AndroidNotificationAction('snooze_30', 'Snooze 30m'),
+            AndroidNotificationAction('lower_priority', 'Lower Priority'),
+          ],
         );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
@@ -224,4 +249,9 @@ class NotificationService {
   }
 
   String? get fcmToken => _fcmToken;
+
+  Future<String?> getFreshToken() async {
+    _fcmToken = await _messaging.getToken();
+    return _fcmToken;
+  }
 }

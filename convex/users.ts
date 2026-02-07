@@ -142,7 +142,16 @@ export const registerPushToken = mutation({
             .withIndex("by_token", (q) => q.eq("token", args.token))
             .first();
 
-        if (existing) return existing._id;
+        if (existing) {
+            if (existing.userId !== user._id) {
+                await ctx.db.patch(existing._id, {
+                    userId: user._id,
+                    platform: args.platform,
+                    createdAt: Date.now(),
+                });
+            }
+            return existing._id;
+        }
 
         return await ctx.db.insert("pushTokens", {
             userId: user._id,
