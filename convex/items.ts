@@ -145,7 +145,14 @@ export const updateItem = mutation({
         description: v.optional(v.string()),
         priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
         tags: v.optional(v.array(v.string())),
-        status: v.optional(v.union(v.literal("unread"), v.literal("read"), v.literal("archived"))),
+        status: v.optional(
+            v.union(
+                v.literal("unread"),
+                v.literal("in_progress"),
+                v.literal("read"),
+                v.literal("archived")
+            )
+        ),
         isFavorite: v.optional(v.boolean()),
         snoozedUntil: v.optional(v.number()),
     },
