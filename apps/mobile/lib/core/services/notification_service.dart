@@ -120,7 +120,15 @@ class NotificationService {
     final notification = message.notification;
     if (notification == null) return;
 
-    const AndroidNotificationDetails androidDetails =
+    final actions = message.data['type'] == 'digest'
+        ? [const AndroidNotificationAction('open_unread_list', 'Open Unread')]
+        : const [
+            AndroidNotificationAction('mark_read', 'Mark Read'),
+            AndroidNotificationAction('snooze_30', 'Snooze 30m'),
+            AndroidNotificationAction('lower_priority', 'Lower Priority'),
+          ];
+
+    final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
           'rem_channel',
           'REM Notifications',
@@ -128,11 +136,7 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
           showWhen: true,
-          actions: [
-            AndroidNotificationAction('mark_read', 'Mark Read'),
-            AndroidNotificationAction('snooze_30', 'Snooze 30m'),
-            AndroidNotificationAction('lower_priority', 'Lower Priority'),
-          ],
+          actions: actions,
         );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(

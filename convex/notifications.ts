@@ -72,12 +72,20 @@ function buildCandidate(item: any): NotificationCandidate {
   };
 }
 
-function buildDigestCandidate(userId: string, count: number): NotificationCandidate {
+function buildDigestCandidate(
+  userId: string,
+  count: number,
+  titles: string[]
+): NotificationCandidate {
   const itemLabel = count === 1 ? "item" : "items";
+  const preview = titles.filter(Boolean).slice(0, 3).join(" • ");
+  const extra = count > 3 ? ` and ${count - 3} more` : "";
+  const bodyBase = `${count} unread ${itemLabel} waiting in your vault`;
+  const body = preview ? `${bodyBase}: ${preview}${extra}` : bodyBase;
   return {
     userId,
     title: "Daily digest",
-    body: `${count} unread ${itemLabel} waiting in your vault`,
+    body,
     priority: "low",
     type: "digest",
   };
@@ -235,7 +243,18 @@ export const selectNotificationCandidates = internalQuery({
 
     if (recent.length >= dailyCap) {
       if (items.length > 0 && !digestAlreadySent) {
-        return [buildDigestCandidate(args.userId, items.length)];
+        const priorityOrder = { high: 0, medium: 1, low: 2 } as const;
+        const titles = [...items]
+          .sort((a, b) => {
+            const prioDiff =
+              priorityOrder[a.priority ?? "medium"] -
+              priorityOrder[b.priority ?? "medium"];
+            if (prioDiff !== 0) return prioDiff;
+            return (a.title ?? "").localeCompare(b.title ?? "");
+          })
+          .map((item) => item.title as string)
+          .slice(0, 3);
+        return [buildDigestCandidate(args.userId, items.length, titles)];
       }
       return [];
     }
@@ -300,11 +319,16 @@ export const sendNotificationBatch = action({
     const tokenValues = tokens.map((token) => token.token);
     const now = Date.now();
     for (const candidate of args.candidates) {
-      await sendFcmNotification(tokenValues, candidate.title, candidate.body, {
+      const data: Record<string, string> = {
         itemId: candidate.itemId ?? "",
         type: candidate.type,
         priority: candidate.priority,
-      });
+      };
+      if (candidate.type === "digest") {
+        data.action = "open_unread_list";
+      }
+
+      await sendFcmNotification(tokenValues, candidate.title, candidate.body, data);
 
       await ctx.runMutation(internal.notifications.logNotification, {
         userId: args.userId,
