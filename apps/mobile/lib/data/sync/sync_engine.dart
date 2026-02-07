@@ -129,16 +129,31 @@ class SyncEngine {
         createPayload.remove('visibility');
         createPayload.remove('userId');
 
-        final result = await _convex.mutation('items:createItem', createPayload);
-        if (result != null) {
-          final convexId = result['_id'] as String?;
-          if (convexId != null) {
+        try {
+          final result = await _convex.mutation(
+            'items:createItem',
+            createPayload,
+          );
+          if (result != null) {
+            final convexId = result['_id'] as String?;
+            if (convexId != null) {
+              await _db.updateItemSyncStatus(
+                syncItem.recordId,
+                convexId: convexId,
+                syncStatus: 'synced',
+              );
+            }
+          }
+        } catch (e) {
+          final message = e.toString();
+          if (message.contains('Duplicate URL')) {
             await _db.updateItemSyncStatus(
               syncItem.recordId,
-              convexId: convexId,
               syncStatus: 'synced',
             );
+            return;
           }
+          rethrow;
         }
         break;
 
@@ -219,7 +234,7 @@ class SyncEngine {
 
   Future<void> _insertRemoteItem(Map<String, dynamic> remoteItem) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final remoteUpdatedAt = remoteItem['updatedAt'] as int? ?? now;
+    final remoteUpdatedAt = _asInt(remoteItem['updatedAt']) ?? now;
 
     await _db.insertItem(
       ItemsCompanion.insert(
@@ -231,14 +246,14 @@ class SyncEngine {
         url: Value(remoteItem['url'] as String?),
         description: Value(remoteItem['description'] as String?),
         thumbnailUrl: Value(remoteItem['thumbnailUrl'] as String?),
-        estimatedReadTime: Value(remoteItem['estimatedReadTime'] as int?),
+        estimatedReadTime: Value(_asInt(remoteItem['estimatedReadTime'])),
         priority: Value(remoteItem['priority'] as String? ?? 'medium'),
         tags: Value(jsonEncode(remoteItem['tags'] as List<dynamic>? ?? [])),
         status: Value(remoteItem['status'] as String? ?? 'unread'),
-        readAt: Value(remoteItem['readAt'] as int?),
+        readAt: Value(_asInt(remoteItem['readAt'])),
         visibility: Value(remoteItem['visibility'] as String? ?? 'private'),
         syncStatus: const Value('synced'),
-        createdAt: remoteItem['createdAt'] as int? ?? now,
+        createdAt: _asInt(remoteItem['createdAt']) ?? now,
         updatedAt: remoteUpdatedAt,
       ),
     );
@@ -249,7 +264,7 @@ class SyncEngine {
     Map<String, dynamic> remoteItem,
   ) async {
     final localUpdatedAt = localItem.updatedAt;
-    final remoteUpdatedAt = remoteItem['updatedAt'] as int? ?? 0;
+    final remoteUpdatedAt = _asInt(remoteItem['updatedAt']) ?? 0;
 
     if (remoteUpdatedAt > localUpdatedAt) {
       await _db.updateItemById(
@@ -259,17 +274,24 @@ class SyncEngine {
           url: Value(remoteItem['url'] as String?),
           description: Value(remoteItem['description'] as String?),
           thumbnailUrl: Value(remoteItem['thumbnailUrl'] as String?),
-          estimatedReadTime: Value(remoteItem['estimatedReadTime'] as int?),
+          estimatedReadTime: Value(_asInt(remoteItem['estimatedReadTime'])),
           priority: Value(remoteItem['priority'] as String? ?? 'medium'),
           tags: Value(jsonEncode(remoteItem['tags'] as List<dynamic>? ?? [])),
           status: Value(remoteItem['status'] as String? ?? 'unread'),
-          readAt: Value(remoteItem['readAt'] as int?),
+          readAt: Value(_asInt(remoteItem['readAt'])),
           visibility: Value(remoteItem['visibility'] as String? ?? 'private'),
           syncStatus: const Value('synced'),
           updatedAt: Value(remoteUpdatedAt),
+          snoozedUntil: Value(_asInt(remoteItem['snoozedUntil'])),
         ),
       );
     }
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return null;
   }
 
   Future<int> _getLastSyncTimestamp() async {
@@ -337,8 +359,6 @@ class SyncEngine {
         'priority': priority,
         'tags': tags,
         'visibility': visibility,
-        'status': 'unread',
-        'remindCount': 0,
       }),
     );
 

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -24,15 +25,20 @@ class ItemCard extends StatelessWidget {
     this.onTap,
   });
 
+  bool _isLocalFile(String path) {
+    return path.startsWith('/') || path.startsWith('file://');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isXSource = _isXSource(url);
     final isBook = type == 'book';
-    final hasNetworkThumbnail =
-        thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
+    final hasThumbnailUrl = thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
+    final isLocalThumbnail = hasThumbnailUrl && _isLocalFile(thumbnailUrl!);
+    final hasNetworkThumbnail = hasThumbnailUrl && !isLocalThumbnail;
     final hasAssetThumbnail = isXSource;
-    final hasThumbnail = hasAssetThumbnail || hasNetworkThumbnail || isBook;
+    final hasThumbnail = hasAssetThumbnail || hasNetworkThumbnail || isLocalThumbnail || isBook;
 
     return InkWell(
       onTap: onTap,
@@ -132,6 +138,23 @@ class ItemCard extends StatelessWidget {
                         width: 82,
                         height: 82,
                         fit: BoxFit.cover,
+                      )
+                    : isLocalThumbnail
+                    ? Image.file(
+                        File(thumbnailUrl!),
+                        width: 82,
+                        height: 82,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: 82,
+                          height: 82,
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            _getTypeIcon(),
+                            size: 30,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       )
                     : hasNetworkThumbnail
                     ? CachedNetworkImage(
