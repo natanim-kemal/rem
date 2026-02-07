@@ -130,8 +130,8 @@ rem/
 │   ├── schema.ts                   # Database schema
 │   ├── items.ts                    # Item functions
 │   ├── users.ts                    # User functions
-│   ├── notifications.ts            # Notification logic (planned)
-│   ├── crons.ts                    # Scheduled jobs (planned)
+│   ├── notifications.ts            # Notification logic + FCM dispatch
+│   ├── crons.ts                    # Scheduler (priority cadence + quiet hours)
 │   ├── http.ts                     # HTTP endpoints for Flutter
 │   └── _generated/                 # Auto-generated
 │
@@ -426,6 +426,7 @@ export default defineSchema({
       maxPerDay: v.number(),
       quietHoursStart: v.string(),
       quietHoursEnd: v.string(),
+      timezoneOffsetMinutes: v.optional(v.number()),
     }),
     createdAt: v.number(),
   })

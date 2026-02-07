@@ -232,9 +232,9 @@ class _SettingsSection extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: context.textSecondary,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(color: context.textSecondary),
           ),
         ),
         Container(
@@ -276,10 +276,7 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icon, size: 22),
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
+      title: Text(title, style: Theme.of(context).textTheme.bodyMedium),
       trailing:
           trailing ??
           (value != null

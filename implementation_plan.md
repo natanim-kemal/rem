@@ -75,7 +75,10 @@ rem/
 - [x] FCM integration - `firebase_messaging` + `NotificationService`
 - [x] Scheduled daily reminder - `zonedSchedule` in NotificationService
 - [x] Snooze helper - `snoozeNotification()` in NotificationService
-- [ ] Wire preferences UI to scheduling + persistence
+- [ ] Wire preferences UI to scheduling + persistence (quiet hours + timezone)
+- [ ] Priority cadence enforcement (3/2/1 per day + cooldowns)
+- [ ] Notification actions (mark read, snooze, lower priority)
+- [ ] Notification history + daily digest fallback
 
 ---
 

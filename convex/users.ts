@@ -28,6 +28,7 @@ export const getOrCreateUser = mutation({
                 maxPerDay: 3,
                 quietHoursStart: "22:00",
                 quietHoursEnd: "08:00",
+                timezoneOffsetMinutes: 0,
             },
             createdAt: now,
             updatedAt: now,
@@ -68,6 +69,7 @@ export const updateNotificationPreferences = mutation({
         maxPerDay: v.optional(v.number()),
         quietHoursStart: v.optional(v.string()),
         quietHoursEnd: v.optional(v.string()),
+        timezoneOffsetMinutes: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
@@ -87,6 +89,9 @@ export const updateNotificationPreferences = mutation({
             ...(args.maxPerDay !== undefined && { maxPerDay: args.maxPerDay }),
             ...(args.quietHoursStart && { quietHoursStart: args.quietHoursStart }),
             ...(args.quietHoursEnd && { quietHoursEnd: args.quietHoursEnd }),
+            ...(args.timezoneOffsetMinutes !== undefined && {
+                timezoneOffsetMinutes: args.timezoneOffsetMinutes,
+            }),
         };
 
         await ctx.db.patch(user._id, {

@@ -14,6 +14,7 @@ export default defineSchema({
             maxPerDay: v.number(),
             quietHoursStart: v.string(),
             quietHoursEnd: v.string(),
+            timezoneOffsetMinutes: v.optional(v.number()),
         }),
         createdAt: v.number(),
         updatedAt: v.number(),
@@ -87,7 +88,8 @@ export default defineSchema({
         dismissedAt: v.optional(v.number()),
     })
         .index("by_user", ["userId"])
-        .index("by_item", ["itemId"]),
+        .index("by_item", ["itemId"])
+        .index("by_user_sent_at", ["userId", "sentAt"]),
 
     userStats: defineTable({
         userId: v.id("users"),

@@ -223,7 +223,7 @@ export const sendTestNotification = action({
       throw new Error("Rate limit exceeded: max 10 notifications per hour");
     }
     
-    // ... send notification
+    // ... send notification (respect quiet hours + per-user daily cap)
   },
 });
 ```

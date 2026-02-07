@@ -129,6 +129,7 @@ Respect user quiet hours and OS DND
 - [ ] Escalation ladder with soft opt-out
 - [ ] Read decay for stale items (auto-reduce frequency after 30 days)
 - [ ] One-tap actions in notification (mark read, snooze, lower priority)
+- [ ] Digest fallback when daily cap is reached
 
 ### 3.4 Consumption Tracking
 

@@ -28,10 +28,11 @@ class ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isXSource = _isXSource(url);
+    final isBook = type == 'book';
     final hasNetworkThumbnail =
         thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
     final hasAssetThumbnail = isXSource;
-    final hasThumbnail = hasAssetThumbnail || hasNetworkThumbnail;
+    final hasThumbnail = hasAssetThumbnail || hasNetworkThumbnail || isBook;
 
     return InkWell(
       onTap: onTap,
@@ -151,6 +152,17 @@ class ItemCard extends StatelessWidget {
                             size: 30,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
+                        ),
+                      )
+                    : isBook
+                    ? Container(
+                        width: 82,
+                        height: 82,
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        child: Icon(
+                          CupertinoIcons.book,
+                          size: 30,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       )
                     : const SizedBox.shrink(),
