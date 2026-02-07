@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:rem/providers/data_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirmation_snackbar.dart';
@@ -19,12 +20,16 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _isDeleting = false;
 
   late String _priority;
+  late String _status;
   late List<String> _tags;
+  late bool _isFavorite;
 
   @override
   void initState() {
     super.initState();
     _priority = widget.item['priority'] as String? ?? 'medium';
+    _status = widget.item['status'] as String? ?? 'unread';
+    _isFavorite = widget.item['isFavorite'] as bool? ?? false;
     final tagsData = widget.item['tags'];
     List<String> parsedTags = [];
     if (tagsData is List) {
@@ -54,6 +59,48 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         return const Color(0xFF34C759);
       default:
         return const Color(0xFFFF9500);
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'read':
+        return const Color(0xFF34C759);
+      case 'in_progress':
+        return const Color(0xFFFF9500);
+      case 'archived':
+        return const Color(0xFF8E8E93);
+      case 'unread':
+      default:
+        return const Color(0xFF007AFF);
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status) {
+      case 'read':
+        return CupertinoIcons.checkmark_circle_fill;
+      case 'in_progress':
+        return CupertinoIcons.time;
+      case 'archived':
+        return CupertinoIcons.archivebox_fill;
+      case 'unread':
+      default:
+        return CupertinoIcons.circle;
+    }
+  }
+
+  String _getStatusLabel(String status) {
+    switch (status) {
+      case 'read':
+        return 'Read';
+      case 'in_progress':
+        return 'In Progress';
+      case 'archived':
+        return 'Archived';
+      case 'unread':
+      default:
+        return 'Unread';
     }
   }
 
@@ -129,6 +176,54 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       if (mounted) {
         setState(() => _isDeleting = false);
         showWarningSnackBar(context, 'Failed to delete item: $e');
+      }
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final itemId = widget.item['id'] as String?;
+    if (itemId == null) return;
+
+    try {
+      final syncEngine = ref.read(syncEngineProvider);
+      final newFavoriteStatus = !_isFavorite;
+      await syncEngine.updateItemFavorite(itemId, newFavoriteStatus);
+
+      if (mounted) {
+        setState(() {
+          _isFavorite = newFavoriteStatus;
+        });
+        showConfirmationSnackBar(
+          context,
+          newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showWarningSnackBar(context, 'Failed to update favorite: $e');
+      }
+    }
+  }
+
+  Future<void> _shareItem() async {
+    final url = widget.item['url'] as String?;
+    final title = widget.item['title'] as String? ?? 'Check this out';
+
+    if (url == null || url.isEmpty) {
+      if (mounted) {
+        showWarningSnackBar(context, 'No URL to share');
+      }
+      return;
+    }
+
+    try {
+      final shareText = '$title\n$url';
+      await SharePlus.instance.share(
+        ShareParams(text: shareText, subject: title),
+      );
+    } catch (e) {
+      if (mounted) {
+        showWarningSnackBar(context, 'Failed to share: $e');
       }
     }
   }
@@ -243,6 +338,78 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     } catch (e) {
       if (mounted) {
         showWarningSnackBar(context, 'Failed to update priority: $e');
+      }
+    }
+  }
+
+  void _showStatusPicker() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: const Text('Change Status', style: TextStyle(fontSize: 15)),
+        actions: [
+          _buildStatusAction('unread'),
+          _buildStatusAction('in_progress'),
+          _buildStatusAction('read'),
+          _buildStatusAction('archived'),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(fontSize: 15)),
+        ),
+      ),
+    );
+  }
+
+  CupertinoActionSheetAction _buildStatusAction(String status) {
+    final isSelected = _status == status;
+    return CupertinoActionSheetAction(
+      onPressed: () => _updateStatus(status),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(fontSize: 15),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _getStatusIcon(status),
+              size: 16,
+              color: _getStatusColor(status),
+            ),
+            const SizedBox(width: 8),
+            Text(_getStatusLabel(status)),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              const Icon(CupertinoIcons.checkmark, size: 16),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateStatus(String status) async {
+    Navigator.pop(context);
+
+    final itemId = widget.item['id'] as String?;
+    if (itemId == null) return;
+
+    try {
+      final syncEngine = ref.read(syncEngineProvider);
+      await syncEngine.updateItemStatus(itemId, status);
+
+      if (mounted) {
+        setState(() {
+          _status = status;
+        });
+        showConfirmationSnackBar(
+          context,
+          'Marked as ${_getStatusLabel(status).toLowerCase()}',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showWarningSnackBar(context, 'Failed to update status: $e');
       }
     }
   }
@@ -553,15 +720,21 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 : null,
             actions: [
               IconButton(
-                onPressed: () {},
+                onPressed: _toggleFavorite,
                 style: IconButton.styleFrom(
                   backgroundColor: actionBackground,
-                  foregroundColor: actionForeground,
+                  foregroundColor: _isFavorite
+                      ? const Color(0xFFFF3B30)
+                      : actionForeground,
                 ),
-                icon: const Icon(CupertinoIcons.heart),
+                icon: Icon(
+                  _isFavorite
+                      ? CupertinoIcons.heart_fill
+                      : CupertinoIcons.heart,
+                ),
               ),
               IconButton(
-                onPressed: () {},
+                onPressed: _shareItem,
                 style: IconButton.styleFrom(
                   backgroundColor: actionBackground,
                   foregroundColor: actionForeground,
@@ -636,6 +809,46 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                               CupertinoIcons.chevron_down,
                               size: 12,
                               color: _getPriorityColor(_priority),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: _showStatusPicker,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(
+                            _status,
+                          ).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getStatusIcon(_status),
+                              size: 14,
+                              color: _getStatusColor(_status),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _getStatusLabel(_status).toUpperCase(),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: _getStatusColor(_status),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Icon(
+                              CupertinoIcons.chevron_down,
+                              size: 12,
+                              color: _getStatusColor(_status),
                             ),
                           ],
                         ),

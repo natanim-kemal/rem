@@ -125,6 +125,7 @@ class SyncEngine {
       case 'create':
         final createPayload = Map<String, dynamic>.from(cleanPayload);
 
+        createPayload.remove('remindCount');
         createPayload.remove('status');
         createPayload.remove('visibility');
         createPayload.remove('userId');
@@ -135,7 +136,13 @@ class SyncEngine {
             createPayload,
           );
           if (result != null) {
-            final convexId = result['_id'] as String?;
+            String? convexId;
+            if (result is String) {
+              convexId = result;
+            } else if (result is Map<String, dynamic>) {
+              convexId = result['_id'] as String? ?? result['id'] as String?;
+            }
+
             if (convexId != null) {
               await _db.updateItemSyncStatus(
                 syncItem.recordId,
@@ -160,10 +167,27 @@ class SyncEngine {
       case 'update':
         final convexId = payload['convexId'];
         if (convexId != null) {
-          await _convex.mutation('items:updateItem', {
-            'itemId': convexId,
-            ...cleanPayload,
-          });
+          final updatePayload = Map<String, dynamic>.from(cleanPayload)
+            ..remove('convexId');
+          updatePayload.remove('readAt');
+          updatePayload.remove('remindCount');
+          updatePayload.remove('lastRemindedAt');
+          try {
+            await _convex.mutation('items:updateItem', {
+              'itemId': convexId,
+              ...updatePayload,
+            });
+          } catch (e) {
+            final message = e.toString();
+            if (message.contains('Object contains extra field')) {
+              await _db.updateItemSyncStatus(
+                syncItem.recordId,
+                syncStatus: 'synced',
+              );
+              return;
+            }
+            rethrow;
+          }
           await _db.updateItemSyncStatus(
             syncItem.recordId,
             syncStatus: 'synced',
@@ -201,14 +225,21 @@ class SyncEngine {
     try {
       final lastSyncAt = await _getLastSyncTimestamp();
 
-      final remoteItems =
+      var remoteItems =
           await _convex.query('items:getItemsSince', {'since': lastSyncAt})
               as List<dynamic>?;
+
+      if ((remoteItems == null || remoteItems.isEmpty) && lastSyncAt == 0) {
+        remoteItems =
+            await _convex.query('items:getItems', {'limit': 200})
+                as List<dynamic>?;
+      }
 
       if (remoteItems == null || remoteItems.isEmpty) return;
 
       for (final remoteItem in remoteItems) {
-        await _mergeRemoteItem(remoteItem as Map<String, dynamic>);
+        if (remoteItem is! Map<String, dynamic>) continue;
+        await _mergeRemoteItem(remoteItem);
       }
 
       await _setLastSyncTimestamp(DateTime.now().millisecondsSinceEpoch);
@@ -218,40 +249,72 @@ class SyncEngine {
   }
 
   Future<void> _mergeRemoteItem(Map<String, dynamic> remoteItem) async {
-    final localId = remoteItem['localId'] as String?;
-    final convexId = remoteItem['_id'] as String?;
+    final convexId = _asString(remoteItem['_id']);
+    final localId = _asString(remoteItem['localId']) ?? convexId;
+    final userId = _asString(remoteItem['userId']);
+    final type = _asString(remoteItem['type']) ?? 'link';
+    final title = _asString(remoteItem['title']) ?? 'Untitled';
 
-    if (localId == null || convexId == null) return;
+    if (localId == null || convexId == null || userId == null) {
+      return;
+    }
+
+    final existingByConvex = await _db.getItemByConvexId(convexId);
+    if (existingByConvex != null) {
+      await _resolveConflict(existingByConvex, remoteItem, title);
+      return;
+    }
 
     final localItem = await _db.getItemById(localId);
 
     if (localItem == null) {
-      await _insertRemoteItem(remoteItem);
+      await _insertRemoteItem(
+        remoteItem,
+        localId,
+        convexId,
+        userId,
+        type,
+        title,
+      );
     } else {
-      await _resolveConflict(localItem, remoteItem);
+      await _resolveConflict(localItem, remoteItem, title);
     }
   }
 
-  Future<void> _insertRemoteItem(Map<String, dynamic> remoteItem) async {
+  Future<void> _insertRemoteItem(
+    Map<String, dynamic> remoteItem,
+    String localId,
+    String convexId,
+    String userId,
+    String type,
+    String title,
+  ) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     final remoteUpdatedAt = _asInt(remoteItem['updatedAt']) ?? now;
+    final url = _asString(remoteItem['url']);
+    final description = _asString(remoteItem['description']);
+    final thumbnailUrl = _asString(remoteItem['thumbnailUrl']);
+    final priority = _asString(remoteItem['priority']) ?? 'medium';
+    final status = _asString(remoteItem['status']) ?? 'unread';
+    final visibility = _asString(remoteItem['visibility']) ?? 'private';
 
     await _db.insertItem(
       ItemsCompanion.insert(
-        id: remoteItem['localId'] as String,
-        convexId: Value(remoteItem['_id'] as String?),
-        userId: remoteItem['userId'] as String,
-        type: remoteItem['type'] as String,
-        title: remoteItem['title'] as String,
-        url: Value(remoteItem['url'] as String?),
-        description: Value(remoteItem['description'] as String?),
-        thumbnailUrl: Value(remoteItem['thumbnailUrl'] as String?),
+        id: localId,
+        convexId: Value(convexId),
+        userId: userId,
+        type: type,
+        title: title,
+        url: Value(url),
+        description: Value(description),
+        thumbnailUrl: Value(thumbnailUrl),
         estimatedReadTime: Value(_asInt(remoteItem['estimatedReadTime'])),
-        priority: Value(remoteItem['priority'] as String? ?? 'medium'),
-        tags: Value(jsonEncode(remoteItem['tags'] as List<dynamic>? ?? [])),
-        status: Value(remoteItem['status'] as String? ?? 'unread'),
+        priority: Value(priority),
+        tags: Value(jsonEncode(_asList(remoteItem['tags']))),
+        status: Value(status),
         readAt: Value(_asInt(remoteItem['readAt'])),
-        visibility: Value(remoteItem['visibility'] as String? ?? 'private'),
+        visibility: Value(visibility),
+        isFavorite: Value(remoteItem['isFavorite'] == true),
         syncStatus: const Value('synced'),
         createdAt: _asInt(remoteItem['createdAt']) ?? now,
         updatedAt: remoteUpdatedAt,
@@ -262,24 +325,32 @@ class SyncEngine {
   Future<void> _resolveConflict(
     Item localItem,
     Map<String, dynamic> remoteItem,
+    String title,
   ) async {
     final localUpdatedAt = localItem.updatedAt;
     final remoteUpdatedAt = _asInt(remoteItem['updatedAt']) ?? 0;
 
     if (remoteUpdatedAt > localUpdatedAt) {
+      final url = _asString(remoteItem['url']);
+      final description = _asString(remoteItem['description']);
+      final thumbnailUrl = _asString(remoteItem['thumbnailUrl']);
+      final priority = _asString(remoteItem['priority']) ?? 'medium';
+      final status = _asString(remoteItem['status']) ?? 'unread';
+      final visibility = _asString(remoteItem['visibility']) ?? 'private';
       await _db.updateItemById(
         localItem.id,
         ItemsCompanion(
-          title: Value(remoteItem['title'] as String),
-          url: Value(remoteItem['url'] as String?),
-          description: Value(remoteItem['description'] as String?),
-          thumbnailUrl: Value(remoteItem['thumbnailUrl'] as String?),
+          title: Value(title),
+          url: Value(url),
+          description: Value(description),
+          thumbnailUrl: Value(thumbnailUrl),
           estimatedReadTime: Value(_asInt(remoteItem['estimatedReadTime'])),
-          priority: Value(remoteItem['priority'] as String? ?? 'medium'),
-          tags: Value(jsonEncode(remoteItem['tags'] as List<dynamic>? ?? [])),
-          status: Value(remoteItem['status'] as String? ?? 'unread'),
+          priority: Value(priority),
+          tags: Value(jsonEncode(_asList(remoteItem['tags']))),
+          status: Value(status),
           readAt: Value(_asInt(remoteItem['readAt'])),
-          visibility: Value(remoteItem['visibility'] as String? ?? 'private'),
+          visibility: Value(visibility),
+          isFavorite: Value(remoteItem['isFavorite'] == true),
           syncStatus: const Value('synced'),
           updatedAt: Value(remoteUpdatedAt),
           snoozedUntil: Value(_asInt(remoteItem['snoozedUntil'])),
@@ -291,6 +362,16 @@ class SyncEngine {
   int? _asInt(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
+    return null;
+  }
+
+  List<dynamic> _asList(dynamic value) {
+    if (value is List) return value;
+    return [];
+  }
+
+  String? _asString(dynamic value) {
+    if (value is String) return value;
     return null;
   }
 
@@ -359,6 +440,7 @@ class SyncEngine {
         'priority': priority,
         'tags': tags,
         'visibility': visibility,
+        'isFavorite': false,
       }),
     );
 
@@ -460,6 +542,34 @@ class SyncEngine {
       recordId: itemId,
       operation: 'update',
       payload: jsonEncode({'convexId': item.convexId, 'tags': tags}),
+    );
+
+    _triggerSync();
+  }
+
+  Future<void> updateItemFavorite(String itemId, bool isFavorite) async {
+    final item = await _db.getItemById(itemId);
+    if (item == null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await _db.updateItemById(
+      itemId,
+      ItemsCompanion(
+        isFavorite: Value(isFavorite),
+        updatedAt: Value(now),
+        syncStatus: const Value('pending'),
+      ),
+    );
+
+    await _db.addToSyncQueue(
+      tableName: 'items',
+      recordId: itemId,
+      operation: 'update',
+      payload: jsonEncode({
+        'convexId': item.convexId,
+        'isFavorite': isFavorite,
+      }),
     );
 
     _triggerSync();

@@ -43,6 +43,7 @@ class Items extends Table {
   IntColumn get remindCount => integer().withDefault(const Constant(0))();
   IntColumn get snoozedUntil => integer().nullable()();
   TextColumn get visibility => text().withDefault(const Constant('private'))();
+  BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
   TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
@@ -204,6 +205,12 @@ class AppDatabase extends _$AppDatabase {
     return (select(
       users,
     )..where((u) => u.clerkId.equals(clerkId))).getSingleOrNull();
+  }
+
+  Stream<User?> watchUserByClerkId(String clerkId) {
+    return (select(
+      users,
+    )..where((u) => u.clerkId.equals(clerkId))).watchSingleOrNull();
   }
 
   Future<int> upsertUser(UsersCompanion user) {

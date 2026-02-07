@@ -33,6 +33,15 @@ final userByClerkIdProvider = FutureProvider.family<User?, String>((
   return db.getUserByClerkId(clerkId);
 });
 
+final userByClerkIdStreamProvider = StreamProvider.family<User?, String>((
+  ref,
+  clerkId,
+) {
+  if (clerkId.isEmpty) return const Stream.empty();
+  final db = ref.watch(databaseProvider);
+  return db.watchUserByClerkId(clerkId);
+});
+
 final notificationHistoryProvider = FutureProvider.family<List<dynamic>, int>((
   ref,
   limit,

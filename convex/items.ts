@@ -73,6 +73,7 @@ export const createItem = mutation({
         ),
         priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
         tags: v.optional(v.array(v.string())),
+        isFavorite: v.optional(v.boolean()),
         localId: v.optional(v.string()),
         remindCount: v.optional(v.number()),
     },
@@ -113,6 +114,7 @@ export const createItem = mutation({
             status: "unread",
             remindCount: args.remindCount ?? 0,
             visibility: "private",
+            isFavorite: args.isFavorite ?? false,
             syncStatus: "synced",
             localId: args.localId,
             createdAt: now,
@@ -144,6 +146,7 @@ export const updateItem = mutation({
         priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
         tags: v.optional(v.array(v.string())),
         status: v.optional(v.union(v.literal("unread"), v.literal("read"), v.literal("archived"))),
+        isFavorite: v.optional(v.boolean()),
         snoozedUntil: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
@@ -175,6 +178,9 @@ export const updateItem = mutation({
             if (args.status === "read") {
                 updateData.readAt = Date.now();
             }
+        }
+        if (args.isFavorite !== undefined) {
+            updateData.isFavorite = args.isFavorite;
         }
         if (args.snoozedUntil !== undefined) {
             updateData.snoozedUntil = args.snoozedUntil;

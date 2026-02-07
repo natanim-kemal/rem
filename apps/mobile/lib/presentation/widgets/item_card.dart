@@ -37,8 +37,9 @@ class ItemCard extends StatelessWidget {
     final hasThumbnailUrl = thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
     final isLocalThumbnail = hasThumbnailUrl && _isLocalFile(thumbnailUrl!);
     final hasNetworkThumbnail = hasThumbnailUrl && !isLocalThumbnail;
-    final hasAssetThumbnail = isXSource;
-    final hasThumbnail = hasAssetThumbnail || hasNetworkThumbnail || isLocalThumbnail || isBook;
+    final hasAssetThumbnail = isXSource || isBook;
+    final hasThumbnail =
+        hasAssetThumbnail || hasNetworkThumbnail || isLocalThumbnail;
 
     return InkWell(
       onTap: onTap,
@@ -134,7 +135,9 @@ class ItemCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 child: hasAssetThumbnail
                     ? Image.asset(
-                        'assets/images/x-img.png',
+                        isBook
+                            ? 'assets/images/book-img.png'
+                            : 'assets/images/x-img.png',
                         width: 82,
                         height: 82,
                         fit: BoxFit.cover,
@@ -175,17 +178,6 @@ class ItemCard extends StatelessWidget {
                             size: 30,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
-                        ),
-                      )
-                    : isBook
-                    ? Container(
-                        width: 82,
-                        height: 82,
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        child: Icon(
-                          CupertinoIcons.book,
-                          size: 30,
-                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       )
                     : const SizedBox.shrink(),

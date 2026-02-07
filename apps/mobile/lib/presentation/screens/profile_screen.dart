@@ -25,6 +25,7 @@ class ProfileScreen extends ConsumerWidget {
     NotificationPreferences preferences,
     String? userId,
     SyncEngine syncEngine,
+    WidgetRef ref,
   ) async {
     final controller = TextEditingController(text: preferences.dailyDigestTime);
     await showCupertinoDialog<void>(
@@ -50,6 +51,7 @@ class ProfileScreen extends ConsumerWidget {
                   userId,
                   preferences.copyWith(dailyDigestTime: value),
                 );
+                ref.invalidate(userByClerkIdStreamProvider(userId));
               }
               if (context.mounted) Navigator.pop(context);
             },
@@ -65,6 +67,7 @@ class ProfileScreen extends ConsumerWidget {
     NotificationPreferences preferences,
     String? userId,
     SyncEngine syncEngine,
+    WidgetRef ref,
   ) async {
     int selected = preferences.maxPerDay;
     await showCupertinoModalPopup<void>(
@@ -98,6 +101,7 @@ class ProfileScreen extends ConsumerWidget {
                     userId,
                     preferences.copyWith(maxPerDay: selected),
                   );
+                  ref.invalidate(userByClerkIdStreamProvider(userId));
                 }
                 if (context.mounted) Navigator.pop(context);
               },
@@ -113,6 +117,7 @@ class ProfileScreen extends ConsumerWidget {
     NotificationPreferences preferences,
     String? userId,
     SyncEngine syncEngine,
+    WidgetRef ref,
   ) async {
     final startController = TextEditingController(
       text: preferences.quietHoursStart,
@@ -154,6 +159,7 @@ class ProfileScreen extends ConsumerWidget {
                     quietHoursEnd: endController.text.trim(),
                   ),
                 );
+                ref.invalidate(userByClerkIdStreamProvider(userId));
               }
               if (context.mounted) Navigator.pop(context);
             },
@@ -478,7 +484,7 @@ class ProfileScreen extends ConsumerWidget {
 
     final timezoneOffsetMinutes = DateTime.now().timeZoneOffset.inMinutes;
     final userFuture = authState.userId != null
-        ? ref.watch(userByClerkIdProvider(authState.userId!))
+        ? ref.watch(userByClerkIdStreamProvider(authState.userId!))
         : const AsyncValue.data(null);
 
     final NotificationPreferences preferences = userFuture.maybeWhen(
@@ -501,6 +507,12 @@ class ProfileScreen extends ConsumerWidget {
           );
         }
       },
+      loading: () => NotificationPreferences.defaults().copyWith(
+        timezoneOffsetMinutes: timezoneOffsetMinutes,
+      ),
+      error: (_, _) => NotificationPreferences.defaults().copyWith(
+        timezoneOffsetMinutes: timezoneOffsetMinutes,
+      ),
       orElse: () => NotificationPreferences.defaults().copyWith(
         timezoneOffsetMinutes: timezoneOffsetMinutes,
       ),
@@ -667,6 +679,9 @@ class ProfileScreen extends ConsumerWidget {
                             authState.userId!,
                             updated,
                           );
+                          ref.invalidate(
+                            userByClerkIdStreamProvider(authState.userId!),
+                          );
                         }
                       },
                     ),
@@ -691,6 +706,7 @@ class ProfileScreen extends ConsumerWidget {
                       preferences,
                       authState.userId,
                       syncEngine,
+                      ref,
                     ),
                   ),
                   _SettingsTile(
@@ -702,6 +718,7 @@ class ProfileScreen extends ConsumerWidget {
                       preferences,
                       authState.userId,
                       syncEngine,
+                      ref,
                     ),
                   ),
                   _SettingsTile(
@@ -714,6 +731,7 @@ class ProfileScreen extends ConsumerWidget {
                       preferences,
                       authState.userId,
                       syncEngine,
+                      ref,
                     ),
                   ),
                   _SettingsTile(
@@ -782,7 +800,10 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () async {
                     final uri = Uri.parse('https://t.me/devnatanim');
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                     }
                   },
                   child: Container(
@@ -808,7 +829,8 @@ class ProfileScreen extends ConsumerWidget {
                         const SizedBox(width: 6),
                         Text(
                           't.me/devnatanim',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: const Color(0xFF2FBF9A),
                                 fontWeight: FontWeight.w500,
                               ),

@@ -49,6 +49,7 @@ export default defineSchema({
         remindCount: v.number(),
         snoozedUntil: v.optional(v.number()),
         visibility: v.union(v.literal("private"), v.literal("friends"), v.literal("public")),
+        isFavorite: v.optional(v.boolean()),
         syncStatus: v.union(v.literal("synced"), v.literal("pending"), v.literal("conflict")),
         localId: v.optional(v.string()),
         createdAt: v.number(),
