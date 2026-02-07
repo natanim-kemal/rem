@@ -130,8 +130,8 @@ rem/
 │   ├── schema.ts                   # Database schema
 │   ├── items.ts                    # Item functions
 │   ├── users.ts                    # User functions
-│   ├── notifications.ts            # Notification logic
-│   ├── crons.ts                    # Scheduled jobs
+│   ├── notifications.ts            # Notification logic (planned)
+│   ├── crons.ts                    # Scheduled jobs (planned)
 │   ├── http.ts                     # HTTP endpoints for Flutter
 │   └── _generated/                 # Auto-generated
 │

@@ -43,7 +43,7 @@ class ProfileScreen extends ConsumerWidget {
                       builder: (context) => CupertinoActionSheet(
                         title: Text(
                           'Signed in as ${authState.displayName}',
-                          style: const TextStyle(fontSize: 15),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         actions: [
                           CupertinoActionSheetAction(
@@ -52,17 +52,17 @@ class ProfileScreen extends ConsumerWidget {
                               ref.read(authProvider.notifier).signOut();
                               Navigator.pop(context);
                             },
-                            child: const Text(
+                            child: Text(
                               'Sign Out',
-                              style: TextStyle(fontSize: 15),
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ),
                         ],
                         cancelButton: CupertinoActionSheetAction(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text(
+                          child: Text(
                             'Cancel',
-                            style: TextStyle(fontSize: 15),
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
                       ),
@@ -231,10 +231,9 @@ class _SettingsSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
-            title.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            title,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: context.textSecondary,
-              letterSpacing: 1,
             ),
           ),
         ),
@@ -277,7 +276,10 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icon, size: 22),
-      title: Text(title),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
       trailing:
           trailing ??
           (value != null
@@ -286,7 +288,9 @@ class _SettingsTile extends StatelessWidget {
                   children: [
                     Text(
                       value!,
-                      style: TextStyle(color: context.textSecondary),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: context.textSecondary,
+                      ),
                     ),
                     if (onTap != null) ...[
                       const SizedBox(width: 4),

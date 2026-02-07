@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'confirmation_snackbar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rem/core/services/metadata_service.dart';
 import 'package:rem/data/sync/sync_engine.dart';
@@ -386,23 +387,13 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
     final title = _titleController.text.trim();
 
     if (title.isEmpty && url.isEmpty && _selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a URL or select an image'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showWarningSnackBar(context, 'Please enter a URL or select an image');
       return;
     }
 
     final authState = ref.read(authProvider);
     if (!authState.isAuthenticated || authState.userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please sign in to save items'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showWarningSnackBar(context, 'Please sign in to save items');
       return;
     }
 
@@ -431,70 +422,22 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
       if (mounted) {
         ref.read(homeRefreshProvider.notifier).bump();
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF34C759).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      CupertinoIcons.checkmark_circle_fill,
-                      color: const Color(0xFF34C759),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Saved to vault',
-                      style: TextStyle(
-                        color: const Color(0xFF34C759),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-            margin: const EdgeInsets.only(bottom: 40),
-          ),
-        );
+        showConfirmationSnackBar(context, 'Saved to vault');
       }
     } on DuplicateItemException {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('This item already exists in your vault'),
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'View',
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ),
+        showWarningSnackBar(
+          context,
+          'This item already exists in your vault',
+          actionLabel: 'View',
+          onAction: () {
+            Navigator.pop(context);
+          },
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save item: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showWarningSnackBar(context, 'Failed to save item: $e');
       }
     }
   }

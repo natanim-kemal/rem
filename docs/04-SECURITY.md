@@ -206,7 +206,7 @@ export function validateUrl(url: string): void {
 Convex has built-in rate limiting, but add application-level limits for expensive operations:
 
 ```typescript
-// convex/notifications.ts
+// convex/notifications.ts (planned)
 export const sendTestNotification = action({
   args: { itemId: v.id("items") },
   handler: async (ctx, args) => {

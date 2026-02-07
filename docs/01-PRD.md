@@ -76,6 +76,7 @@ A "consumption accountability" app that:
 | Feature | Description | Priority |
 |---------|-------------|----------|
 | **Scheduled Reminders** | Daily/weekly at user-set times | P0 |
+| **Priority Cadence** | High: 3/day, Medium: 2/day, Low: 1/day | P0 |
 | **Smart Nudges** | Context-aware (time, frequency, type) | P1 |
 | **Snooze** | Delay reminder by 1hr/1day/1week | P0 |
 | **Escalation** | Increase frequency for ignored items | P2 |
@@ -95,10 +96,39 @@ ELSE IF item.type == "book"
   THEN use weekly digest
 ```
 
+**Priority Cadence Rules (MVP):**
+```
+IF item.status != "unread" THEN do not notify
+
+IF item.priority == "high"
+  THEN max 3 notifications/day for that item
+ELSE IF item.priority == "medium"
+  THEN max 2 notifications/day for that item
+ELSE
+  max 1 notification/day for that item
+
+Cooldown between notifications for same item:
+- High: 4 hours
+- Medium: 6 hours
+- Low: 12 hours
+Respect user quiet hours and OS DND
+```
+
 **Acceptance Criteria:**
-- [ ] Notifications respect system DND
-- [ ] Maximum 5 notifications/day (configurable)
+- [ ] Notifications delivered with app closed (server push)
+- [ ] Notifications respect system DND and user quiet hours
+- [ ] Priority cadence enforced per item (3/2/1 per day)
+- [ ] Read/archived items never notify
 - [ ] Snooze persists across app restarts
+
+**Suggested Enhancements:**
+- [ ] Notification center/history (last 30 days)
+- [ ] Daily cap across all items (user configurable)
+- [ ] Per-item cooldown controls (override 4h default)
+- [ ] Smart batching for low priority items
+- [ ] Escalation ladder with soft opt-out
+- [ ] Read decay for stale items (auto-reduce frequency after 30 days)
+- [ ] One-tap actions in notification (mark read, snooze, lower priority)
 
 ### 3.4 Consumption Tracking
 

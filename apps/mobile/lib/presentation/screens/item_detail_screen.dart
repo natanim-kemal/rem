@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:rem/providers/data_providers.dart';
 import '../theme/app_theme.dart';
+import '../widgets/confirmation_snackbar.dart';
 
 class ItemDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> item;
@@ -81,9 +82,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     if (canLaunch) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Could not launch URL')));
+      showWarningSnackBar(context, 'Could not launch URL');
     }
   }
 
@@ -124,22 +123,12 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Item deleted'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showConfirmationSnackBar(context, 'Item deleted');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isDeleting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete item: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showWarningSnackBar(context, 'Failed to delete item: $e');
       }
     }
   }
@@ -152,68 +141,77 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         actions: [
           CupertinoActionSheetAction(
             onPressed: () => _updatePriority('high'),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF3B30),
-                    shape: BoxShape.circle,
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(fontSize: 15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF3B30),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                const Text('High', style: TextStyle(fontSize: 15)),
-                if (_priority == 'high') ...[
                   const SizedBox(width: 8),
-                  const Icon(CupertinoIcons.checkmark, size: 16),
+                  const Text('High'),
+                  if (_priority == 'high') ...[
+                    const SizedBox(width: 8),
+                    const Icon(CupertinoIcons.checkmark, size: 16),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           CupertinoActionSheetAction(
             onPressed: () => _updatePriority('medium'),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF9500),
-                    shape: BoxShape.circle,
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(fontSize: 15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF9500),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                const Text('Medium', style: TextStyle(fontSize: 15)),
-                if (_priority == 'medium') ...[
                   const SizedBox(width: 8),
-                  const Icon(CupertinoIcons.checkmark, size: 16),
+                  const Text('Medium'),
+                  if (_priority == 'medium') ...[
+                    const SizedBox(width: 8),
+                    const Icon(CupertinoIcons.checkmark, size: 16),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
           CupertinoActionSheetAction(
             onPressed: () => _updatePriority('low'),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF34C759),
-                    shape: BoxShape.circle,
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(fontSize: 15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF34C759),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                const Text('Low', style: TextStyle(fontSize: 15)),
-                if (_priority == 'low') ...[
                   const SizedBox(width: 8),
-                  const Icon(CupertinoIcons.checkmark, size: 16),
+                  const Text('Low'),
+                  if (_priority == 'low') ...[
+                    const SizedBox(width: 8),
+                    const Icon(CupertinoIcons.checkmark, size: 16),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],
@@ -240,21 +238,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         setState(() {
           _priority = priority;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Priority updated'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showConfirmationSnackBar(context, 'Priority updated');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update priority: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showWarningSnackBar(context, 'Failed to update priority: $e');
       }
     }
   }
@@ -324,20 +312,16 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                   _tags = tempTags;
                                 });
                                 Navigator.of(this.context).pop();
-                                ScaffoldMessenger.of(this.context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Tags updated'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
+                                showConfirmationSnackBar(
+                                  this.context,
+                                  'Tags updated',
                                 );
                               }
                             } catch (e) {
                               if (mounted) {
-                                ScaffoldMessenger.of(this.context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Failed to update tags: $e'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
+                                showWarningSnackBar(
+                                  this.context,
+                                  'Failed to update tags: $e',
                                 );
                               }
                             }

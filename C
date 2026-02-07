@@ -1,0 +1,148 @@
+# AGENTS.md
+# Guidance for agentic coding in this repo
+
+## Repo overview
+- Primary app: Flutter/Dart in `apps/mobile`.
+- Backend: Convex functions in `convex/` (TypeScript).
+- Root `package.json` is only for Convex CLI tasks.
+- Hooks: `lefthook.yml` runs Dart format and commit message validation.
+
+## Build, lint, test commands
+
+### Root (Convex)
+```bash
+# Install Convex CLI (if not already)
+npm install
+
+# Start local Convex dev server
+npx convex dev
+
+# Generate Convex types
+npx convex codegen
+
+# Typecheck Convex functions
+npx convex typecheck
+
+# Deploy Convex (production)
+npx convex deploy
+```
+
+### Flutter app (run from `apps/mobile`)
+```bash
+# Install Flutter deps
+flutter pub get
+
+# Run app (device/simulator)
+flutter run
+
+# Analyze
+flutter analyze --fatal-infos
+
+# Format
+dart format .
+
+# Format check (CI-style)
+dart format --set-exit-if-changed .
+
+# Code generation
+dart run build_runner build --delete-conflicting-outputs
+
+# Watch codegen
+dart run build_runner watch --delete-conflicting-outputs
+
+# Unit/widget tests
+flutter test
+
+# Coverage
+flutter test --coverage
+```
+
+### Run a single test
+```bash
+# Single Dart test file
+flutter test test/widget_test.dart
+
+# Single test by name (file contains name)
+flutter test test/widget_test.dart -n "ItemCard displays title"
+```
+
+## Hooks and commit rules
+- `lefthook.yml` pre-commit runs Dart formatting on staged `apps/mobile/**/*.dart`.
+- `lefthook.yml` also runs `scripts/no-comments-in-added.ps1` on pre-commit.
+- Commit messages are validated by `scripts/validate-commit-msg.ps1`.
+- Follow Conventional Commits (see `docs/05-DEVELOPMENT-STANDARDS.md`).
+
+## Style guidelines (Dart/Flutter)
+
+### Formatting and linting
+- Use `dart format` for all Dart files.
+- Lints come from `apps/mobile/analysis_options.yaml` (flutter_lints).
+- Prefer `const` widgets and `final` locals where possible.
+
+### Imports
+- Order: Dart SDK, package imports, then relative imports.
+- Keep import groups separated by a blank line.
+
+Example:
+```dart
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../providers/auth_provider.dart';
+```
+
+### Naming and files
+- Classes: PascalCase (`ItemRepository`).
+- Methods/variables: lowerCamelCase (`fetchItems`).
+- Private identifiers: prefix `_`.
+- Files and folders: snake_case (`item_repository.dart`).
+- Widgets should describe purpose: `ItemCard`, `AddItemSheet`.
+
+### State management (Riverpod)
+- Providers live in `apps/mobile/lib/providers/`.
+- Prefer `Notifier`/`AsyncValue` patterns for async work.
+- Keep `ref.watch`/`ref.listen` logic in `build` or in notifier classes.
+
+### Data layer
+- Local data uses Drift in `apps/mobile/lib/data/`.
+- Keep DB access in repository/services; UI should not query DB directly.
+
+### Error handling
+- Prefer explicit error states (`AsyncValue.error`) instead of silent failures.
+- Log with `debugPrint` for recoverable issues.
+- For user-facing errors, surface friendly messages in UI widgets.
+
+### UI consistency
+- Theme is defined in `apps/mobile/lib/presentation/theme/app_theme.dart`.
+- Use theme colors/typography instead of hard-coded values.
+- Use Cupertino widgets where existing screens do (see `HomeScreen`).
+
+### Performance
+- Use `ListView.builder` / `SliverList` for long lists.
+- Avoid recomputing heavy work in `build`; cache or memoize when needed.
+
+## Style guidelines (Convex TypeScript)
+- Functions live in `convex/`.
+- Always validate args with `v.*` validators.
+- Always check auth with `ctx.auth.getUserIdentity()`.
+- Use indexes for queries (`withIndex`, `withSearchIndex`).
+- Throw explicit errors for auth/validation/ownership issues.
+- Keep handlers small; prefer helper functions for shared logic.
+
+## JS browser extension (if touching `extension/`)
+- Keep scripts simple, no build step is configured.
+- Prefer small helpers and clear error handling.
+
+## Docs and standards to follow
+- `docs/05-DEVELOPMENT-STANDARDS.md`: detailed naming, testing, and Convex rules.
+- `docs/03-CICD.md`: CI pipeline and build steps.
+
+## Cursor/Copilot rules
+- No `.cursor/rules`, `.cursorrules`, or `.github/copilot-instructions.md` found.
+
+## Safety and hygiene
+- Do not commit secrets (`.env`, keys, tokens).
+- Avoid editing generated files in `build/` or `.dart_tool/`.
+- Keep changes focused; match existing project patterns.
