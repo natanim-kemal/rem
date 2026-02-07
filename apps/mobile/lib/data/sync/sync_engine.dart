@@ -123,7 +123,13 @@ class SyncEngine {
 
     switch (syncItem.operation) {
       case 'create':
-        final result = await _convex.mutation('items:createItem', cleanPayload);
+        final createPayload = Map<String, dynamic>.from(cleanPayload);
+
+        createPayload.remove('status');
+        createPayload.remove('visibility');
+        createPayload.remove('userId');
+
+        final result = await _convex.mutation('items:createItem', createPayload);
         if (result != null) {
           final convexId = result['_id'] as String?;
           if (convexId != null) {

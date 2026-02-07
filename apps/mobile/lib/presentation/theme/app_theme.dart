@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   AppTheme._();
 
-  static const _lightBackground = Color(0xFFF8F7F4);
+  static const _lightBackground = Color(0xFFFDFCFA);
   static const _lightSurface = Color(0xFFFFFFFF);
   static const _lightSurfaceElevated = Color(0xFFF2F2EF);
   static const _lightTextPrimary = Color(0xFF1E1E1E);

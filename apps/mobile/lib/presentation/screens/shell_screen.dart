@@ -60,8 +60,16 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     final itemId = data['itemId'] ?? payload;
     final action = data['action'];
 
+    if (action == 'open_unread_list') {
+      if (!mounted) return;
+      setState(() => _currentIndex = 0);
+      return;
+    }
+
     final db = ref.read(databaseProvider);
     final syncEngine = ref.read(syncEngineProvider);
+
+    if (itemId.isEmpty) return;
 
     final item = await db.getItemById(itemId);
     if (item == null && itemId.isNotEmpty) {

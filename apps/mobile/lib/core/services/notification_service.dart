@@ -122,10 +122,10 @@ class NotificationService {
 
     final actions = message.data['type'] == 'digest'
         ? [const AndroidNotificationAction('open_unread_list', 'Open Unread')]
-        : const [
-            AndroidNotificationAction('mark_read', 'Mark Read'),
-            AndroidNotificationAction('snooze_30', 'Snooze 30m'),
-            AndroidNotificationAction('lower_priority', 'Lower Priority'),
+        : [
+            const AndroidNotificationAction('mark_read', 'Mark Read'),
+            const AndroidNotificationAction('snooze_30', 'Snooze 30m'),
+            const AndroidNotificationAction('lower_priority', 'Lower Priority'),
           ];
 
     final AndroidNotificationDetails androidDetails =

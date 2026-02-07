@@ -74,6 +74,7 @@ export const createItem = mutation({
         priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
         tags: v.optional(v.array(v.string())),
         localId: v.optional(v.string()),
+        remindCount: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();
@@ -110,7 +111,7 @@ export const createItem = mutation({
             priority: args.priority ?? "medium",
             tags: args.tags ?? [],
             status: "unread",
-            remindCount: 0,
+            remindCount: args.remindCount ?? 0,
             visibility: "private",
             syncStatus: "synced",
             localId: args.localId,
