@@ -48,7 +48,7 @@ firebase_options.dart
 .project
 .classpath
 .settings/
-# implementation_plan.md
+implementation_plan.md
 
 # ----- OS Generated -----
 .DS_Store
@@ -93,3 +93,6 @@ lefthook-local.yml
 *.temp
 .gradle/
 local.properties
+
+# Local planning files
+C
