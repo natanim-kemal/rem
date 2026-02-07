@@ -39,8 +39,9 @@ final notificationHistoryProvider = FutureProvider.family<List<dynamic>, int>((
 ) async {
   final convex = ref.watch(convexClientProvider);
   return await convex.query('notifications:getNotificationHistory', {
-    'limit': limit,
-  }) as List<dynamic>;
+        'limit': limit,
+      })
+      as List<dynamic>;
 });
 
 class HomeRefreshNotifier extends Notifier<int> {

@@ -253,9 +253,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<Item?> getItemByConvexId(String convexId) {
-    return (select(items)
-          ..where((i) => i.convexId.equals(convexId)))
-        .getSingleOrNull();
+    return (select(
+      items,
+    )..where((i) => i.convexId.equals(convexId))).getSingleOrNull();
   }
 
   Future<Item?> findDuplicateItem(

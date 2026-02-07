@@ -79,7 +79,7 @@ rem/
 - [x] Priority cadence enforcement (3/2/1 per day + cooldowns)
 - [x] Notification actions (mark read, snooze, lower priority)
 - [x] Notification history (basic list)
-- [ ] Daily digest fallback
+- [x] Daily digest fallback
 
 ---
 

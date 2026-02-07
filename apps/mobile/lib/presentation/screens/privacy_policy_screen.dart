@@ -75,16 +75,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
 • Firebase: For push notifications and analytics.
 • Google Fonts: For typography (DM Sans).''',
               ),
-              _buildSection(
-                context,
-                '5. Your Rights',
-                '''You have the right to:
+              _buildSection(context, '5. Your Rights', '''You have the right to:
 
 • Export your data at any time from the Profile screen.
 • Delete your account and all associated data.
 • Modify your notification preferences.
-• Request information about your stored data.''',
-              ),
+• Request information about your stored data.'''),
               _buildSection(
                 context,
                 '6. Data Retention',
@@ -111,9 +107,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Text(

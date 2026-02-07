@@ -24,11 +24,12 @@ const MAX_NOTIFICATIONS_PER_DAY = 5;
 const FCM_ENDPOINT = "https://fcm.googleapis.com/fcm/send";
 
 type NotificationCandidate = {
-  itemId: string;
+  itemId?: string;
   userId: string;
   title: string;
   body: string;
   priority: "high" | "medium" | "low";
+  type: "reminder" | "digest";
 };
 
 function parseTimeString(value: string): { hour: number; minute: number } {
@@ -67,6 +68,18 @@ function buildCandidate(item: any): NotificationCandidate {
     title: item.title,
     body: "Time to read this from your vault",
     priority: item.priority,
+    type: "reminder",
+  };
+}
+
+function buildDigestCandidate(userId: string, count: number): NotificationCandidate {
+  const itemLabel = count === 1 ? "item" : "items";
+  return {
+    userId,
+    title: "Daily digest",
+    body: `${count} unread ${itemLabel} waiting in your vault`,
+    priority: "low",
+    type: "digest",
   };
 }
 
@@ -199,9 +212,10 @@ export const selectNotificationCandidates = internalQuery({
       )
       .collect();
 
-    if (recent.length >= (prefs.maxPerDay ?? MAX_NOTIFICATIONS_PER_DAY)) {
-      return [];
-    }
+    const dailyCap = prefs.maxPerDay ?? MAX_NOTIFICATIONS_PER_DAY;
+    const digestAlreadySent = recent.some(
+      (entry) => entry.type === "digest"
+    );
 
     const perItemCounts = new Map<string, number>();
     const lastSentAt = new Map<string, number>();
@@ -218,6 +232,13 @@ export const selectNotificationCandidates = internalQuery({
         q.eq("userId", args.userId).eq("status", "unread")
       )
       .collect();
+
+    if (recent.length >= dailyCap) {
+      if (items.length > 0 && !digestAlreadySent) {
+        return [buildDigestCandidate(args.userId, items.length)];
+      }
+      return [];
+    }
 
     const candidates: NotificationCandidate[] = [];
     for (const item of items) {
@@ -280,24 +301,26 @@ export const sendNotificationBatch = action({
     const now = Date.now();
     for (const candidate of args.candidates) {
       await sendFcmNotification(tokenValues, candidate.title, candidate.body, {
-        itemId: candidate.itemId,
-        type: "reminder",
+        itemId: candidate.itemId ?? "",
+        type: candidate.type,
         priority: candidate.priority,
       });
 
       await ctx.runMutation(internal.notifications.logNotification, {
         userId: args.userId,
         itemId: candidate.itemId,
-        type: "reminder",
+        type: candidate.type,
         title: candidate.title,
         body: candidate.body,
         sentAt: now,
       });
 
-      await ctx.runMutation(internal.notifications.markItemReminded, {
-        itemId: candidate.itemId,
-        remindAt: now,
-      });
+      if (candidate.type === "reminder" && candidate.itemId) {
+        await ctx.runMutation(internal.notifications.markItemReminded, {
+          itemId: candidate.itemId,
+          remindAt: now,
+        });
+      }
     }
 
     return { sent: args.candidates.length };

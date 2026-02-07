@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
@@ -33,10 +34,7 @@ class ProfileScreen extends ConsumerWidget {
         content: Column(
           children: [
             const SizedBox(height: 12),
-            CupertinoTextField(
-              controller: controller,
-              placeholder: 'HH:MM',
-            ),
+            CupertinoTextField(controller: controller, placeholder: 'HH:MM'),
           ],
         ),
         actions: [
@@ -80,8 +78,9 @@ class ProfileScreen extends ConsumerWidget {
               height: 180,
               child: CupertinoPicker(
                 itemExtent: 36,
-                scrollController:
-                    FixedExtentScrollController(initialItem: selected - 1),
+                scrollController: FixedExtentScrollController(
+                  initialItem: selected - 1,
+                ),
                 onSelectedItemChanged: (index) {
                   selected = index + 1;
                 },
@@ -115,10 +114,12 @@ class ProfileScreen extends ConsumerWidget {
     String? userId,
     SyncEngine syncEngine,
   ) async {
-    final startController =
-        TextEditingController(text: preferences.quietHoursStart);
-    final endController =
-        TextEditingController(text: preferences.quietHoursEnd);
+    final startController = TextEditingController(
+      text: preferences.quietHoursStart,
+    );
+    final endController = TextEditingController(
+      text: preferences.quietHoursEnd,
+    );
 
     await showCupertinoDialog<void>(
       context: context,
@@ -194,7 +195,9 @@ class ProfileScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: ref.watch(notificationHistoryProvider(30)).when(
+                child: ref
+                    .watch(notificationHistoryProvider(30))
+                    .when(
                       data: (items) {
                         if (items.isEmpty) {
                           return const Center(
@@ -219,21 +222,19 @@ class ProfileScreen extends ConsumerWidget {
                               trailing: timestamp != null
                                   ? Text(
                                       '${timestamp.month}/${timestamp.day}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall,
                                     )
                                   : null,
                             );
                           },
                         );
                       },
-                      loading: () => const Center(
-                        child: CupertinoActivityIndicator(),
-                      ),
-                      error: (e, _) => Center(
-                        child: Text('Failed to load: $e'),
-                      ),
+                      loading: () =>
+                          const Center(child: CupertinoActivityIndicator()),
+                      error: (e, _) =>
+                          Center(child: Text('Failed to load: $e')),
                     ),
               ),
             ],
@@ -255,9 +256,7 @@ class ProfileScreen extends ConsumerWidget {
     showCupertinoDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CupertinoActivityIndicator(),
-      ),
+      builder: (context) => const Center(child: CupertinoActivityIndicator()),
     );
 
     try {
@@ -268,25 +267,27 @@ class ProfileScreen extends ConsumerWidget {
       final exportData = {
         'exported_at': DateTime.now().toIso8601String(),
         'user_id': userId,
-        'items': items.map((item) => {
-          'id': item.id,
-          'title': item.title,
-          'url': item.url,
-          'description': item.description,
-          'thumbnail_url': item.thumbnailUrl,
-          'type': item.type,
-          'status': item.status,
-          'priority': item.priority,
-          'tags': item.tags,
-          'estimated_read_time': item.estimatedReadTime,
-          'created_at': item.createdAt,
-          'updated_at': item.updatedAt,
-        }).toList(),
-        'tags': tags.map((tag) => {
-          'id': tag.id,
-          'name': tag.name,
-          'color': tag.color,
-        }).toList(),
+        'items': items
+            .map(
+              (item) => {
+                'id': item.id,
+                'title': item.title,
+                'url': item.url,
+                'description': item.description,
+                'thumbnail_url': item.thumbnailUrl,
+                'type': item.type,
+                'status': item.status,
+                'priority': item.priority,
+                'tags': item.tags,
+                'estimated_read_time': item.estimatedReadTime,
+                'created_at': item.createdAt,
+                'updated_at': item.updatedAt,
+              },
+            )
+            .toList(),
+        'tags': tags
+            .map((tag) => {'id': tag.id, 'name': tag.name, 'color': tag.color})
+            .toList(),
       };
 
       final jsonString = const JsonEncoder.withIndent('  ').convert(exportData);
@@ -300,7 +301,9 @@ class ProfileScreen extends ConsumerWidget {
             height: MediaQuery.of(context).size.height * 0.7,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
             ),
             child: Column(
               children: [
@@ -336,7 +339,9 @@ class ProfileScreen extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: SingleChildScrollView(
@@ -410,9 +415,8 @@ class ProfileScreen extends ConsumerWidget {
       showCupertinoDialog(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) => const Center(
-          child: CupertinoActivityIndicator(),
-        ),
+        builder: (dialogContext) =>
+            const Center(child: CupertinoActivityIndicator()),
       );
 
       try {
@@ -486,11 +490,11 @@ class ProfileScreen extends ConsumerWidget {
         }
 
         try {
-          final decoded = jsonDecode(user.notificationPreferences)
-              as Map<String, dynamic>;
-          return NotificationPreferences.fromJson(decoded).copyWith(
-            timezoneOffsetMinutes: timezoneOffsetMinutes,
-          );
+          final decoded =
+              jsonDecode(user.notificationPreferences) as Map<String, dynamic>;
+          return NotificationPreferences.fromJson(
+            decoded,
+          ).copyWith(timezoneOffsetMinutes: timezoneOffsetMinutes);
         } catch (_) {
           return NotificationPreferences.defaults().copyWith(
             timezoneOffsetMinutes: timezoneOffsetMinutes,
@@ -636,23 +640,22 @@ class ProfileScreen extends ConsumerWidget {
                       activeTrackColor: Theme.of(context).colorScheme.primary,
                       onChanged: (value) async {
                         if (value) {
-                          final granted =
-                              await notificationService.ensurePermissions();
+                          final granted = await notificationService
+                              .ensurePermissions();
                           if (!granted) return;
                         }
 
                         final updated = preferences.copyWith(enabled: value);
 
                         if (value && authState.userId != null) {
-                          final token =
-                              await notificationService.getFreshToken();
+                          final token = await notificationService
+                              .getFreshToken();
                           if (token != null && token.isNotEmpty) {
                             try {
-                              await syncEngine.convex
-                                  .mutation('users:registerPushToken', {
-                                'token': token,
-                                'platform': 'android',
-                              });
+                              await syncEngine.convex.mutation(
+                                'users:registerPushToken',
+                                {'token': token, 'platform': 'android'},
+                              );
                             } catch (e) {
                               debugPrint('Failed to register push token: $e');
                             }
@@ -716,10 +719,7 @@ class ProfileScreen extends ConsumerWidget {
                   _SettingsTile(
                     icon: CupertinoIcons.list_bullet,
                     title: 'Notification History',
-                    onTap: () => _showNotificationHistory(
-                      context,
-                      ref,
-                    ),
+                    onTap: () => _showNotificationHistory(context, ref),
                   ),
                 ],
               ),
@@ -779,19 +779,22 @@ class ProfileScreen extends ConsumerWidget {
               // Telegram Channel Link
               Center(
                 child: GestureDetector(
-                  onTap: () {
-                    // Open Telegram channel
+                  onTap: () async {
+                    final uri = Uri.parse('https://t.me/devnatanim');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                      horizontal: 12,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0088CC).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(25),
+                      color: const Color(0xFF2FBF9A).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: const Color(0xFF0088CC).withValues(alpha: 0.3),
+                        color: const Color(0xFF2FBF9A).withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -799,16 +802,16 @@ class ProfileScreen extends ConsumerWidget {
                       children: [
                         Icon(
                           Icons.telegram,
-                          color: const Color(0xFF0088CC),
-                          size: 20,
+                          color: const Color(0xFF2FBF9A),
+                          size: 16,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Text(
                           't.me/devnatanim',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF0088CC),
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFF2FBF9A),
+                                fontWeight: FontWeight.w500,
+                              ),
                         ),
                       ],
                     ),
