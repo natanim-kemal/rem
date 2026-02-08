@@ -259,7 +259,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: custom.SearchBar(
                   hintText: 'Search your vault...',
                   onChanged: _onSearchChanged,
-                  onFilterTap: () {},
                 ),
               ),
             ),
