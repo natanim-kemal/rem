@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -121,17 +119,6 @@ class _StatsBody extends StatelessWidget {
       typeCounts[type] = (typeCounts[type] ?? 0) + 1;
     }
     final sortedTypes = typeCounts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final tagCounts = <String, int>{};
-    for (final item in items) {
-      for (final tag in _parseTags(item.tags)) {
-        final normalized = tag.trim();
-        if (normalized.isEmpty) continue;
-        tagCounts[normalized] = (tagCounts[normalized] ?? 0) + 1;
-      }
-    }
-    final topTags = tagCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     return SingleChildScrollView(
@@ -260,24 +247,6 @@ class _StatsBody extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 20),
-          _SectionTitle(title: 'Top tags'),
-          const SizedBox(height: 12),
-          _StatCard(
-            child: topTags.isEmpty
-                ? Text(
-                    'No tags yet. Add tags to see your most used labels.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: context.textSecondary,
-                    ),
-                  )
-                : Column(
-                    children: topTags
-                        .take(5)
-                        .map((tag) => _TagRow(label: tag.key, count: tag.value))
-                        .toList(),
-                  ),
           ),
         ],
       ),
@@ -661,33 +630,6 @@ class _TypeChip extends StatelessWidget {
   }
 }
 
-class _TagRow extends StatelessWidget {
-  final String label;
-  final int count;
-
-  const _TagRow({required this.label, required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-          Text(
-            '$count',
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(color: context.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _StatCard extends StatelessWidget {
   final Widget child;
 
@@ -747,22 +689,4 @@ String _formatMinutes(int minutes) {
   if (hours == 0) return '${remainder}m';
   if (remainder == 0) return '${hours}h';
   return '${hours}h ${remainder}m';
-}
-
-List<String> _parseTags(String raw) {
-  final trimmed = raw.trim();
-  if (trimmed.isEmpty) return [];
-  if (trimmed.startsWith('[')) {
-    try {
-      final decoded = jsonDecode(trimmed);
-      if (decoded is List) {
-        return decoded.whereType<String>().toList();
-      }
-    } catch (_) {}
-  }
-  return trimmed
-      .split(',')
-      .map((tag) => tag.trim())
-      .where((tag) => tag.isNotEmpty)
-      .toList();
 }
