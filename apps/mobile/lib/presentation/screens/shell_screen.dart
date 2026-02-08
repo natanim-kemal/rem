@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'home_screen.dart';
@@ -152,59 +153,95 @@ class _FloatingNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    const navHeight = 72.0;
+    const bottomMargin = 24.0;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(35),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
+    return SizedBox(
+      height: navHeight + bottomMargin,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            top: navHeight / 2,
+            bottom: 0,
+            child: IgnorePointer(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  color: theme.colorScheme.surface.withValues(alpha: 0.3),
+                ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, bottomMargin),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(35),
+                child: Container(
+                  height: navHeight,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(35),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _NavItem(
+                            icon: CupertinoIcons.house,
+                            activeIcon: CupertinoIcons.house_fill,
+                            label: 'Home',
+                            isActive: currentIndex == 0,
+                            onTap: () => onTap(0),
+                          ),
+                          _NavItem(
+                            icon: CupertinoIcons.plus_circle,
+                            activeIcon: CupertinoIcons.plus_circle_fill,
+                            label: 'Add',
+                            isActive: currentIndex == 1,
+                            onTap: () => onTap(1),
+                            isCenter: true,
+                          ),
+                          _NavItem(
+                            icon: CupertinoIcons.chart_bar,
+                            activeIcon: CupertinoIcons.chart_bar_fill,
+                            label: 'Stats',
+                            isActive: currentIndex == 2,
+                            onTap: () => onTap(2),
+                          ),
+                          _NavItem(
+                            icon: CupertinoIcons.person,
+                            activeIcon: CupertinoIcons.person_fill,
+                            label: 'Profile',
+                            isActive: currentIndex == 3,
+                            onTap: () => onTap(3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: CupertinoIcons.house,
-                activeIcon: CupertinoIcons.house_fill,
-                label: 'Home',
-                isActive: currentIndex == 0,
-                onTap: () => onTap(0),
-              ),
-              _NavItem(
-                icon: CupertinoIcons.plus_circle,
-                activeIcon: CupertinoIcons.plus_circle_fill,
-                label: 'Add',
-                isActive: currentIndex == 1,
-                onTap: () => onTap(1),
-                isCenter: true,
-              ),
-              _NavItem(
-                icon: CupertinoIcons.chart_bar,
-                activeIcon: CupertinoIcons.chart_bar_fill,
-                label: 'Stats',
-                isActive: currentIndex == 2,
-                onTap: () => onTap(2),
-              ),
-              _NavItem(
-                icon: CupertinoIcons.person,
-                activeIcon: CupertinoIcons.person_fill,
-                label: 'Profile',
-                isActive: currentIndex == 3,
-                onTap: () => onTap(3),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
