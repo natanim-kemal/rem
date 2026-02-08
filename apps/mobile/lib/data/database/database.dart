@@ -336,6 +336,17 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  Future<void> removeSyncItemsForRecord({
+    required String tableName,
+    required String recordId,
+  }) {
+    return (delete(syncQueue)
+          ..where((s) => s.syncTableName.equals(tableName))
+          ..where((s) => s.recordId.equals(recordId)))
+        .go()
+        .then((_) => null);
+  }
+
   Future<int> removeSyncItem(int id) {
     return (delete(syncQueue)..where((s) => s.id.equals(id))).go();
   }

@@ -217,7 +217,19 @@ class SyncEngine {
     Map<String, dynamic> payload,
   ) async {
     if (syncItem.operation == 'update') {
-      await _convex.mutation('users:updateNotificationPreferences', payload);
+      final userId = payload['userId'];
+      if (userId is String && userId.isNotEmpty) {
+        final cleanPayload = Map<String, dynamic>.from(payload)
+          ..remove('userId');
+        await _convex.mutation(
+          'users:updateNotificationPreferences',
+          cleanPayload,
+        );
+        await _db.removeSyncItemsForRecord(
+          tableName: 'users',
+          recordId: userId,
+        );
+      }
     }
   }
 
@@ -611,24 +623,29 @@ class SyncEngine {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     final user = await _db.getUserByClerkId(userId);
-    if (user != null) {
-      await _db.upsertUser(
-        UsersCompanion(
-          id: Value(user.id),
-          notificationPreferences: Value(jsonEncode(preferences.toJson())),
-          updatedAt: Value(now),
-        ),
-      );
-    }
+    final userIdValue = user?.id ?? userId;
 
-    if (user != null) {
-      await _db.addToSyncQueue(
-        tableName: 'users',
-        recordId: userId,
-        operation: 'update',
-        payload: jsonEncode(preferences.toJson()),
-      );
-    }
+    await _db.upsertUser(
+      UsersCompanion(
+        id: Value(userIdValue),
+        clerkId: Value(user?.clerkId ?? userId),
+        email: Value(user?.email ?? ''),
+        displayName: Value(user?.displayName),
+        avatarUrl: Value(user?.avatarUrl),
+        isPremium: Value(user?.isPremium ?? false),
+        notificationPreferences: Value(jsonEncode(preferences.toJson())),
+        createdAt: Value(user?.createdAt ?? now),
+        updatedAt: Value(now),
+        syncStatus: Value(user?.syncStatus ?? 'pending'),
+      ),
+    );
+
+    await _db.addToSyncQueue(
+      tableName: 'users',
+      recordId: userId,
+      operation: 'update',
+      payload: jsonEncode({'userId': userId, ...preferences.toJson()}),
+    );
 
     _triggerSync();
   }
