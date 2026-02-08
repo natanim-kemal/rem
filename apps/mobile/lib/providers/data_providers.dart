@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/database/database.dart';
 import '../data/sync/sync_engine.dart';
+import '../data/models/notification_preferences.dart';
 import 'auth_provider.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -52,6 +55,46 @@ final notificationHistoryProvider = FutureProvider.family<List<dynamic>, int>((
       })
       as List<dynamic>;
 });
+
+final notificationPrefsCacheProvider =
+    NotifierProvider<NotificationPrefsCacheNotifier, NotificationPreferences?>(
+        NotificationPrefsCacheNotifier.new);
+
+class NotificationPrefsCacheNotifier
+    extends Notifier<NotificationPreferences?> {
+  @override
+  NotificationPreferences? build() => null;
+
+  void set(NotificationPreferences? value) {
+    state = value;
+  }
+}
+
+class ProfileGenderNotifier extends Notifier<String> {
+  @override
+  String build() {
+    _load();
+    return 'M';
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString('profile_gender');
+    if (value == 'M' || value == 'F') {
+      state = value!;
+    }
+  }
+
+  Future<void> setGender(String value) async {
+    if (value != 'M' && value != 'F') return;
+    state = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profile_gender', value);
+  }
+}
+
+final profileGenderProvider =
+    NotifierProvider<ProfileGenderNotifier, String>(ProfileGenderNotifier.new);
 
 class HomeRefreshNotifier extends Notifier<int> {
   @override

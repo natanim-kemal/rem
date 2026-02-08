@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 import '../../providers/theme_provider.dart';
@@ -52,6 +52,9 @@ class ProfileScreen extends ConsumerWidget {
                   preferences.copyWith(dailyDigestTime: value),
                 );
                 ref.invalidate(userByClerkIdStreamProvider(userId));
+                ref
+                    .read(notificationPrefsCacheProvider.notifier)
+                    .set(preferences.copyWith(dailyDigestTime: value));
               }
               if (context.mounted) Navigator.pop(context);
             },
@@ -102,6 +105,9 @@ class ProfileScreen extends ConsumerWidget {
                     preferences.copyWith(maxPerDay: selected),
                   );
                   ref.invalidate(userByClerkIdStreamProvider(userId));
+                  ref
+                      .read(notificationPrefsCacheProvider.notifier)
+                      .set(preferences.copyWith(maxPerDay: selected));
                 }
                 if (context.mounted) Navigator.pop(context);
               },
@@ -160,6 +166,12 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 );
                 ref.invalidate(userByClerkIdStreamProvider(userId));
+                ref.read(notificationPrefsCacheProvider.notifier).set(
+                  preferences.copyWith(
+                    quietHoursStart: startController.text.trim(),
+                    quietHoursEnd: endController.text.trim(),
+                  ),
+                );
               }
               if (context.mounted) Navigator.pop(context);
             },
@@ -487,36 +499,37 @@ class ProfileScreen extends ConsumerWidget {
         ? ref.watch(userByClerkIdStreamProvider(authState.userId!))
         : const AsyncValue.data(null);
 
-    final NotificationPreferences preferences = userFuture.maybeWhen(
-      data: (user) {
-        if (user == null) {
-          return NotificationPreferences.defaults().copyWith(
-            timezoneOffsetMinutes: timezoneOffsetMinutes,
-          );
-        }
+    final cachedPrefs = ref.watch(notificationPrefsCacheProvider);
+    final NotificationPreferences preferences = cachedPrefs ??
+        userFuture.when(
+          data: (user) {
+            if (user == null) {
+              return NotificationPreferences.defaults().copyWith(
+                timezoneOffsetMinutes: timezoneOffsetMinutes,
+              );
+            }
 
-        try {
-          final decoded =
-              jsonDecode(user.notificationPreferences) as Map<String, dynamic>;
-          return NotificationPreferences.fromJson(
-            decoded,
-          ).copyWith(timezoneOffsetMinutes: timezoneOffsetMinutes);
-        } catch (_) {
-          return NotificationPreferences.defaults().copyWith(
+            try {
+              final decoded = jsonDecode(user.notificationPreferences)
+                  as Map<String, dynamic>;
+              return NotificationPreferences.fromJson(
+                decoded,
+              ).copyWith(timezoneOffsetMinutes: timezoneOffsetMinutes);
+            } catch (_) {
+              return NotificationPreferences.defaults().copyWith(
+                timezoneOffsetMinutes: timezoneOffsetMinutes,
+              );
+            }
+          },
+          loading: () => NotificationPreferences.defaults().copyWith(
             timezoneOffsetMinutes: timezoneOffsetMinutes,
-          );
-        }
-      },
-      loading: () => NotificationPreferences.defaults().copyWith(
-        timezoneOffsetMinutes: timezoneOffsetMinutes,
-      ),
-      error: (_, _) => NotificationPreferences.defaults().copyWith(
-        timezoneOffsetMinutes: timezoneOffsetMinutes,
-      ),
-      orElse: () => NotificationPreferences.defaults().copyWith(
-        timezoneOffsetMinutes: timezoneOffsetMinutes,
-      ),
-    );
+          ),
+          error: (_, _) => NotificationPreferences.defaults().copyWith(
+            timezoneOffsetMinutes: timezoneOffsetMinutes,
+          ),
+        );
+
+    final gender = ref.watch(profileGenderProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -583,32 +596,17 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      if (authState.isAuthenticated &&
-                          authState.imageUrl != null)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(32),
-                          child: CachedNetworkImage(
-                            imageUrl: authState.imageUrl!,
-                            width: 64,
-                            height: 64,
-                            fit: BoxFit.cover,
-                            placeholder: (_, _) => CircleAvatar(
-                              radius: 32,
-                              backgroundColor: context.textTertiary,
-                              child: const CupertinoActivityIndicator(),
-                            ),
-                          ),
-                        )
-                      else
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: context.textTertiary,
-                          child: const Icon(
-                            CupertinoIcons.person_fill,
-                            size: 32,
-                            color: Colors.white,
-                          ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(32),
+                        child: Image.asset(
+                          gender == 'F'
+                              ? 'assets/images/female.png'
+                              : 'assets/images/male.png',
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
                         ),
+                      ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -631,9 +629,46 @@ class ProfileScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      Icon(
-                        CupertinoIcons.chevron_right,
-                        color: context.textTertiary,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: context.divider),
+                            ),
+                            child: DropdownButton<String>(
+                              value: gender,
+                              underline: const SizedBox.shrink(),
+                              dropdownColor:
+                                  Theme.of(context).colorScheme.surface,
+                              icon: Icon(
+                                CupertinoIcons.chevron_down,
+                                color: context.textTertiary,
+                                size: 14,
+                              ),
+                              onChanged: (value) {
+                                if (value == null) return;
+                                ref
+                                    .read(profileGenderProvider.notifier)
+                                    .setGender(value);
+                              },
+                              items: const [
+                                DropdownMenuItem(value: 'M', child: Text('M')),
+                                DropdownMenuItem(value: 'F', child: Text('F')),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            CupertinoIcons.chevron_right,
+                            color: context.textTertiary,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -682,6 +717,9 @@ class ProfileScreen extends ConsumerWidget {
                           ref.invalidate(
                             userByClerkIdStreamProvider(authState.userId!),
                           );
+                          ref
+                              .read(notificationPrefsCacheProvider.notifier)
+                              .set(updated);
                         }
                       },
                     ),
