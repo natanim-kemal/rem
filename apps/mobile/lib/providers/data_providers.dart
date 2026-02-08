@@ -58,7 +58,8 @@ final notificationHistoryProvider = FutureProvider.family<List<dynamic>, int>((
 
 final notificationPrefsCacheProvider =
     NotifierProvider<NotificationPrefsCacheNotifier, NotificationPreferences?>(
-        NotificationPrefsCacheNotifier.new);
+      NotificationPrefsCacheNotifier.new,
+    );
 
 class NotificationPrefsCacheNotifier
     extends Notifier<NotificationPreferences?> {
@@ -93,8 +94,9 @@ class ProfileGenderNotifier extends Notifier<String> {
   }
 }
 
-final profileGenderProvider =
-    NotifierProvider<ProfileGenderNotifier, String>(ProfileGenderNotifier.new);
+final profileGenderProvider = NotifierProvider<ProfileGenderNotifier, String>(
+  ProfileGenderNotifier.new,
+);
 
 class HomeRefreshNotifier extends Notifier<int> {
   @override

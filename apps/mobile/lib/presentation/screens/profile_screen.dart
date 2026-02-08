@@ -166,12 +166,14 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 );
                 ref.invalidate(userByClerkIdStreamProvider(userId));
-                ref.read(notificationPrefsCacheProvider.notifier).set(
-                  preferences.copyWith(
-                    quietHoursStart: startController.text.trim(),
-                    quietHoursEnd: endController.text.trim(),
-                  ),
-                );
+                ref
+                    .read(notificationPrefsCacheProvider.notifier)
+                    .set(
+                      preferences.copyWith(
+                        quietHoursStart: startController.text.trim(),
+                        quietHoursEnd: endController.text.trim(),
+                      ),
+                    );
               }
               if (context.mounted) Navigator.pop(context);
             },
@@ -500,7 +502,8 @@ class ProfileScreen extends ConsumerWidget {
         : const AsyncValue.data(null);
 
     final cachedPrefs = ref.watch(notificationPrefsCacheProvider);
-    final NotificationPreferences preferences = cachedPrefs ??
+    final NotificationPreferences preferences =
+        cachedPrefs ??
         userFuture.when(
           data: (user) {
             if (user == null) {
@@ -510,8 +513,9 @@ class ProfileScreen extends ConsumerWidget {
             }
 
             try {
-              final decoded = jsonDecode(user.notificationPreferences)
-                  as Map<String, dynamic>;
+              final decoded =
+                  jsonDecode(user.notificationPreferences)
+                      as Map<String, dynamic>;
               return NotificationPreferences.fromJson(
                 decoded,
               ).copyWith(timezoneOffsetMinutes: timezoneOffsetMinutes);
@@ -644,8 +648,9 @@ class ProfileScreen extends ConsumerWidget {
                             child: DropdownButton<String>(
                               value: gender,
                               underline: const SizedBox.shrink(),
-                              dropdownColor:
-                                  Theme.of(context).colorScheme.surface,
+                              dropdownColor: Theme.of(
+                                context,
+                              ).colorScheme.surface,
                               icon: Icon(
                                 CupertinoIcons.chevron_down,
                                 color: context.textTertiary,
