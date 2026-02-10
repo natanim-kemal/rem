@@ -43,7 +43,7 @@ void _showStatusSnackBar(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
+            color: color.withValues(alpha: 0.32),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
