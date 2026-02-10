@@ -557,7 +557,8 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
 
   String? _pickXTitle(String? title, String? description, String? html) {
     final trimmedTitle = title?.trim() ?? '';
-    if (trimmedTitle.isNotEmpty && !_isGenericXTitle(trimmedTitle.toLowerCase())) {
+    if (trimmedTitle.isNotEmpty &&
+        !_isGenericXTitle(trimmedTitle.toLowerCase())) {
       return trimmedTitle;
     }
     final htmlText = _extractXPostText(html);
@@ -581,8 +582,9 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
 
   String? _extractXImageUrl(String? html) {
     if (html == null || html.isEmpty) return null;
-    final match = RegExp("<img[^>]+src=['\\\"]([^'\\\"]+)['\\\"]")
-        .firstMatch(html);
+    final match = RegExp(
+      "<img[^>]+src=['\\\"]([^'\\\"]+)['\\\"]",
+    ).firstMatch(html);
     return match?.group(1);
   }
 
