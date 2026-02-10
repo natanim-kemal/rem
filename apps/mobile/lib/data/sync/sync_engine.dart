@@ -198,7 +198,15 @@ class SyncEngine {
       case 'delete':
         final convexId = payload['convexId'];
         if (convexId != null) {
-          await _convex.mutation('items:deleteItem', {'itemId': convexId});
+          try {
+            await _convex.mutation('items:deleteItem', {'itemId': convexId});
+          } catch (e) {
+            final message = e.toString().toLowerCase();
+            if (message.contains('nonexistent document')) {
+              return;
+            }
+            rethrow;
+          }
         }
         break;
     }
