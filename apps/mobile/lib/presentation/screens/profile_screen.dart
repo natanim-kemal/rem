@@ -633,47 +633,35 @@ class ProfileScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: context.divider),
-                            ),
-                            child: DropdownButton<String>(
-                              value: gender,
-                              underline: const SizedBox.shrink(),
-                              dropdownColor: Theme.of(
-                                context,
-                              ).colorScheme.surface,
-                              icon: Icon(
-                                CupertinoIcons.chevron_down,
-                                color: context.textTertiary,
-                                size: 14,
-                              ),
-                              onChanged: (value) {
-                                if (value == null) return;
-                                ref
-                                    .read(profileGenderProvider.notifier)
-                                    .setGender(value);
-                              },
-                              items: const [
-                                DropdownMenuItem(value: 'M', child: Text('M')),
-                                DropdownMenuItem(value: 'F', child: Text('F')),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            CupertinoIcons.chevron_right,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: context.divider),
+                        ),
+                        child: DropdownButton<String>(
+                          value: gender,
+                          underline: const SizedBox.shrink(),
+                          dropdownColor: Theme.of(
+                            context,
+                          ).colorScheme.surface,
+                          icon: Icon(
+                            CupertinoIcons.chevron_down,
                             color: context.textTertiary,
+                            size: 14,
                           ),
-                        ],
+                          onChanged: (value) {
+                            if (value == null) return;
+                            ref
+                                .read(profileGenderProvider.notifier)
+                                .setGender(value);
+                          },
+                          items: const [
+                            DropdownMenuItem(value: 'M', child: Text('M')),
+                            DropdownMenuItem(value: 'F', child: Text('F')),
+                          ],
+                        ),
                       ),
                     ],
                   ),
