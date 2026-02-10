@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'home_screen.dart';
@@ -167,10 +166,16 @@ class _FloatingNavBar extends StatelessWidget {
             top: navHeight / 2,
             bottom: 0,
             child: IgnorePointer(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: Container(
-                  color: theme.colorScheme.surface.withValues(alpha: 0.3),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      theme.colorScheme.surface.withValues(alpha: 0.8),
+                      theme.colorScheme.surface.withValues(alpha: 0.9),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -184,7 +189,7 @@ class _FloatingNavBar extends StatelessWidget {
                 child: Container(
                   height: navHeight,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface.withValues(alpha: 0.9),
+                    color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(35),
                     boxShadow: [
                       BoxShadow(
