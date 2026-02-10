@@ -32,12 +32,14 @@ class ItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cacheSize = (82 * MediaQuery.of(context).devicePixelRatio).round();
     final isXSource = _isXSource(url);
     final isBook = type == 'book';
     final hasThumbnailUrl = thumbnailUrl != null && thumbnailUrl!.isNotEmpty;
     final isLocalThumbnail = hasThumbnailUrl && _isLocalFile(thumbnailUrl!);
     final hasNetworkThumbnail = hasThumbnailUrl && !isLocalThumbnail;
-    final hasAssetThumbnail = isXSource || isBook;
+    final hasAssetThumbnail =
+        isBook || (isXSource && !hasNetworkThumbnail && !isLocalThumbnail);
     final hasThumbnail =
         hasAssetThumbnail || hasNetworkThumbnail || isLocalThumbnail;
 
@@ -141,6 +143,8 @@ class ItemCard extends StatelessWidget {
                         width: 82,
                         height: 82,
                         fit: BoxFit.cover,
+                        cacheWidth: cacheSize,
+                        cacheHeight: cacheSize,
                       )
                     : isLocalThumbnail
                     ? Image.file(
@@ -148,6 +152,8 @@ class ItemCard extends StatelessWidget {
                         width: 82,
                         height: 82,
                         fit: BoxFit.cover,
+                        cacheWidth: cacheSize,
+                        cacheHeight: cacheSize,
                         errorBuilder: (context, error, stackTrace) => Container(
                           width: 82,
                           height: 82,
@@ -165,6 +171,8 @@ class ItemCard extends StatelessWidget {
                         width: 82,
                         height: 82,
                         fit: BoxFit.cover,
+                        memCacheWidth: cacheSize,
+                        memCacheHeight: cacheSize,
                         placeholder: (context, url) => Container(
                           color: theme.colorScheme.surfaceContainerHighest,
                           child: const Center(
@@ -258,6 +266,8 @@ class ItemCard extends StatelessWidget {
     return host == 'x.com' ||
         host.endsWith('.x.com') ||
         host == 'twitter.com' ||
-        host.endsWith('.twitter.com');
+        host.endsWith('.twitter.com') ||
+        host == 'mobile.twitter.com' ||
+        host == 't.co';
   }
 }
