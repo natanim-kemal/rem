@@ -31,11 +31,9 @@ class MetadataService {
 
   Future<XOEmbed?> fetchXOEmbed(String url) async {
     try {
-      final endpoint = Uri.https(
-        'publish.twitter.com',
-        '/oembed',
-        {'url': url},
-      );
+      final endpoint = Uri.https('publish.twitter.com', '/oembed', {
+        'url': url,
+      });
       final response = await http.get(endpoint);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         return null;
@@ -69,9 +67,7 @@ class XOEmbed {
   const XOEmbed({this.html});
 
   factory XOEmbed.fromJson(Map<String, dynamic> json) {
-    return XOEmbed(
-      html: json['html'] as String?,
-    );
+    return XOEmbed(html: json['html'] as String?);
   }
 }
 
