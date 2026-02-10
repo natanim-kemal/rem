@@ -643,9 +643,7 @@ class ProfileScreen extends ConsumerWidget {
                         child: DropdownButton<String>(
                           value: gender,
                           underline: const SizedBox.shrink(),
-                          dropdownColor: Theme.of(
-                            context,
-                          ).colorScheme.surface,
+                          dropdownColor: Theme.of(context).colorScheme.surface,
                           icon: Icon(
                             CupertinoIcons.chevron_down,
                             color: context.textTertiary,
