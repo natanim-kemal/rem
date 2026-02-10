@@ -45,7 +45,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
     super.initState();
     if (widget.initialUrl != null) {
       _urlController.text = widget.initialUrl!;
-      _selectedType = _isYouTubeUrl(widget.initialUrl!) ? 'video' : 'link';
+      _selectedType = _isVideoUrl(widget.initialUrl!) ? 'video' : 'link';
       _fetchMetadata();
     }
     if (widget.initialTitle != null) {
@@ -63,20 +63,64 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
 
     setState(() => _isLoadingMetadata = true);
     final metadata = await _metadataService.fetchMetadata(url);
-    if (mounted && metadata != null) {
-      if (_titleController.text.isEmpty && metadata.title != null) {
-        _titleController.text = metadata.title!;
+    final isTikTok = _isTikTokUrl(url);
+    final isX = _isXUrl(url);
+    final tiktokMetadata = isTikTok
+        ? await _metadataService.fetchTikTokOEmbed(url)
+        : null;
+    final xMetadata = isX ? await _metadataService.fetchXOEmbed(url) : null;
+    if (!mounted) {
+      return;
+    }
+
+    final metadataTitle = metadata?.title;
+    final metadataImage = metadata?.image;
+
+    if (_titleController.text.isEmpty) {
+      String? title;
+      if (isTikTok) {
+        final tiktokTitle = tiktokMetadata?.title;
+        title = (tiktokTitle != null && tiktokTitle.isNotEmpty)
+            ? tiktokTitle
+            : metadataTitle;
+      } else if (isX) {
+        title = _pickXTitle(
+          metadataTitle,
+          metadata?.description,
+          xMetadata?.html,
+        );
+      } else {
+        title = metadataTitle;
       }
-      if (metadata.image != null && metadata.image!.isNotEmpty) {
+
+      if (title != null && title.isNotEmpty && !_isGenericTitle(title, isX)) {
+        final cleanedTitle = _stripHashtags(title);
+        if (cleanedTitle.isNotEmpty) {
+          _titleController.text = cleanedTitle;
+        }
+      }
+    }
+
+    if (_thumbnailUrl == null || _thumbnailUrl!.isEmpty) {
+      String? thumbnail;
+      if (isX) {
+        thumbnail = _extractXImageUrl(xMetadata?.html);
+      } else {
+        thumbnail = metadataImage?.isNotEmpty == true
+            ? metadataImage
+            : tiktokMetadata?.thumbnailUrl;
+      }
+      if (thumbnail != null && thumbnail.isNotEmpty) {
         setState(() {
-          _thumbnailUrl = metadata.image;
+          _thumbnailUrl = thumbnail;
         });
       }
-      if (_selectedType == 'link' && _isYouTubeUrl(url)) {
-        setState(() {
-          _selectedType = 'video';
-        });
-      }
+    }
+
+    if (_selectedType == 'link' && _isVideoUrl(url)) {
+      setState(() {
+        _selectedType = 'video';
+      });
     }
     setState(() => _isLoadingMetadata = false);
   }
@@ -398,7 +442,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
     }
 
     final syncEngine = ref.read(syncEngineProvider);
-    final resolvedType = _selectedType == 'link' && _isYouTubeUrl(url)
+    final resolvedType = _selectedType == 'link' && _isVideoUrl(url)
         ? 'video'
         : _selectedType;
 
@@ -454,6 +498,106 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
         host.endsWith('.youtube.com') ||
         host == 'youtu.be' ||
         host.endsWith('.youtu.be');
+  }
+
+  bool _isTikTokUrl(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return false;
+    var uri = Uri.tryParse(trimmed);
+    if (uri == null || uri.host.isEmpty) {
+      uri = Uri.tryParse('https://$trimmed');
+    }
+    final host = uri?.host.toLowerCase() ?? '';
+    return host == 'tiktok.com' ||
+        host.endsWith('.tiktok.com') ||
+        host == 'vm.tiktok.com' ||
+        host == 'vt.tiktok.com';
+  }
+
+  bool _isXUrl(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return false;
+    var uri = Uri.tryParse(trimmed);
+    if (uri == null || uri.host.isEmpty) {
+      uri = Uri.tryParse('https://$trimmed');
+    }
+    final host = uri?.host.toLowerCase() ?? '';
+    return host == 'x.com' ||
+        host.endsWith('.x.com') ||
+        host == 'twitter.com' ||
+        host.endsWith('.twitter.com') ||
+        host == 'mobile.twitter.com' ||
+        host == 't.co';
+  }
+
+  bool _isVideoUrl(String url) {
+    return _isYouTubeUrl(url) || _isTikTokUrl(url);
+  }
+
+  bool _isGenericTitle(String title, bool isX) {
+    final normalized = title.trim().toLowerCase();
+    if (normalized.isEmpty) return true;
+    if (normalized == 'tiktok - make your day' ||
+        normalized == 'tiktok' ||
+        normalized == 'make your day') {
+      return true;
+    }
+    if (isX && _isGenericXTitle(normalized)) {
+      return true;
+    }
+    return false;
+  }
+
+  bool _isGenericXTitle(String normalizedTitle) {
+    return normalizedTitle == 'x' ||
+        normalizedTitle == 'twitter' ||
+        normalizedTitle == 'x / twitter' ||
+        normalizedTitle == 'twitter / x';
+  }
+
+  String? _pickXTitle(String? title, String? description, String? html) {
+    final trimmedTitle = title?.trim() ?? '';
+    if (trimmedTitle.isNotEmpty && !_isGenericXTitle(trimmedTitle.toLowerCase())) {
+      return trimmedTitle;
+    }
+    final htmlText = _extractXPostText(html);
+    if (htmlText != null && htmlText.isNotEmpty) {
+      return _takeWords(htmlText, 5);
+    }
+    final trimmedDescription = description?.trim() ?? '';
+    if (trimmedDescription.isEmpty) return null;
+    return _takeWords(trimmedDescription, 5);
+  }
+
+  String? _extractXPostText(String? html) {
+    if (html == null || html.isEmpty) return null;
+    final match = RegExp(r'<p[^>]*>([\s\S]*?)</p>').firstMatch(html);
+    if (match == null) return null;
+    final raw = match.group(1) ?? '';
+    final noTags = raw.replaceAll(RegExp(r'<[^>]+>'), ' ');
+    final normalized = noTags.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return normalized;
+  }
+
+  String? _extractXImageUrl(String? html) {
+    if (html == null || html.isEmpty) return null;
+    final match = RegExp("<img[^>]+src=['\\\"]([^'\\\"]+)['\\\"]")
+        .firstMatch(html);
+    return match?.group(1);
+  }
+
+  String _takeWords(String text, int count) {
+    final words = text.split(RegExp(r'\s+'));
+    final limit = words.length < count ? words.length : count;
+    return words.take(limit).join(' ').trim();
+  }
+
+  String _stripHashtags(String title) {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) return '';
+    final parts = trimmed.split(RegExp(r'\s+'));
+    final kept = parts.where((part) => !part.startsWith('#')).toList();
+    return kept.join(' ').trim();
   }
 }
 
