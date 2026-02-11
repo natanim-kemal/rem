@@ -106,11 +106,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     }
   }
 
-  final _pages = const [
-    HomeScreen(),
-    StatsScreen(),
-    ProfileScreen(),
-  ];
+  final _pages = const [HomeScreen(), StatsScreen(), ProfileScreen()];
 
   int _pageIndexForNavIndex(int navIndex) {
     switch (navIndex) {
