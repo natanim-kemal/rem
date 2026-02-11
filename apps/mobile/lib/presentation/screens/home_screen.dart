@@ -266,18 +266,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             width: 28,
                             height: 28,
                             decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: context.divider),
                             ),
                             child: Icon(
                               CupertinoIcons.add,
                               size: 16,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
