@@ -22,14 +22,12 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   late String _priority;
   late String _status;
   late List<String> _tags;
-  late bool _isFavorite;
 
   @override
   void initState() {
     super.initState();
     _priority = widget.item['priority'] as String? ?? 'medium';
     _status = widget.item['status'] as String? ?? 'unread';
-    _isFavorite = widget.item['isFavorite'] as bool? ?? false;
     final tagsData = widget.item['tags'];
     List<String> parsedTags = [];
     if (tagsData is List) {
@@ -82,8 +80,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         return CupertinoIcons.checkmark_circle_fill;
       case 'in_progress':
         return CupertinoIcons.time;
-      case 'archived':
-        return CupertinoIcons.archivebox_fill;
       case 'unread':
       default:
         return CupertinoIcons.circle;
@@ -96,8 +92,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         return 'Read';
       case 'in_progress':
         return 'In Progress';
-      case 'archived':
-        return 'Archived';
       case 'unread':
       default:
         return 'Unread';
@@ -180,27 +174,28 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     }
   }
 
-  Future<void> _toggleFavorite() async {
+  Future<void> _toggleArchive() async {
     final itemId = widget.item['id'] as String?;
     if (itemId == null) return;
 
+    final newStatus = _status == 'archived' ? 'unread' : 'archived';
+
     try {
       final syncEngine = ref.read(syncEngineProvider);
-      final newFavoriteStatus = !_isFavorite;
-      await syncEngine.updateItemFavorite(itemId, newFavoriteStatus);
+      await syncEngine.updateItemStatus(itemId, newStatus);
 
       if (mounted) {
         setState(() {
-          _isFavorite = newFavoriteStatus;
+          _status = newStatus;
         });
         showConfirmationSnackBar(
           context,
-          newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites',
+          newStatus == 'archived' ? 'Archived item' : 'Restored item',
         );
       }
     } catch (e) {
       if (mounted) {
-        showWarningSnackBar(context, 'Failed to update favorite: $e');
+        showWarningSnackBar(context, 'Failed to update archive: $e');
       }
     }
   }
@@ -351,7 +346,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           _buildStatusAction('unread'),
           _buildStatusAction('in_progress'),
           _buildStatusAction('read'),
-          _buildStatusAction('archived'),
         ],
         cancelButton: CupertinoActionSheetAction(
           isDefaultAction: true,
@@ -720,17 +714,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 : null,
             actions: [
               IconButton(
-                onPressed: _toggleFavorite,
+                onPressed: _toggleArchive,
                 style: IconButton.styleFrom(
                   backgroundColor: actionBackground,
-                  foregroundColor: _isFavorite
-                      ? const Color(0xFFFF3B30)
-                      : actionForeground,
+                  foregroundColor: actionForeground,
                 ),
                 icon: Icon(
-                  _isFavorite
-                      ? CupertinoIcons.heart_fill
-                      : CupertinoIcons.heart,
+                  _status == 'archived'
+                      ? CupertinoIcons.archivebox_fill
+                      : CupertinoIcons.archivebox,
                 ),
               ),
               IconButton(
