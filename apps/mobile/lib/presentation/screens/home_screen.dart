@@ -11,6 +11,7 @@ import '../widgets/item_card.dart';
 import '../widgets/sync_status_indicator.dart';
 import '../theme/app_theme.dart';
 import 'item_detail_screen.dart';
+import '../widgets/add_item_sheet.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -85,6 +86,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _isLoading = true;
       _lastHandledKey = null;
     });
+  }
+
+  void _openAddItemSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const AddItemSheet(),
+    );
   }
 
   String? _getStatusFilter() {
@@ -248,7 +258,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       'rem',
                       style: Theme.of(context).textTheme.displayMedium,
                     ),
-                    const SyncStatusIndicator(),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _openAddItemSheet,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: context.divider),
+                            ),
+                            child: Icon(
+                              CupertinoIcons.add,
+                              size: 16,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const SyncStatusIndicator(),
+                      ],
+                    ),
                   ],
                 ),
               ),
