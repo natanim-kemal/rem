@@ -20,11 +20,13 @@ class ShellScreen extends ConsumerStatefulWidget {
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
   int _currentIndex = 0;
+  late final PageController _pageController;
   final _shareService = ShareService();
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _pageIndexForNavIndex(0));
     _shareService.initialize();
     _shareService.contentStream.listen(_handleSharedContent);
     final notificationService = ref.read(notificationServiceProvider);
@@ -35,6 +37,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
   void dispose() {
     _shareService.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -103,36 +106,62 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     }
   }
 
-  final _screens = const [
+  final _pages = const [
     HomeScreen(),
-    SizedBox(),
     StatsScreen(),
     ProfileScreen(),
   ];
 
-  void _onNavTap(int index) {
-    if (index == 1) {
-      _showAddSheet();
-    } else {
-      setState(() => _currentIndex = index);
+  int _pageIndexForNavIndex(int navIndex) {
+    switch (navIndex) {
+      case 0:
+        return 0;
+      case 1:
+        return 1;
+      case 2:
+        return 2;
+      default:
+        return 0;
     }
   }
 
-  void _showAddSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const AddItemSheet(),
-    );
+  int _navIndexForPageIndex(int pageIndex) {
+    switch (pageIndex) {
+      case 0:
+        return 0;
+      case 1:
+        return 1;
+      case 2:
+        return 2;
+      default:
+        return 0;
+    }
+  }
+
+  void _onNavTap(int index) {
+    final pageIndex = _pageIndexForNavIndex(index);
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        pageIndex,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
+    }
+    setState(() => _currentIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex == 1 ? 0 : _currentIndex,
-        children: _screens,
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (pageIndex) {
+          final navIndex = _navIndexForPageIndex(pageIndex);
+          if (navIndex != _currentIndex) {
+            setState(() => _currentIndex = navIndex);
+          }
+        },
+        children: _pages,
       ),
       extendBody: true,
       bottomNavigationBar: _FloatingNavBar(
@@ -183,7 +212,7 @@ class _FloatingNavBar extends StatelessWidget {
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, bottomMargin),
+              padding: const EdgeInsets.fromLTRB(36, 0, 36, bottomMargin),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(35),
                 child: Container(
@@ -203,7 +232,7 @@ class _FloatingNavBar extends StatelessWidget {
                     top: false,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                        horizontal: 4,
                         vertical: 8,
                       ),
                       child: Row(
@@ -217,26 +246,18 @@ class _FloatingNavBar extends StatelessWidget {
                             onTap: () => onTap(0),
                           ),
                           _NavItem(
-                            icon: CupertinoIcons.plus_circle,
-                            activeIcon: CupertinoIcons.plus_circle_fill,
-                            label: 'Add',
-                            isActive: currentIndex == 1,
-                            onTap: () => onTap(1),
-                            isCenter: true,
-                          ),
-                          _NavItem(
                             icon: CupertinoIcons.chart_bar,
                             activeIcon: CupertinoIcons.chart_bar_fill,
                             label: 'Stats',
-                            isActive: currentIndex == 2,
-                            onTap: () => onTap(2),
+                            isActive: currentIndex == 1,
+                            onTap: () => onTap(1),
                           ),
                           _NavItem(
                             icon: CupertinoIcons.person,
                             activeIcon: CupertinoIcons.person_fill,
                             label: 'Profile',
-                            isActive: currentIndex == 3,
-                            onTap: () => onTap(3),
+                            isActive: currentIndex == 2,
+                            onTap: () => onTap(2),
                           ),
                         ],
                       ),
