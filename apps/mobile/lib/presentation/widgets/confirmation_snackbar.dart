@@ -20,11 +20,28 @@ void showWarningSnackBar(
   _showStatusSnackBar(
     context,
     message,
-    color: Colors.orange,
-    textColor: Colors.orange.shade700,
+    color: const Color(0xFF1A8A6E),
+    textColor: const Color(0xFF1A8A6E),
     icon: CupertinoIcons.exclamationmark_triangle_fill,
     actionLabel: actionLabel,
     onAction: onAction,
+  );
+}
+
+void showUndoSnackBar(
+  BuildContext context,
+  String message, {
+  required VoidCallback onUndo,
+}) {
+  _showStatusSnackBar(
+    context,
+    message,
+    color: const Color(0xFF2FBF9A),
+    textColor: const Color(0xFF2FBF9A),
+    icon: CupertinoIcons.checkmark_circle_fill,
+    actionLabel: 'Undo',
+    onAction: onUndo,
+    duration: const Duration(seconds: 4),
   );
 }
 
@@ -36,7 +53,9 @@ void _showStatusSnackBar(
   required IconData icon,
   String? actionLabel,
   VoidCallback? onAction,
+  Duration duration = const Duration(seconds: 2),
 }) {
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Center(
@@ -80,7 +99,7 @@ void _showStatusSnackBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
       behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 2),
+      duration: duration,
       margin: const EdgeInsets.only(bottom: 40),
     ),
   );

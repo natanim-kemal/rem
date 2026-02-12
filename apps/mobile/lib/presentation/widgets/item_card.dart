@@ -245,13 +245,13 @@ class ItemCard extends StatelessWidget {
   Color _getPriorityColor() {
     switch (priority.toLowerCase()) {
       case 'high':
-        return const Color(0xFFFF3B30);
+        return const Color(0xFF1A8A6E);
       case 'medium':
-        return const Color(0xFFFF9500);
+        return const Color(0xFF2FBF9A);
       case 'low':
-        return const Color(0xFF34C759);
+        return const Color(0xFF7DDBC4);
       default:
-        return const Color(0xFFFF9500);
+        return const Color(0xFF2FBF9A);
     }
   }
 
