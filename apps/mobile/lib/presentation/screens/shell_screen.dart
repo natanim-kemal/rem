@@ -177,8 +177,8 @@ class _FloatingNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const navHeight = 72.0;
-    const bottomMargin = 24.0;
+    const navHeight = 64.0;
+    const bottomMargin = 20.0;
 
     return SizedBox(
       height: navHeight + bottomMargin,
@@ -210,12 +210,12 @@ class _FloatingNavBar extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(36, 0, 36, bottomMargin),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(35),
+                borderRadius: BorderRadius.circular(28),
                 child: Container(
                   height: navHeight,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(35),
+                    borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.15),
@@ -275,7 +275,6 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
-  final bool isCenter;
 
   const _NavItem({
     required this.icon,
@@ -283,7 +282,6 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.isActive,
     required this.onTap,
-    this.isCenter = false,
   });
 
   @override
@@ -297,20 +295,20 @@ class _NavItem extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 56,
+        width: 52,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isActive ? activeIcon : icon,
-              size: isCenter ? 28 : 24,
+              size: 22,
               color: color,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                 color: color,
               ),
