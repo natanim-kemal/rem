@@ -39,14 +39,22 @@ class SwipeableItemCard extends StatelessWidget {
       },
       background: _SwipeBackground(
         alignment: Alignment.centerLeft,
-        color: isRead ? theme.colorScheme.onSurfaceVariant : const Color(0xFF2FBF9A),
-        icon: isRead ? CupertinoIcons.envelope : CupertinoIcons.checkmark_circle,
+        color: isRead
+            ? theme.colorScheme.onSurfaceVariant
+            : const Color(0xFF2FBF9A),
+        icon: isRead
+            ? CupertinoIcons.envelope
+            : CupertinoIcons.checkmark_circle,
         label: isRead ? 'Unread' : 'Read',
       ),
       secondaryBackground: _SwipeBackground(
         alignment: Alignment.centerRight,
-        color: isArchived ? theme.colorScheme.onSurfaceVariant : const Color(0xFF1A8A6E),
-        icon: isArchived ? CupertinoIcons.tray_arrow_up : CupertinoIcons.archivebox,
+        color: isArchived
+            ? theme.colorScheme.onSurfaceVariant
+            : const Color(0xFF1A8A6E),
+        icon: isArchived
+            ? CupertinoIcons.tray_arrow_up
+            : CupertinoIcons.archivebox,
         label: isArchived ? 'Unarchive' : 'Archive',
       ),
       child: child,
@@ -73,10 +81,7 @@ class _SwipeBackground extends StatelessWidget {
 
     return Container(
       alignment: alignment,
-      padding: EdgeInsets.only(
-        left: isLeft ? 24 : 0,
-        right: isLeft ? 0 : 24,
-      ),
+      padding: EdgeInsets.only(left: isLeft ? 24 : 0, right: isLeft ? 0 : 24),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),

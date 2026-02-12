@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/sync/sync_engine.dart';
 import '../../providers/data_providers.dart';
@@ -89,26 +88,26 @@ class SyncStatusIndicator extends ConsumerWidget {
   Color _getBackgroundColor(SyncStatus status) {
     switch (status) {
       case SyncStatus.syncing:
-        return Colors.blue;
+        return const Color(0xFF2FBF9A);
       case SyncStatus.offline:
-        return Colors.orange;
+        return const Color(0xFF7DDBC4);
       case SyncStatus.error:
-        return Colors.red;
+        return const Color(0xFF1A8A6E);
       case SyncStatus.idle:
-        return Colors.green;
+        return const Color(0xFF2FBF9A);
     }
   }
 
   Color _getTextColor(SyncStatus status) {
     switch (status) {
       case SyncStatus.syncing:
-        return Colors.blue.shade700;
+        return const Color(0xFF1A8A6E);
       case SyncStatus.offline:
-        return Colors.orange.shade700;
+        return const Color(0xFF1A8A6E);
       case SyncStatus.error:
-        return Colors.red.shade700;
+        return const Color(0xFF0D5E4A);
       case SyncStatus.idle:
-        return Colors.green.shade700;
+        return const Color(0xFF1A8A6E);
     }
   }
 }
