@@ -321,21 +321,21 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
             Row(
               children: [
                 _PriorityChip(
-                  color: const Color(0xFFFF3B30),
+                  color: const Color(0xFF1A8A6E),
                   label: 'High',
                   isSelected: _selectedPriority == 'high',
                   onTap: () => setState(() => _selectedPriority = 'high'),
                 ),
                 const SizedBox(width: 8),
                 _PriorityChip(
-                  color: const Color(0xFFFF9500),
+                  color: const Color(0xFF2FBF9A),
                   label: 'Medium',
                   isSelected: _selectedPriority == 'medium',
                   onTap: () => setState(() => _selectedPriority = 'medium'),
                 ),
                 const SizedBox(width: 8),
                 _PriorityChip(
-                  color: const Color(0xFF34C759),
+                  color: const Color(0xFF7DDBC4),
                   label: 'Low',
                   isSelected: _selectedPriority == 'low',
                   onTap: () => setState(() => _selectedPriority = 'low'),

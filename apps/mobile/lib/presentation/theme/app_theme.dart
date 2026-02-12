@@ -22,7 +22,7 @@ class AppTheme {
   static const _darkDivider = Color(0xFF2F2F2F);
 
   static const accent = Color(0xFF2FBF9A);
-  static const destructive = Color(0xFFFF3B30);
+  static const destructive = Color(0xFF1A8A6E);
 
   static TextTheme _buildTextTheme(TextTheme base, Color textColor) {
     final geistTheme = GoogleFonts.dmSansTextTheme(base);

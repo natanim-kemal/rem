@@ -8,6 +8,8 @@ import '../../providers/data_providers.dart';
 import '../widgets/search_bar.dart' as custom;
 import '../widgets/filter_chips.dart';
 import '../widgets/item_card.dart';
+import '../widgets/swipeable_item_card.dart';
+import '../widgets/confirmation_snackbar.dart';
 import '../widgets/sync_status_indicator.dart';
 import '../theme/app_theme.dart';
 import 'item_detail_screen.dart';
@@ -95,6 +97,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => const AddItemSheet(),
     );
+  }
+
+  void _handleStatusChange(Item item, String newStatus) {
+    final previousStatus = item.status;
+    final syncEngine = ref.read(syncEngineProvider);
+
+    syncEngine.updateItemStatus(item.id, newStatus);
+
+    setState(() {
+      _allItems.removeWhere((i) => i.id == item.id);
+    });
+
+    final label = newStatus == 'read' ? 'Marked as read' : newStatus == 'archived' ? 'Archived' : 'Marked as unread';
+
+    showUndoSnackBar(
+      context,
+      label,
+      onUndo: () {
+        syncEngine.updateItemStatus(item.id, previousStatus);
+        setState(() {
+          _currentPage = 0;
+          _allItems.clear();
+          _hasMore = true;
+          _isLoading = true;
+          _lastHandledKey = null;
+          _refreshToken++;
+        });
+      },
+    );
+
+    ref.invalidate(paginatedItemsProvider);
   }
 
   String? _getStatusFilter() {
@@ -344,38 +377,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       }
 
                       final item = _allItems[index];
-                      return ItemCard(
-                        title: item.title,
-                        url: item.url ?? 'No URL',
-                        type: item.type,
-                        priority: item.priority,
-                        thumbnailUrl: item.thumbnailUrl,
-                        readTime: item.estimatedReadTime != null
-                            ? '${item.estimatedReadTime} min'
-                            : null,
-                        date: _formatDate(item.createdAt),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ItemDetailScreen(
-                                item: {
-                                  'id': item.id,
-                                  'title': item.title,
-                                  'url': item.url,
-                                  'type': item.type,
-                                  'priority': item.priority,
-                                  'description': item.description,
-                                  'thumbnailUrl': item.thumbnailUrl,
-                                  'tags': _parseTags(item.tags),
-                                  'status': item.status,
-                                  'createdAt': item.createdAt,
-                                  'convexId': item.convexId,
-                                },
+                      return SwipeableItemCard(
+                        itemId: item.id,
+                        currentStatus: item.status,
+                        onStatusChanged: (newStatus) => _handleStatusChange(item, newStatus),
+                        child: ItemCard(
+                          title: item.title,
+                          url: item.url ?? 'No URL',
+                          type: item.type,
+                          priority: item.priority,
+                          thumbnailUrl: item.thumbnailUrl,
+                          readTime: item.estimatedReadTime != null
+                              ? '${item.estimatedReadTime} min'
+                              : null,
+                          date: _formatDate(item.createdAt),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ItemDetailScreen(
+                                  item: {
+                                    'id': item.id,
+                                    'title': item.title,
+                                    'url': item.url,
+                                    'type': item.type,
+                                    'priority': item.priority,
+                                    'description': item.description,
+                                    'thumbnailUrl': item.thumbnailUrl,
+                                    'tags': _parseTags(item.tags),
+                                    'status': item.status,
+                                    'createdAt': item.createdAt,
+                                    'convexId': item.convexId,
+                                  },
+                                ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       );
                     },
                     childCount:
