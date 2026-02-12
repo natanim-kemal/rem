@@ -109,7 +109,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _allItems.removeWhere((i) => i.id == item.id);
     });
 
-    final label = newStatus == 'read' ? 'Marked as read' : newStatus == 'archived' ? 'Archived' : 'Marked as unread';
+    final label = newStatus == 'read'
+        ? 'Marked as read'
+        : newStatus == 'archived'
+        ? 'Archived'
+        : 'Marked as unread';
 
     showUndoSnackBar(
       context,
@@ -380,7 +384,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       return SwipeableItemCard(
                         itemId: item.id,
                         currentStatus: item.status,
-                        onStatusChanged: (newStatus) => _handleStatusChange(item, newStatus),
+                        onStatusChanged: (newStatus) =>
+                            _handleStatusChange(item, newStatus),
                         child: ItemCard(
                           title: item.title,
                           url: item.url ?? 'No URL',
