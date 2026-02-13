@@ -8,7 +8,9 @@ import 'presentation/screens/auth_screen.dart';
 import 'presentation/theme/app_theme.dart';
 import 'providers/theme_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/data_providers.dart';
 import 'core/config/app_config.dart';
+import 'core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,14 +41,82 @@ class RemApp extends ConsumerWidget {
   }
 }
 
-class _AuthStateSync extends ConsumerWidget {
+class _AuthStateSync extends ConsumerStatefulWidget {
   const _AuthStateSync();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_AuthStateSync> createState() => _AuthStateSyncState();
+}
+
+class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
+  final NotificationService _notificationService = NotificationService();
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationService.initialize();
+    _notificationService.onAction = _handleNotificationAction;
+  }
+
+  void _handleNotificationAction(String? payload) {
+    if (payload == null) return;
+
+    debugPrint('Notification action: $payload');
+
+    final params = Uri.splitQueryString(payload);
+    final itemId = params['itemId'];
+    final action = params['action'];
+
+    if (itemId == null) return;
+
+    switch (action) {
+      case 'mark_read':
+        _handleMarkRead(itemId);
+        break;
+      case 'snooze_30':
+        _handleSnooze(itemId);
+        break;
+      case 'lower_priority':
+        _handleLowerPriority(itemId);
+        break;
+      case 'open_unread_list':
+        break;
+    }
+  }
+
+  void _handleMarkRead(String itemId) async {
+    try {
+      final syncEngine = ref.read(syncEngineProvider);
+      await syncEngine.updateItemStatus(itemId, 'read');
+    } catch (e) {
+      debugPrint('Error marking item as read: $e');
+    }
+  }
+
+  void _handleSnooze(String itemId) async {
+    try {
+      final syncEngine = ref.read(syncEngineProvider);
+      await syncEngine.snoozeItem(itemId, const Duration(minutes: 30));
+      _notificationService.snoozeNotification(minutes: 30, itemId: itemId);
+    } catch (e) {
+      debugPrint('Error snoozing item: $e');
+    }
+  }
+
+  void _handleLowerPriority(String itemId) async {
+    try {
+      final syncEngine = ref.read(syncEngineProvider);
+      await syncEngine.updateItemPriority(itemId, 'low');
+    } catch (e) {
+      debugPrint('Error lowering priority: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ClerkAuthBuilder(
       signedInBuilder: (context, authState) {
-        _syncAuthState(context, ref);
+        _syncAuthState(context);
         return const ShellScreen();
       },
       signedOutBuilder: (context, authState) {
@@ -61,7 +131,7 @@ class _AuthStateSync extends ConsumerWidget {
     );
   }
 
-  void _syncAuthState(BuildContext context, WidgetRef ref) {
+  void _syncAuthState(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final clerkAuth = ClerkAuth.of(context, listen: false);
       final user = clerkAuth.user;

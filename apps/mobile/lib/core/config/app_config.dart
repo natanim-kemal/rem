@@ -1,7 +1,7 @@
 class AppConfig {
   static const String convexUrl = String.fromEnvironment(
     'CONVEX_URL',
-    defaultValue: 'https://curious-lemming-834.convex.cloud',
+    defaultValue: 'https://robust-tiger-419.convex.cloud',
   );
 
   static const String clerkPublishableKey = String.fromEnvironment(

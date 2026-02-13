@@ -455,6 +455,41 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _sendTestNotification(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final authState = ref.read(authProvider);
+    if (authState.userId == null) {
+      _showError(context, 'Please sign in first');
+      return;
+    }
+
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) =>
+          const Center(child: CupertinoActivityIndicator()),
+    );
+
+    try {
+      final convex = ref.read(convexClientProvider);
+      await convex.action('notifications:sendTestNotification', {
+        'userId': authState.userId,
+      });
+
+      if (context.mounted) {
+        Navigator.pop(context);
+        _showSuccess(context, 'Test notification sent!');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        _showError(context, 'Failed to send test: $e');
+      }
+    }
+  }
+
   void _showError(BuildContext context, String message) {
     showCupertinoDialog(
       context: context,
@@ -774,6 +809,11 @@ class ProfileScreen extends ConsumerWidget {
               _SettingsSection(
                 title: 'Data',
                 children: [
+                  _SettingsTile(
+                    icon: CupertinoIcons.bell,
+                    title: 'Test Notification',
+                    onTap: () => _sendTestNotification(context, ref),
+                  ),
                   _SettingsTile(
                     icon: CupertinoIcons.arrow_down_circle,
                     title: 'Export Data',

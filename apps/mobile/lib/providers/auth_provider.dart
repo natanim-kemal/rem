@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/services/convex_client.dart';
+import '../core/services/notification_service.dart';
 
 class AuthState {
   final bool isAuthenticated;
@@ -77,6 +78,13 @@ class AuthNotifier extends Notifier<AuthState> {
       lastName: lastName,
       imageUrl: imageUrl,
     );
+
+    NotificationService().registerTokenWithBackend((token, platform) async {
+      await _convex.mutation('users:registerPushToken', {
+        'token': token,
+        'platform': platform,
+      });
+    });
   }
 
   Future<void> signOut() async {

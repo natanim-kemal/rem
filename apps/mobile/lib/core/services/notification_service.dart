@@ -258,4 +258,17 @@ class NotificationService {
     _fcmToken = await _messaging.getToken();
     return _fcmToken;
   }
+
+  Future<void> registerTokenWithBackend(
+    Future<dynamic> Function(String, String) registerFn,
+  ) async {
+    final token = await getFreshToken();
+    if (token != null) {
+      try {
+        await registerFn(token, 'android');
+      } catch (e) {
+        debugPrint('Failed to register push token: $e');
+      }
+    }
+  }
 }
