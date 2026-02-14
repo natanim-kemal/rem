@@ -51,6 +51,11 @@ class SyncEngine {
 
   Future<void> _triggerSync() async {
     if (_isSyncing) return;
+    
+    if (!_convex.isAuthenticated) {
+      debugPrint('Sync skipped: not authenticated');
+      return;
+    }
 
     try {
       _isSyncing = true;

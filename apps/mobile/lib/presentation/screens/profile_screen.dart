@@ -473,9 +473,20 @@ class ProfileScreen extends ConsumerWidget {
     );
 
     try {
+      final db = ref.read(databaseProvider);
+      final user = await db.getUserByClerkId(authState.userId!);
+      
+      if (user == null) {
+        if (context.mounted) {
+          Navigator.pop(context);
+          _showError(context, 'User not found. Try logging out and back in.');
+        }
+        return;
+      }
+
       final convex = ref.read(convexClientProvider);
       await convex.action('notifications:sendTestNotification', {
-        'userId': authState.userId,
+        'userId': user.id,
       });
 
       if (context.mounted) {
