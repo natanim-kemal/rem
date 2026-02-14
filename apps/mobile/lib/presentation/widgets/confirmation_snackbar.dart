@@ -20,8 +20,8 @@ void showWarningSnackBar(
   _showStatusSnackBar(
     context,
     message,
-    color: const Color(0xFF1A8A6E),
-    textColor: const Color(0xFF1A8A6E),
+    color: Colors.orange,
+    textColor: Colors.orange.shade700,
     icon: CupertinoIcons.exclamationmark_triangle_fill,
     actionLabel: actionLabel,
     onAction: onAction,
