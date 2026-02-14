@@ -475,7 +475,6 @@ class ProfileScreen extends ConsumerWidget {
     try {
       final db = ref.read(databaseProvider);
       final user = await db.getUserByClerkId(authState.userId!);
-      
       if (user == null) {
         if (context.mounted) {
           Navigator.pop(context);
@@ -484,9 +483,25 @@ class ProfileScreen extends ConsumerWidget {
         return;
       }
 
+      final notificationService = ref.read(notificationServiceProvider);
       final convex = ref.read(convexClientProvider);
+
+      String? freshToken;
+      try {
+        freshToken = await notificationService.getFreshToken();
+        if (freshToken != null) {
+          convex.mutation('users:registerPushToken', {
+            'token': freshToken,
+            'platform': 'android',
+          }).catchError((e) => debugPrint('Push token register warning: $e'));
+        }
+      } catch (e) {
+        debugPrint('Failed to get fresh token: $e');
+      }
+
       await convex.action('notifications:sendTestNotification', {
         'userId': user.id,
+        if (freshToken != null) 'fcmToken': freshToken,
       });
 
       if (context.mounted) {
@@ -873,7 +888,6 @@ class ProfileScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 32),
 
-              // Telegram Channel Link
               Center(
                 child: GestureDetector(
                   onTap: () async {
