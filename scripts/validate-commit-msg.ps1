@@ -1,7 +1,7 @@
 $msg = Get-Content .git/COMMIT_EDITMSG -Raw
 $msg = $msg.Trim()
 
-if ($msg -notmatch '^(feat|fix|docs|style|ci|refactor|test|chore)(\(.+\))?:') {
+if ($msg -notmatch '^(feat|fix|docs|style|ci|refactor|test|chore)(\(.+\)):') {
     Write-Error 'Commit must start with: feat|fix|docs|style|ci|refactor|test|chore'
     exit 1
 }
