@@ -457,8 +457,9 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
         type: resolvedType,
         title: title.isNotEmpty ? title : (url.isNotEmpty ? url : 'Image'),
         url: url.isNotEmpty ? url : null,
+        localPath: (resolvedType == 'image' || resolvedType == 'book') ? localImagePath : null,
         description: null,
-        thumbnailUrl: localImagePath ?? _thumbnailUrl,
+        thumbnailUrl: _thumbnailUrl,
         priority: _selectedPriority,
         tags: _tags,
       );
