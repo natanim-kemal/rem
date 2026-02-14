@@ -8,6 +8,19 @@ import {
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
+function getServiceAccountCredentials(): { credentials: any; projectId: string } {
+  const raw = process.env.FCM_SERVICE_ACCOUNT_KEY;
+  if (!raw) {
+    throw new Error("Missing FCM_SERVICE_ACCOUNT_KEY env var");
+  }
+  const credentials = JSON.parse(raw);
+  const projectId = credentials.project_id;
+  if (!projectId) {
+    throw new Error("Missing project_id in service account key");
+  }
+  return { credentials, projectId };
+}
+
 const PRIORITY_DAILY_LIMITS: Record<string, number> = {
   high: 3,
   medium: 2,
@@ -91,12 +104,7 @@ function buildDigestCandidate(
 }
 
 async function getFcmAccessToken(): Promise<string> {
-  const serviceAccountKey = process.env.FCM_SERVICE_ACCOUNT_KEY;
-  if (!serviceAccountKey) {
-    throw new Error("Missing FCM_SERVICE_ACCOUNT_KEY env var");
-  }
-
-  const credentials = JSON.parse(serviceAccountKey);
+  const { credentials } = getServiceAccountCredentials();
   const now = Math.floor(Date.now() / 1000);
   const expiry = now + 3600;
 
@@ -123,7 +131,6 @@ async function getFcmAccessToken(): Promise<string> {
   const encodedClaim = base64UrlEncode(JSON.stringify(claim));
   const signatureInput = `${encodedHeader}.${encodedClaim}`;
 
-  // Parse the PEM private key
   const pemHeader = "-----BEGIN PRIVATE KEY-----";
   const pemFooter = "-----END PRIVATE KEY-----";
   const pemContents = credentials.private_key
@@ -132,7 +139,6 @@ async function getFcmAccessToken(): Promise<string> {
     .replace(/\s/g, "");
   const binaryKey = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
 
-  // Import the private key
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
     binaryKey.buffer,
@@ -141,7 +147,6 @@ async function getFcmAccessToken(): Promise<string> {
     ["sign"]
   );
 
-  // Sign the JWT
   const encoder = new TextEncoder();
   const signature = await crypto.subtle.sign(
     "RSASSA-PKCS1-v1_5",
@@ -259,6 +264,55 @@ export const logNotification = internalMutation({
       title: args.title,
       body: args.body,
       sentAt: args.sentAt,
+    });
+  },
+});
+
+export const getUser = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.userId);
+  },
+});
+
+export const getPushTokens = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("pushTokens")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+  },
+});
+
+export const upsertPushToken = internalMutation({
+  args: {
+    userId: v.id("users"),
+    token: v.string(),
+    platform: v.union(v.literal("android"), v.literal("web")),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("pushTokens")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .first();
+
+    if (existing) {
+      if (existing.userId !== args.userId) {
+        await ctx.db.patch(existing._id, {
+          userId: args.userId,
+          platform: args.platform,
+          createdAt: Date.now(),
+        });
+      }
+      return existing._id;
+    }
+
+    return await ctx.db.insert("pushTokens", {
+      userId: args.userId,
+      token: args.token,
+      platform: args.platform,
+      createdAt: Date.now(),
     });
   },
 });
@@ -406,20 +460,11 @@ export const getNotificationHistory = query({
 export const sendNotificationBatch = action({
   args: { userId: v.id("users"), candidates: v.array(v.any()) },
   handler: async (ctx, args) => {
-    const serviceAccountKey = process.env.FCM_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountKey) {
-      throw new Error("Missing FCM_SERVICE_ACCOUNT_KEY env var");
-    }
-    const credentials = JSON.parse(serviceAccountKey);
-    const projectId = credentials.project_id;
-    if (!projectId) {
-      throw new Error("Missing project_id in service account key");
-    }
+    const { projectId } = getServiceAccountCredentials();
 
-    const tokens = await ctx.db
-      .query("pushTokens")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
+    const tokens = await ctx.runQuery(internal.notifications.getPushTokens, {
+      userId: args.userId,
+    });
 
     if (!tokens.length) return { sent: 0 };
 
@@ -489,36 +534,73 @@ export const runNotificationCron = internalAction({
 });
 
 export const sendTestNotification = action({
-  args: { userId: v.id("users") },
+  args: { userId: v.id("users"), fcmToken: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
+    const user = await ctx.runQuery(internal.notifications.getUser, {
+      userId: args.userId,
+    });
     if (!user) throw new Error("User not found");
 
-    const tokens = await ctx.db
-      .query("pushTokens")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
-
-    if (tokens.length === 0) {
-      throw new Error("No push token registered. Please open the app and wait for sync.");
+    // If a fresh FCM token was provided, register it first
+    if (args.fcmToken) {
+      await ctx.runMutation(internal.notifications.upsertPushToken, {
+        userId: args.userId,
+        token: args.fcmToken,
+        platform: "android",
+      });
     }
 
-    const serviceAccountKey = process.env.FCM_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountKey) {
-      throw new Error("Missing FCM_SERVICE_ACCOUNT_KEY env var");
+    // Use the provided token, or fall back to stored tokens
+    let tokenToUse = args.fcmToken;
+    if (!tokenToUse) {
+      const tokens = await ctx.runQuery(internal.notifications.getPushTokens, {
+        userId: args.userId,
+      });
+      if (tokens.length === 0) {
+        throw new Error("No push token registered. Please open the app and wait for sync.");
+      }
+      tokenToUse = tokens[0].token;
     }
-    const credentials = JSON.parse(serviceAccountKey);
-    const projectId = credentials.project_id;
 
-    await sendFcmNotification(
-      [tokens[0].token],
-      "Test Notification",
-      "Notifications are working!",
-      { type: "test", itemId: "" },
-      projectId
+    const { projectId } = getServiceAccountCredentials();
+    const accessToken = await getFcmAccessToken();
+
+    const payload = {
+      message: {
+        token: tokenToUse,
+        notification: {
+          title: "Test Notification",
+          body: "Notifications are working!",
+        },
+        data: { type: "test", itemId: "" },
+        android: {
+          priority: "high" as const,
+          notification: {
+            channelId: "rem_channel",
+            clickAction: "FLUTTER_NOTIFICATION_CLICK",
+          },
+        },
+      },
+    };
+
+    const response = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      }
     );
 
-    await ctx.db.insert("notificationLog", {
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`FCM send failed: ${errorText}`);
+    }
+
+    await ctx.runMutation(internal.notifications.logNotification, {
       userId: args.userId,
       itemId: undefined,
       type: "reminder",
