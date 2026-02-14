@@ -209,12 +209,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final userId = authState.userId;
+    final clerkId = authState.userId;
     final manualRefreshToken = ref.watch(homeRefreshProvider);
 
-    if (userId == null) {
+    if (clerkId == null) {
       return const Scaffold(body: Center(child: CupertinoActivityIndicator()));
     }
+
+    final userAsync = ref.watch(userByClerkIdProvider(clerkId));
+    final user = userAsync.value;
+    final userId = user?.id ?? clerkId;
 
     final params = PaginatedItemsParams(
       userId: userId,
