@@ -51,11 +51,6 @@ class SyncEngine {
 
   Future<void> _triggerSync() async {
     if (_isSyncing) return;
-    
-    if (!_convex.isAuthenticated) {
-      debugPrint('Sync skipped: not authenticated');
-      return;
-    }
 
     try {
       _isSyncing = true;
@@ -70,6 +65,24 @@ class SyncEngine {
 
       try {
         await _convex.mutation('users:getOrCreateUser', {});
+        
+        final convexUser = await _convex.query('users:getCurrentUser');
+        if (convexUser != null) {
+          await _db.upsertUser(
+            UsersCompanion(
+              id: Value(convexUser['_id']),
+              clerkId: Value(convexUser['clerkId']),
+              email: Value(convexUser['email'] ?? ''),
+              displayName: Value(convexUser['displayName']),
+              avatarUrl: Value(convexUser['avatarUrl']),
+              isPremium: Value(convexUser['isPremium'] ?? false),
+              notificationPreferences: Value('{}'),
+              createdAt: Value((convexUser['createdAt'] as num).toInt()),
+              updatedAt: Value((convexUser['updatedAt'] as num).toInt()),
+              syncStatus: const Value('synced'),
+            ),
+          );
+        }
       } catch (e) {
         debugPrint('Failed to create/get user: $e');
       }
@@ -250,17 +263,23 @@ class SyncEngine {
     try {
       final lastSyncAt = await _getLastSyncTimestamp();
 
-      var remoteItems =
-          await _convex.query('items:getItemsSince', {'since': lastSyncAt})
-              as List<dynamic>?;
+      var remoteItemsRaw = await _convex.query('items:getItemsSince', {'since': lastSyncAt});
+      
+      if (remoteItemsRaw is! List) {
+        remoteItemsRaw = [];
+      }
+      var remoteItems = remoteItemsRaw.take(100).toList().cast<dynamic>();
 
-      if ((remoteItems == null || remoteItems.isEmpty) && lastSyncAt == 0) {
-        remoteItems =
-            await _convex.query('items:getItems', {'limit': 200})
-                as List<dynamic>?;
+      if ((remoteItems.isEmpty) && lastSyncAt == 0) {
+        var getItemsRaw = await _convex.query('items:getItems', {'limit': 200});
+        if (getItemsRaw is List) {
+          remoteItems = getItemsRaw.take(200).toList().cast<dynamic>();
+        }
       }
 
-      if (remoteItems == null || remoteItems.isEmpty) return;
+      if (remoteItems.isEmpty) {
+        return;
+      }
 
       for (final remoteItem in remoteItems) {
         if (remoteItem is! Map<String, dynamic>) continue;
@@ -275,34 +294,29 @@ class SyncEngine {
 
   Future<void> _mergeRemoteItem(Map<String, dynamic> remoteItem) async {
     final convexId = _asString(remoteItem['_id']);
-    final localId = _asString(remoteItem['localId']) ?? convexId;
     final userId = _asString(remoteItem['userId']);
     final type = _asString(remoteItem['type']) ?? 'link';
     final title = _asString(remoteItem['title']) ?? 'Untitled';
 
-    if (localId == null || convexId == null || userId == null) {
+    if (convexId == null || userId == null) {
       return;
     }
 
-    final existingByConvex = await _db.getItemByConvexId(convexId);
-    if (existingByConvex != null) {
-      await _resolveConflict(existingByConvex, remoteItem, title);
-      return;
-    }
+    final existingItem = await _db.getItemByConvexId(convexId);
 
-    final localItem = await _db.getItemById(localId);
+    if (existingItem != null) {
+      await _resolveConflict(existingItem, remoteItem, title);
+    } else {
+      final itemId = convexId;
 
-    if (localItem == null) {
       await _insertRemoteItem(
         remoteItem,
-        localId,
+        itemId,
         convexId,
         userId,
         type,
         title,
       );
-    } else {
-      await _resolveConflict(localItem, remoteItem, title);
     }
   }
 
@@ -317,6 +331,7 @@ class SyncEngine {
     final now = DateTime.now().millisecondsSinceEpoch;
     final remoteUpdatedAt = _asInt(remoteItem['updatedAt']) ?? now;
     final url = _asString(remoteItem['url']);
+    final localPath = _asString(remoteItem['localPath']);
     final description = _asString(remoteItem['description']);
     final thumbnailUrl = _asString(remoteItem['thumbnailUrl']);
     final priority = _asString(remoteItem['priority']) ?? 'medium';
@@ -331,6 +346,7 @@ class SyncEngine {
         type: type,
         title: title,
         url: Value(url),
+        localPath: Value(localPath),
         description: Value(description),
         thumbnailUrl: Value(thumbnailUrl),
         estimatedReadTime: Value(_asInt(remoteItem['estimatedReadTime'])),
@@ -411,6 +427,7 @@ class SyncEngine {
     required String type,
     required String title,
     String? url,
+    String? localPath,
     String? description,
     String? thumbnailUrl,
     int? estimatedReadTime,
@@ -436,6 +453,7 @@ class SyncEngine {
         type: type,
         title: title,
         url: Value(url),
+        localPath: Value(localPath),
         description: Value(description),
         thumbnailUrl: Value(thumbnailUrl),
         estimatedReadTime: Value(estimatedReadTime),
