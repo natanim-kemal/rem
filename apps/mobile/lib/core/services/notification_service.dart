@@ -38,13 +38,19 @@ class NotificationService {
     );
 
     _fcmToken = await _messaging.getToken();
+    debugPrint('[NOTIF] FCM Token: $_fcmToken');
 
     _messaging.onTokenRefresh.listen((token) {
       _fcmToken = token;
-      debugPrint('FCM Token refreshed: $token');
+      debugPrint('[NOTIF] FCM Token refreshed: $token');
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+  }
+
+  Future<String?> getFreshToken() async {
+    _fcmToken = await _messaging.getToken();
+    return _fcmToken;
   }
 
   Future<bool> ensurePermissions() async {
@@ -105,20 +111,23 @@ class NotificationService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    debugPrint('Got a message whilst in the foreground!');
-    debugPrint('Message data: ${message.data}');
+    debugPrint('[NOTIF] Got a message whilst in the foreground!');
+    debugPrint('[NOTIF] Message data: ${message.data}');
+    debugPrint('[NOTIF] Message notification: ${message.notification}');
+    debugPrint('[NOTIF] Notification title: ${message.notification?.title}');
+    debugPrint('[NOTIF] Notification body: ${message.notification?.body}');
 
     if (message.notification != null) {
-      debugPrint(
-        'Message also contained a notification: ${message.notification}',
-      );
       await _showLocalNotification(message);
+    } else {
+      debugPrint('[NOTIF] No notification payload in message, skipping local notification');
     }
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
+    debugPrint('[NOTIF] Showing local notification: ${notification.title} - ${notification.body}');
 
     final actions = message.data['type'] == 'digest'
         ? [const AndroidNotificationAction('open_unread_list', 'Open Unread')]
@@ -150,13 +159,18 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _localNotifications.show(
-      message.hashCode,
-      notification.title,
-      notification.body,
-      platformDetails,
-      payload: message.data['itemId'],
-    );
+    try {
+      await _localNotifications.show(
+        message.hashCode,
+        notification.title,
+        notification.body,
+        platformDetails,
+        payload: message.data['itemId'],
+      );
+      debugPrint('[NOTIF] Local notification shown successfully');
+    } catch (e) {
+      debugPrint('[NOTIF] Error showing local notification: $e');
+    }
   }
 
   void _handleMessageOpenedApp(RemoteMessage message) {
@@ -254,10 +268,7 @@ class NotificationService {
 
   String? get fcmToken => _fcmToken;
 
-  Future<String?> getFreshToken() async {
-    _fcmToken = await _messaging.getToken();
-    return _fcmToken;
-  }
+
 
   Future<void> registerTokenWithBackend(
     Future<dynamic> Function(String, String) registerFn,
