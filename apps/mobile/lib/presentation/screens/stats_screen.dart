@@ -12,11 +12,15 @@ class StatsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final userId = authState.userId;
+    final clerkId = authState.userId;
 
-    if (userId == null) {
+    if (clerkId == null) {
       return const Scaffold(body: Center(child: CupertinoActivityIndicator()));
     }
+
+    final userAsync = ref.watch(userByClerkIdProvider(clerkId));
+    final user = userAsync.value;
+    final userId = user?.id ?? clerkId;
 
     final itemsAsync = ref.watch(itemsStreamProvider(userId));
 
@@ -279,7 +283,7 @@ class _HeaderRow extends StatelessWidget {
                 total == 0 ? 'Get started' : 'Last 7 days',
                 style: Theme.of(
                   context,
-                ).textTheme.labelMedium?.copyWith(color: context.textSecondary),
+                ).textTheme.labelMedium?.copyWith(color:  Theme.of(context).colorScheme.primary),
               ),
             ),
           ),
