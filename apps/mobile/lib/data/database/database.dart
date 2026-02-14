@@ -31,6 +31,7 @@ class Items extends Table {
   TextColumn get userId => text()();
   TextColumn get type => text()();
   TextColumn get url => text().nullable()();
+  TextColumn get localPath => text().nullable()();
   TextColumn get title => text()();
   TextColumn get description => text().nullable()();
   TextColumn get thumbnailUrl => text().nullable()();
@@ -284,7 +285,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<int> insertItem(ItemsCompanion item) {
-    return into(items).insert(item);
+    return into(items).insertOnConflictUpdate(item);
   }
 
   Future<bool> updateItemById(String id, ItemsCompanion updates) {
