@@ -65,7 +65,7 @@ class SyncEngine {
 
       try {
         await _convex.mutation('users:getOrCreateUser', {});
-        
+
         final convexUser = await _convex.query('users:getCurrentUser');
         if (convexUser != null) {
           await _db.upsertUser(
@@ -263,8 +263,10 @@ class SyncEngine {
     try {
       final lastSyncAt = await _getLastSyncTimestamp();
 
-      var remoteItemsRaw = await _convex.query('items:getItemsSince', {'since': lastSyncAt});
-      
+      var remoteItemsRaw = await _convex.query('items:getItemsSince', {
+        'since': lastSyncAt,
+      });
+
       if (remoteItemsRaw is! List) {
         remoteItemsRaw = [];
       }

@@ -120,14 +120,18 @@ class NotificationService {
     if (message.notification != null) {
       await _showLocalNotification(message);
     } else {
-      debugPrint('[NOTIF] No notification payload in message, skipping local notification');
+      debugPrint(
+        '[NOTIF] No notification payload in message, skipping local notification',
+      );
     }
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
-    debugPrint('[NOTIF] Showing local notification: ${notification.title} - ${notification.body}');
+    debugPrint(
+      '[NOTIF] Showing local notification: ${notification.title} - ${notification.body}',
+    );
 
     final actions = message.data['type'] == 'digest'
         ? [const AndroidNotificationAction('open_unread_list', 'Open Unread')]
@@ -267,8 +271,6 @@ class NotificationService {
   }
 
   String? get fcmToken => _fcmToken;
-
-
 
   Future<void> registerTokenWithBackend(
     Future<dynamic> Function(String, String) registerFn,

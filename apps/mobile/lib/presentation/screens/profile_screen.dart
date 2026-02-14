@@ -490,10 +490,12 @@ class ProfileScreen extends ConsumerWidget {
       try {
         freshToken = await notificationService.getFreshToken();
         if (freshToken != null) {
-          convex.mutation('users:registerPushToken', {
-            'token': freshToken,
-            'platform': 'android',
-          }).catchError((e) => debugPrint('Push token register warning: $e'));
+          convex
+              .mutation('users:registerPushToken', {
+                'token': freshToken,
+                'platform': 'android',
+              })
+              .catchError((e) => debugPrint('Push token register warning: $e'));
         }
       } catch (e) {
         debugPrint('Failed to get fresh token: $e');

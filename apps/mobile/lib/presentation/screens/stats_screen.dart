@@ -281,9 +281,9 @@ class _HeaderRow extends StatelessWidget {
               ),
               child: Text(
                 total == 0 ? 'Get started' : 'Last 7 days',
-                style: Theme.of(
-                  context,
-                ).textTheme.labelMedium?.copyWith(color:  Theme.of(context).colorScheme.primary),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
           ),
