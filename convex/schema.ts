@@ -32,6 +32,7 @@ export default defineSchema({
             v.literal("note")
         ),
         url: v.optional(v.string()),
+        localPath: v.optional(v.string()),
         title: v.string(),
         description: v.optional(v.string()),
         thumbnailUrl: v.optional(v.string()),
