@@ -63,14 +63,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'read':
-        return const Color(0xFF2FBF9A);
+        return const Color(0xFF34C759);
       case 'in_progress':
-        return const Color(0xFF7DDBC4);
+        return const Color(0xFFFF9500);
       case 'archived':
         return const Color(0xFF8E8E93);
       case 'unread':
       default:
-        return const Color(0xFF1A8A6E);
+        return const Color(0xFF007AFF);
     }
   }
 
