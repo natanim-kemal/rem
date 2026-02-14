@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/sync/sync_engine.dart';
 import '../../providers/data_providers.dart';
@@ -90,9 +91,9 @@ class SyncStatusIndicator extends ConsumerWidget {
       case SyncStatus.syncing:
         return const Color(0xFF2FBF9A);
       case SyncStatus.offline:
-        return const Color(0xFF7DDBC4);
+        return Colors.orange;
       case SyncStatus.error:
-        return const Color(0xFF1A8A6E);
+        return Colors.red;
       case SyncStatus.idle:
         return const Color(0xFF2FBF9A);
     }
@@ -103,9 +104,9 @@ class SyncStatusIndicator extends ConsumerWidget {
       case SyncStatus.syncing:
         return const Color(0xFF1A8A6E);
       case SyncStatus.offline:
-        return const Color(0xFF1A8A6E);
+        return Colors.orange.shade700;
       case SyncStatus.error:
-        return const Color(0xFF0D5E4A);
+        return Colors.red.shade700;
       case SyncStatus.idle:
         return const Color(0xFF1A8A6E);
     }
