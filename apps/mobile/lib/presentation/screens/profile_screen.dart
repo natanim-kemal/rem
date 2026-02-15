@@ -503,7 +503,7 @@ class ProfileScreen extends ConsumerWidget {
 
       await convex.action('notifications:sendTestNotification', {
         'userId': user.id,
-        if (freshToken != null) 'fcmToken': freshToken,
+        ...?freshToken != null ? {'fcmToken': freshToken} : null,
       });
 
       if (context.mounted) {
@@ -511,6 +511,7 @@ class ProfileScreen extends ConsumerWidget {
         _showSuccess(context, 'Test notification sent!');
       }
     } catch (e) {
+      debugPrint('Failed to send test notification: $e');
       if (context.mounted) {
         Navigator.pop(context);
         _showError(context, 'Failed to send test: $e');
@@ -628,14 +629,14 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         actions: [
                           CupertinoActionSheetAction(
-                            isDestructiveAction: true,
                             onPressed: () {
                               ref.read(authProvider.notifier).signOut();
                               Navigator.pop(context);
                             },
                             child: Text(
                               'Sign Out',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: Colors.orange.shade700),
                             ),
                           ),
                         ],

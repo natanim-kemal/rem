@@ -148,6 +148,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<bool>(navigateToHomeProvider, (previous, next) {
+      if (next) {
+        _onNavTap(0);
+        // Consume the signal so it doesn't fire again
+        ref.read(navigateToHomeProvider.notifier).consume();
+      }
+    });
+
     return Scaffold(
       body: PageView(
         controller: _pageController,

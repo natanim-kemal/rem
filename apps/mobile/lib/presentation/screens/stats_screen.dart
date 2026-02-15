@@ -64,13 +64,22 @@ class StatsScreen extends ConsumerWidget {
   }
 }
 
-class _StatsBody extends StatelessWidget {
+class _StatsBody extends ConsumerWidget {
   final List<Item> items;
 
   const _StatsBody({required this.items});
 
+  void _navigateToHomeWithFilter(
+    BuildContext context,
+    WidgetRef ref,
+    String status,
+  ) {
+    ref.read(selectedStatusFilterProvider.notifier).setFilter(status);
+    ref.read(navigateToHomeProvider.notifier).request();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final total = items.length;
 
@@ -79,6 +88,9 @@ class _StatsBody extends StatelessWidget {
         .where((item) => item.status == 'archived')
         .toList();
     final unreadItems = items.where((item) => item.status == 'unread').toList();
+    final inProgressItems = items
+        .where((item) => item.status == 'in_progress')
+        .toList();
 
     final totalReadMinutes = readItems.fold<int>(
       0,
@@ -145,10 +157,12 @@ class _StatsBody extends StatelessWidget {
             children: [
               Expanded(
                 child: _MetricCard(
-                  icon: CupertinoIcons.bookmark_fill,
-                  label: 'Saved',
-                  value: '$total',
-                  tone: AppTheme.accent,
+                  icon: CupertinoIcons.time,
+                  label: 'In Progress',
+                  value: '${inProgressItems.length}',
+                  tone: const Color(0xFFC2853A),
+                  onTap: () =>
+                      _navigateToHomeWithFilter(context, ref, 'In Progress'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -158,6 +172,7 @@ class _StatsBody extends StatelessWidget {
                   label: 'Read',
                   value: '${readItems.length}',
                   tone: const Color(0xFF3C8D7D),
+                  onTap: () => _navigateToHomeWithFilter(context, ref, 'Read'),
                 ),
               ),
             ],
@@ -167,19 +182,23 @@ class _StatsBody extends StatelessWidget {
             children: [
               Expanded(
                 child: _MetricCard(
-                  icon: CupertinoIcons.bell,
+                  icon: CupertinoIcons.circle,
                   label: 'Unread',
                   value: '${unreadItems.length}',
                   tone: const Color(0xFF5B7DA5),
+                  onTap: () =>
+                      _navigateToHomeWithFilter(context, ref, 'Unread'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _MetricCard(
-                  icon: CupertinoIcons.archivebox_fill,
+                  icon: CupertinoIcons.archivebox,
                   label: 'Archived',
                   value: '${archivedItems.length}',
                   tone: const Color(0xFF916E4D),
+                  onTap: () =>
+                      _navigateToHomeWithFilter(context, ref, 'Archived'),
                 ),
               ),
             ],
@@ -381,50 +400,55 @@ class _MetricCard extends StatelessWidget {
   final String label;
   final String value;
   final Color tone;
+  final VoidCallback? onTap;
 
   const _MetricCard({
     required this.icon,
     required this.label,
     required this.value,
     required this.tone,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.divider.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: tone.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.divider.withValues(alpha: 0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: tone.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 18, color: tone),
             ),
-            child: Icon(icon, size: 18, color: tone),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.displaySmall,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: context.textSecondary),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              value,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.displaySmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: context.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }
