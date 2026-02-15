@@ -93,7 +93,7 @@ class ItemCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (readTime != null || date != null) ...[
+                      if (date != null) ...[
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
@@ -103,30 +103,44 @@ class ItemCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                      ],
-                      if (readTime != null)
-                        Text(
-                          readTime!,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      if (readTime == null && date != null)
                         Text(
                           date!,
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    _getTypeLabel(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.2,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        _getTypeLabel(),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      if (readTime != null) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Text(
+                            '•',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          readTime!,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -174,12 +188,16 @@ class ItemCard extends StatelessWidget {
                         memCacheWidth: cacheSize,
                         memCacheHeight: cacheSize,
                         placeholder: (context, url) => Container(
+                          width: 82,
+                          height: 82,
                           color: theme.colorScheme.surfaceContainerHighest,
                           child: const Center(
                             child: CupertinoActivityIndicator(),
                           ),
                         ),
                         errorWidget: (context, url, error) => Container(
+                          width: 82,
+                          height: 82,
                           color: theme.colorScheme.surfaceContainerHighest,
                           child: Icon(
                             _getTypeIcon(),
@@ -191,17 +209,17 @@ class ItemCard extends StatelessWidget {
                     : const SizedBox.shrink(),
               ),
             ] else ...[
-              const SizedBox(width: 10),
+              const SizedBox(width: 14),
               Container(
-                width: 40,
-                height: 40,
+                width: 82,
+                height: 82,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   _getTypeIcon(),
-                  size: 20,
+                  size: 30,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
