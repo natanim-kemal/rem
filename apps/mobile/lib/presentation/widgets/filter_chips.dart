@@ -34,65 +34,70 @@ class FilterChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return SizedBox(
-      height: 36,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: filters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final filter = filters[index];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: filters.asMap().entries.map((entry) {
+          final index = entry.key;
+          final filter = entry.value;
           final isSelected = filter == selected;
           final icon = _getIcon(filter);
+          final isLast = index == filters.length - 1;
 
-          return GestureDetector(
-            onTap: () => onSelected(filter),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(horizontal: icon != null ? 12 : 16),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? theme.colorScheme.surfaceContainerHighest
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isSelected
-                      ? theme.colorScheme.primary.withValues(alpha: 0.6)
-                      : theme.colorScheme.outline,
-                  width: isSelected ? 1.5 : 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(
-                      icon,
-                      size: 16,
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: isLast ? 0 : 8),
+              child: GestureDetector(
+                onTap: () => onSelected(filter),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? theme.colorScheme.surfaceContainerHighest
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
                       color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                  ],
-                  Text(
-                    filter,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurfaceVariant,
+                          ? theme.colorScheme.primary.withValues(alpha: 0.6)
+                          : theme.colorScheme.outline,
+                      width: isSelected ? 1.5 : 1,
                     ),
                   ),
-                ],
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (icon != null) ...[
+                          Icon(
+                            icon,
+                            size: 16,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Text(
+                          filter,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           );
-        },
+        }).toList(),
       ),
     );
   }
