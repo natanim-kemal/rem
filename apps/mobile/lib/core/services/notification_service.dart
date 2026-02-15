@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -38,14 +39,18 @@ class NotificationService {
     );
 
     _fcmToken = await _messaging.getToken();
-    debugPrint('[NOTIF] FCM Token: $_fcmToken');
 
     _messaging.onTokenRefresh.listen((token) {
       _fcmToken = token;
-      debugPrint('[NOTIF] FCM Token refreshed: $token');
+      _syncTokenWithBackend(token);
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+
+    final initialMessage = await _messaging.getInitialMessage();
+    if (initialMessage != null) {
+      _handleMessageOpenedApp(initialMessage);
+    }
   }
 
   Future<String?> getFreshToken() async {
@@ -54,25 +59,17 @@ class NotificationService {
   }
 
   Future<bool> ensurePermissions() async {
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
-
+    final settings = await _requestPermission();
     return settings.authorizationStatus == AuthorizationStatus.authorized;
   }
 
-  Future<void> _requestPermission() async {
-    NotificationSettings settings = await _messaging.requestPermission(
+  Future<NotificationSettings> _requestPermission() async {
+    return _messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
       provisional: false,
     );
-
-    debugPrint('User granted permission: ${settings.authorizationStatus}');
   }
 
   Future<void> _initializeLocalNotifications() async {
@@ -95,6 +92,19 @@ class NotificationService {
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
+
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'rem_channel',
+      'REM Notifications',
+      description: 'Notifications for REM app',
+      importance: Importance.high,
+    );
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(channel);
   }
 
   void Function(String? payload)? onAction;
@@ -111,27 +121,14 @@ class NotificationService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    debugPrint('[NOTIF] Got a message whilst in the foreground!');
-    debugPrint('[NOTIF] Message data: ${message.data}');
-    debugPrint('[NOTIF] Message notification: ${message.notification}');
-    debugPrint('[NOTIF] Notification title: ${message.notification?.title}');
-    debugPrint('[NOTIF] Notification body: ${message.notification?.body}');
-
     if (message.notification != null) {
       await _showLocalNotification(message);
-    } else {
-      debugPrint(
-        '[NOTIF] No notification payload in message, skipping local notification',
-      );
     }
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
-    debugPrint(
-      '[NOTIF] Showing local notification: ${notification.title} - ${notification.body}',
-    );
 
     final actions = message.data['type'] == 'digest'
         ? [const AndroidNotificationAction('open_unread_list', 'Open Unread')]
@@ -171,14 +168,13 @@ class NotificationService {
         platformDetails,
         payload: message.data['itemId'],
       );
-      debugPrint('[NOTIF] Local notification shown successfully');
     } catch (e) {
-      debugPrint('[NOTIF] Error showing local notification: $e');
+      debugPrint('Error showing local notification: $e');
     }
   }
 
   void _handleMessageOpenedApp(RemoteMessage message) {
-    debugPrint('Message opened app: ${message.data}');
+    onAction?.call(message.data['itemId']);
   }
 
   Future<void> scheduleDailyReminder({
@@ -272,13 +268,29 @@ class NotificationService {
 
   String? get fcmToken => _fcmToken;
 
+  Future<void> _syncTokenWithBackend(String token) async {
+    final platform = Platform.operatingSystem;
+    try {
+      await registerTokenWithBackend(
+        (t, p) async {},
+        token: token,
+        platform: platform,
+      );
+    } catch (e) {
+      debugPrint('Failed to sync token with backend: $e');
+    }
+  }
+
   Future<void> registerTokenWithBackend(
-    Future<dynamic> Function(String, String) registerFn,
-  ) async {
-    final token = await getFreshToken();
-    if (token != null) {
+    Future<dynamic> Function(String, String) registerFn, {
+    String? token,
+    String? platform,
+  }) async {
+    final fcmToken = token ?? await getFreshToken();
+    final os = platform ?? Platform.operatingSystem;
+    if (fcmToken != null) {
       try {
-        await registerFn(token, 'android');
+        await registerFn(fcmToken, os);
       } catch (e) {
         debugPrint('Failed to register push token: $e');
       }
