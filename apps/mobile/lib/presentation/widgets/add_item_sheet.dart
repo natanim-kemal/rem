@@ -37,6 +37,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
   bool _isLoadingMetadata = false;
   File? _selectedImage;
   String? _thumbnailUrl;
+  int? _estimatedReadTime;
   final List<String> _tags = [];
   final FocusNode _tagFocusNode = FocusNode();
 
@@ -122,6 +123,12 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
         _selectedType = 'video';
       });
     }
+
+    String? description = metadata?.description;
+    if (description != null && description.isNotEmpty) {
+      _estimatedReadTime = _metadataService.calculateReadingTime(description);
+    }
+
     setState(() => _isLoadingMetadata = false);
   }
 
@@ -265,9 +272,15 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
                 autofocus: widget.initialUrl == null,
                 keyboardType: TextInputType.url,
                 onSubmitted: (_) => _fetchMetadata(),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'https://...',
-                  prefixIcon: Icon(CupertinoIcons.link, size: 20),
+                  prefixIcon: Icon(
+                    CupertinoIcons.link,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  filled: true,
+                  fillColor: theme.colorScheme.surfaceContainerHighest,
                 ),
               ),
             ],
@@ -277,7 +290,11 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(hintText: 'Custom title...'),
+              decoration: InputDecoration(
+                hintText: 'Custom title...',
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -358,9 +375,15 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
                     spellCheckConfiguration:
                         const SpellCheckConfiguration.disabled(),
                     onSubmitted: (_) => _addTag(),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Add a tag...',
-                      prefixIcon: Icon(CupertinoIcons.tag, size: 20),
+                      prefixIcon: Icon(
+                        CupertinoIcons.tag,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceContainerHighest,
                     ),
                   ),
                 ),
@@ -442,6 +465,17 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
     }
 
     final syncEngine = ref.read(syncEngineProvider);
+
+    final db = ref.read(databaseProvider);
+    final convexUser = await db.getUserByClerkId(authState.userId!);
+    if (convexUser == null) {
+      if (mounted) {
+        showWarningSnackBar(context, 'User not synced yet, please try again');
+      }
+      return;
+    }
+    final userId = convexUser.id;
+
     final resolvedType = _selectedType == 'link' && _isVideoUrl(url)
         ? 'video'
         : _selectedType;
@@ -452,8 +486,15 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
         localImagePath = _selectedImage!.path;
       }
 
+      int? estimatedReadTime;
+      if (resolvedType == 'link') {
+        estimatedReadTime = _estimatedReadTime;
+      } else if (resolvedType == 'video') {
+        estimatedReadTime = 0;
+      }
+
       await syncEngine.createItem(
-        userId: authState.userId!,
+        userId: userId,
         type: resolvedType,
         title: title.isNotEmpty ? title : (url.isNotEmpty ? url : 'Image'),
         url: url.isNotEmpty ? url : null,
@@ -462,6 +503,7 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
             : null,
         description: null,
         thumbnailUrl: _thumbnailUrl,
+        estimatedReadTime: estimatedReadTime,
         priority: _selectedPriority,
         tags: _tags,
       );
