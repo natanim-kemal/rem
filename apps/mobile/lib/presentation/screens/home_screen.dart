@@ -22,8 +22,13 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   String _selectedFilter = 'All';
+  String _selectedStatus = 'All';
   String _searchQuery = '';
   int _currentPage = 0;
   final List<Item> _allItems = [];
@@ -39,6 +44,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pendingStatus = ref.read(selectedStatusFilterProvider);
+      if (pendingStatus != null && pendingStatus != _selectedStatus) {
+        setState(() {
+          _selectedStatus = pendingStatus;
+          _currentPage = 0;
+          _allItems.clear();
+          _hasMore = true;
+          _isLoading = true;
+          _lastHandledKey = null;
+        });
+        ref.read(selectedStatusFilterProvider.notifier).setFilter(null);
+      }
+    });
   }
 
   @override
@@ -99,6 +119,84 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  IconData _getFilterIcon(String status) {
+    switch (status) {
+      case 'All':
+        return CupertinoIcons.square_stack_3d_up;
+      case 'Unread':
+        return CupertinoIcons.circle;
+      case 'Read':
+        return CupertinoIcons.checkmark_circle_fill;
+      case 'In Progress':
+        return CupertinoIcons.time;
+      case 'Archived':
+        return CupertinoIcons.archivebox;
+      default:
+        return CupertinoIcons.circle;
+    }
+  }
+
+  void _showStatusFilterSheet() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: const Text('Filter by Status', style: TextStyle(fontSize: 15)),
+        actions: ['All', 'Unread', 'Read', 'In Progress', 'Archived']
+            .map(
+              (status) => CupertinoActionSheetAction(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (_selectedStatus != status) {
+                    setState(() {
+                      _selectedStatus = status;
+                      _currentPage = 0;
+                      _allItems.clear();
+                      _hasMore = true;
+                      _isLoading = true;
+                      _lastHandledKey = null;
+                    });
+                  }
+                },
+                child: DefaultTextStyle.merge(
+                  style: const TextStyle(fontSize: 15),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _getFilterIcon(status),
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        status,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      if (_selectedStatus == status) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          CupertinoIcons.checkmark,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(fontSize: 15)),
+        ),
+      ),
+    );
+  }
+
   void _handleStatusChange(Item item, String newStatus) {
     final previousStatus = item.status;
     final syncEngine = ref.read(syncEngineProvider);
@@ -135,8 +233,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   String? _getStatusFilter() {
-    if (_selectedFilter == 'Unread') return 'unread';
-    return null;
+    switch (_selectedStatus) {
+      case 'Read':
+        return 'read';
+      case 'Unread':
+        return 'unread';
+      case 'In Progress':
+        return 'in_progress';
+      case 'Archived':
+        return 'archived';
+      default:
+        return null;
+    }
   }
 
   String? _getTypeFilter() {
@@ -208,9 +316,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     final authState = ref.watch(authProvider);
     final clerkId = authState.userId;
     final manualRefreshToken = ref.watch(homeRefreshProvider);
+    final statusFilter = ref.watch(selectedStatusFilterProvider);
+
+    if (statusFilter != null && statusFilter != _selectedStatus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _selectedStatus = statusFilter;
+          _currentPage = 0;
+          _allItems.clear();
+          _hasMore = true;
+          _isLoading = true;
+          _lastHandledKey = null;
+        });
+        ref.read(selectedStatusFilterProvider.notifier).setFilter(null);
+      });
+    }
+
+    ref.listen<String?>(selectedStatusFilterProvider, (previous, next) {
+      if (next != null && next != _selectedStatus) {
+        setState(() {
+          _selectedStatus = next;
+          _currentPage = 0;
+          _allItems.clear();
+          _hasMore = true;
+          _isLoading = true;
+          _lastHandledKey = null;
+        });
+
+        ref.read(selectedStatusFilterProvider.notifier).setFilter(null);
+      }
+    });
 
     if (clerkId == null) {
       return const Scaffold(body: Center(child: CupertinoActivityIndicator()));
@@ -218,7 +358,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final userAsync = ref.watch(userByClerkIdProvider(clerkId));
     final user = userAsync.value;
-    final userId = user?.id ?? clerkId;
+
+    if (user == null) {
+      Future.microtask(() async {
+        try {
+          await ref.read(syncEngineProvider).syncNow();
+        } catch (e) {
+          debugPrint('Sync error: $e');
+        }
+      });
+      return const Scaffold(body: Center(child: CupertinoActivityIndicator()));
+    }
+
+    final userId = user.id;
 
     final params = PaginatedItemsParams(
       userId: userId,
@@ -295,9 +447,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'rem',
-                      style: Theme.of(context).textTheme.displayMedium,
+                    Row(
+                      children: [
+                        Image.asset(
+                          'assets/images/rem_logo.png',
+                          width: 28,
+                          height: 28,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'rem',
+                          style: Theme.of(context).textTheme.displayMedium,
+                        ),
+                      ],
                     ),
                     Row(
                       children: [
@@ -333,22 +495,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-                child: custom.SearchBar(
-                  hintText: 'Search your vault...',
-                  onChanged: _onSearchChanged,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: custom.SearchBar(
+                        hintText: 'Search your vault...',
+                        onChanged: _onSearchChanged,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: _showStatusFilterSheet,
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: _selectedStatus != 'All'
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: context.divider),
+                        ),
+                        child: Icon(
+                          CupertinoIcons.slider_horizontal_3,
+                          size: 20,
+                          color: _selectedStatus != 'All'
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
             SliverToBoxAdapter(
               child: FilterChips(
-                filters: const [
-                  'All',
-                  'Unread',
-                  'Links',
-                  'Images',
-                  'Videos',
-                  'Books',
-                ],
+                filters: const ['All', 'Links', 'Images', 'Videos', 'Books'],
                 selected: _selectedFilter,
                 onSelected: _onFilterChanged,
               ),
@@ -390,6 +575,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         currentStatus: item.status,
                         onStatusChanged: (newStatus) =>
                             _handleStatusChange(item, newStatus),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ItemDetailScreen(
+                                item: {
+                                  'id': item.id,
+                                  'title': item.title,
+                                  'url': item.url,
+                                  'type': item.type,
+                                  'priority': item.priority,
+                                  'description': item.description,
+                                  'thumbnailUrl': item.thumbnailUrl,
+                                  'tags': _parseTags(item.tags),
+                                  'status': item.status,
+                                  'createdAt': item.createdAt,
+                                  'convexId': item.convexId,
+                                  'estimatedReadTime': item.estimatedReadTime,
+                                },
+                              ),
+                            ),
+                          );
+                        },
                         child: ItemCard(
                           title: item.title,
                           url: item.url ?? 'No URL',
@@ -400,28 +608,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ? '${item.estimatedReadTime} min'
                               : null,
                           date: _formatDate(item.createdAt),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ItemDetailScreen(
-                                  item: {
-                                    'id': item.id,
-                                    'title': item.title,
-                                    'url': item.url,
-                                    'type': item.type,
-                                    'priority': item.priority,
-                                    'description': item.description,
-                                    'thumbnailUrl': item.thumbnailUrl,
-                                    'tags': _parseTags(item.tags),
-                                    'status': item.status,
-                                    'createdAt': item.createdAt,
-                                    'convexId': item.convexId,
-                                  },
-                                ),
-                              ),
-                            );
-                          },
                         ),
                       );
                     },
