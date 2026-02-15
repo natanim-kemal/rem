@@ -18,6 +18,8 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _isDeleting = false;
+  bool _isLoadingContent = false;
+  String? _loadedContent;
 
   late String _priority;
   late String _status;
@@ -223,6 +225,41 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     }
   }
 
+  Future<void> _loadContent() async {
+    final url = widget.item['url'] as String?;
+    if (url == null || url.isEmpty) {
+      if (mounted) {
+        showWarningSnackBar(context, 'No URL to load content from');
+      }
+      return;
+    }
+
+    setState(() => _isLoadingContent = true);
+
+    try {
+      // TODO: Implement actual content fetching from backend/URL
+      // For now, simulate loading
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Placeholder content - replace with actual content fetching
+      final content =
+          widget.item['content'] as String? ??
+          'Content will be loaded here. Implement the content fetching service to populate this area with the actual article/page content.';
+
+      if (mounted) {
+        setState(() {
+          _loadedContent = content;
+          _isLoadingContent = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingContent = false);
+        showWarningSnackBar(context, 'Failed to load content: $e');
+      }
+    }
+  }
+
   void _showEditPrioritySheet() {
     showCupertinoModalPopup(
       context: context,
@@ -358,6 +395,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
   CupertinoActionSheetAction _buildStatusAction(String status) {
     final isSelected = _status == status;
+    final theme = Theme.of(context);
     return CupertinoActionSheetAction(
       onPressed: () => _updateStatus(status),
       child: DefaultTextStyle.merge(
@@ -368,13 +406,20 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             Icon(
               _getStatusIcon(status),
               size: 16,
-              color: _getStatusColor(status),
+              color: theme.colorScheme.primary,
             ),
             const SizedBox(width: 8),
-            Text(_getStatusLabel(status)),
+            Text(
+              _getStatusLabel(status),
+              style: TextStyle(color: theme.colorScheme.onSurface),
+            ),
             if (isSelected) ...[
               const SizedBox(width: 8),
-              const Icon(CupertinoIcons.checkmark, size: 16),
+              Icon(
+                CupertinoIcons.checkmark,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
             ],
           ],
         ),
@@ -869,11 +914,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       'Added ${widget.item['createdAt'] != null ? _formatDate(widget.item['createdAt'] as int) : ''}',
                 ),
                 const SizedBox(height: 16),
-                if (widget.item['estimatedReadTime'] != null)
-                  _MetaRow(
-                    icon: CupertinoIcons.time,
-                    text: '${widget.item['estimatedReadTime']} min read',
-                  ),
+                _MetaRow(
+                  icon: CupertinoIcons.time,
+                  text: '${widget.item['estimatedReadTime'] ?? 0} min read',
+                ),
                 const SizedBox(height: 24),
                 GestureDetector(
                   onTap: _showEditTagsSheet,
@@ -905,19 +949,112 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                FilledButton.icon(
-                  onPressed: () => _launchUrl(context),
-                  icon: const Icon(CupertinoIcons.compass, size: 20),
-                  label: const Text(
-                    'Open Original',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => _launchUrl(context),
+                        icon: const Icon(CupertinoIcons.compass, size: 20),
+                        label: const Text(
+                          'Open Original',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: _isLoadingContent ? null : _loadContent,
+                        icon: _isLoadingContent
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CupertinoActivityIndicator(
+                                  color: Colors.black,
+                                ),
+                              )
+                            : const Icon(
+                                CupertinoIcons.arrow_down_circle_fill,
+                                size: 20,
+                                color: Colors.black,
+                              ),
+                        label: Text(
+                          _isLoadingContent ? 'Loading...' : 'Load Content',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                if (_loadedContent != null) ...[
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.doc_text,
+                              size: 18,
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.9,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Content',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Divider(
+                          color: theme.colorScheme.outline.withValues(
+                            alpha: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SelectableText(
+                          _loadedContent!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            height: 1.6,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 100),
               ]),
             ),
