@@ -4,6 +4,8 @@ import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:http/http.dart' as http;
 
 class MetadataService {
+  static const int wordsPerMinute = 225;
+
   Future<Metadata?> fetchMetadata(String url) async {
     try {
       final response = await http.get(Uri.parse(url));
@@ -12,6 +14,17 @@ class MetadataService {
     } catch (e) {
       return null;
     }
+  }
+
+  int calculateReadingTime(String? text) {
+    if (text == null || text.isEmpty) return 0;
+    final wordCount = text.split(RegExp(r'\s+')).length;
+    return (wordCount / wordsPerMinute).ceil();
+  }
+
+  int calculateVideoReadingTime(Duration? duration) {
+    if (duration == null) return 0;
+    return duration.inMinutes;
   }
 
   Future<TikTokOEmbed?> fetchTikTokOEmbed(String url) async {
