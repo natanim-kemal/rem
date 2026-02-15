@@ -153,7 +153,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: _darkSurface,
+      fillColor: _darkSurfaceElevated,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(22),
         borderSide: BorderSide.none,
