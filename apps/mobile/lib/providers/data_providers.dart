@@ -220,6 +220,33 @@ class PaginatedItemsResult {
   });
 }
 
+// State notifiers for navigation and filtering
+class StatusFilterNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void setFilter(String? status) {
+    state = status;
+  }
+}
+
+// Provider to pass status filter from stats to home screen
+final selectedStatusFilterProvider =
+    NotifierProvider<StatusFilterNotifier, String?>(StatusFilterNotifier.new);
+
+// One-shot signal: set true to request navigation to home tab, shell resets to false after consuming
+class NavigateToHomeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void request() => state = true;
+  void consume() => state = false;
+}
+
+final navigateToHomeProvider = NotifierProvider<NavigateToHomeNotifier, bool>(
+  NavigateToHomeNotifier.new,
+);
+
 final paginatedItemsProvider =
     FutureProvider.family<PaginatedItemsResult, PaginatedItemsParams>((
       ref,
