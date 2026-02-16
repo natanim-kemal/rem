@@ -21,9 +21,6 @@ class SwipeableItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: child,
-    );
+    return GestureDetector(onTap: onTap, child: child);
   }
 }

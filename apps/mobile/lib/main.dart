@@ -136,39 +136,42 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
     final user = clerkAuth.user;
 
     if (user != null) {
-      clerkAuth.sessionToken(
-        templateName: 'convex',
-      ).then((sessionToken) {
-        final token = sessionToken.jwt;
-        final currentState = ref.read(authProvider);
-        if (!currentState.isAuthenticated || currentState.userId != user.id) {
-          ref
-              .read(authProvider.notifier)
-              .setAuthFromClerk(
-                userId: user.id,
-                token: token ?? '',
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                imageUrl: user.imageUrl,
-              );
-        }
-      }).catchError((e) {
-        debugPrint('Error getting Convex token: $e');
-        final currentState = ref.read(authProvider);
-        if (!currentState.isAuthenticated || currentState.userId != user.id) {
-          ref
-              .read(authProvider.notifier)
-              .setAuthFromClerk(
-                userId: user.id,
-                token: '',
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                imageUrl: user.imageUrl,
-              );
-        }
-      });
+      clerkAuth
+          .sessionToken(templateName: 'convex')
+          .then((sessionToken) {
+            final token = sessionToken.jwt;
+            final currentState = ref.read(authProvider);
+            if (!currentState.isAuthenticated ||
+                currentState.userId != user.id) {
+              ref
+                  .read(authProvider.notifier)
+                  .setAuthFromClerk(
+                    userId: user.id,
+                    token: token ?? '',
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    imageUrl: user.imageUrl,
+                  );
+            }
+          })
+          .catchError((e) {
+            debugPrint('Error getting Convex token: $e');
+            final currentState = ref.read(authProvider);
+            if (!currentState.isAuthenticated ||
+                currentState.userId != user.id) {
+              ref
+                  .read(authProvider.notifier)
+                  .setAuthFromClerk(
+                    userId: user.id,
+                    token: '',
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    imageUrl: user.imageUrl,
+                  );
+            }
+          });
     }
   }
 }

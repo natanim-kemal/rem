@@ -245,7 +245,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         options: Options(
           responseType: ResponseType.plain,
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           },
           receiveTimeout: const Duration(seconds: 30),
           sendTimeout: const Duration(seconds: 30),
@@ -258,8 +259,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         String content = _extractTextFromHtml(html);
 
         if (content.isEmpty) {
-          content = widget.item['content'] as String? ??
-            'Unable to extract content from this page. Please open the original link.';
+          content =
+              widget.item['content'] as String? ??
+              'Unable to extract content from this page. Please open the original link.';
         }
 
         if (mounted) {
@@ -293,18 +295,45 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   String _extractTextFromHtml(String html) {
-    String text = html.replaceAll(RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false), '');
-    text = text.replaceAll(RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false), '');
-    text = text.replaceAll(RegExp(r'<header[^>]*>[\s\S]*?</header>', caseSensitive: false), '');
-    text = text.replaceAll(RegExp(r'<footer[^>]*>[\s\S]*?</footer>', caseSensitive: false), '');
-    text = text.replaceAll(RegExp(r'<nav[^>]*>[\s\S]*?</nav>', caseSensitive: false), '');
-    text = text.replaceAll(RegExp(r'<aside[^>]*>[\s\S]*?</aside>', caseSensitive: false), '');
-    text = text.replaceAll(RegExp(r'<iframe[^>]*>[\s\S]*?</iframe>', caseSensitive: false), '');
+    String text = html.replaceAll(
+      RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<header[^>]*>[\s\S]*?</header>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<footer[^>]*>[\s\S]*?</footer>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<nav[^>]*>[\s\S]*?</nav>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<aside[^>]*>[\s\S]*?</aside>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<iframe[^>]*>[\s\S]*?</iframe>', caseSensitive: false),
+      '',
+    );
     text = text.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
 
-    text = text.replaceAll(RegExp(r'<(p|div|h[1-6])[^>]*>', caseSensitive: false), '\n\n');
+    text = text.replaceAll(
+      RegExp(r'<(p|div|h[1-6])[^>]*>', caseSensitive: false),
+      '\n\n',
+    );
     text = text.replaceAll(RegExp(r'<br[^>]*>', caseSensitive: false), '\n');
-    text = text.replaceAll(RegExp(r'</(p|div|h[1-6]|li|tr)[^>]*>', caseSensitive: false), '\n');
+    text = text.replaceAll(
+      RegExp(r'</(p|div|h[1-6]|li|tr)[^>]*>', caseSensitive: false),
+      '\n',
+    );
     text = text.replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '\n• ');
 
     text = text.replaceAll(RegExp(r'<[^>]+>'), '');
@@ -829,7 +858,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           Image.network(
                             widget.item['thumbnailUrl'],
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => _buildDefaultImage(theme, isXUrl),
+                            errorBuilder: (_, _, _) =>
+                                _buildDefaultImage(theme, isXUrl),
                           )
                         else if (isXUrl)
                           _buildDefaultImage(theme, isXUrl),

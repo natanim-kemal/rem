@@ -844,7 +844,10 @@ class ProfileScreen extends ConsumerWidget {
                     trailing: GestureDetector(
                       onTap: () => _sendTestNotification(context, ref),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF2FBF9A),
                           borderRadius: BorderRadius.circular(16),
