@@ -15,7 +15,7 @@ migrate_working_dir/
 *.ipr
 *.iws
 .idea/
-
+img.py
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
