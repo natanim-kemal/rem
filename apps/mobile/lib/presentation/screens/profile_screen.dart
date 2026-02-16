@@ -841,7 +841,24 @@ class ProfileScreen extends ConsumerWidget {
                   _SettingsTile(
                     icon: CupertinoIcons.bell,
                     title: 'Test Notification',
-                    onTap: () => _sendTestNotification(context, ref),
+                    trailing: GestureDetector(
+                      onTap: () => _sendTestNotification(context, ref),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2FBF9A),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Text(
+                          'Test',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   _SettingsTile(
                     icon: CupertinoIcons.arrow_down_circle,
