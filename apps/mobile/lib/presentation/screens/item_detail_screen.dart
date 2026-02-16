@@ -1200,7 +1200,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
-                errorBuilder: (_, __, ___) => Icon(
+                errorBuilder: (context, error, stackTrace) => Icon(
                   CupertinoIcons.camera,
                   size: 64,
                   color: theme.colorScheme.onSurfaceVariant,

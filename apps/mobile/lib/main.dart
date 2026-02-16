@@ -147,7 +147,7 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
                   .read(authProvider.notifier)
                   .setAuthFromClerk(
                     userId: user.id,
-                    token: token ?? '',
+                    token: token,
                     email: user.email,
                     firstName: user.firstName,
                     lastName: user.lastName,
