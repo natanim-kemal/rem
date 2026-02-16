@@ -357,16 +357,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
 
     final userAsync = ref.watch(userByClerkIdProvider(clerkId));
-    final user = userAsync.value;
 
-    if (user == null) {
+    if (userAsync.value == null && !userAsync.isLoading) {
       Future.microtask(() async {
         try {
           await ref.read(syncEngineProvider).syncNow();
         } catch (e) {
           debugPrint('Sync error: $e');
         }
+        ref.invalidate(userByClerkIdProvider(clerkId));
       });
+    }
+
+    final user = userAsync.value;
+
+    if (user == null) {
       return const Scaffold(body: Center(child: CupertinoActivityIndicator()));
     }
 
