@@ -29,6 +29,11 @@ class ItemCard extends StatelessWidget {
     return path.startsWith('/') || path.startsWith('file://');
   }
 
+  String _cleanTitle(String title) {
+    // Keep only alphanumeric characters and spaces
+    return title.replaceAll(RegExp(r'[^a-zA-Z0-9\s]'), '').trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -58,21 +63,12 @@ class ItemCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              width: 3,
-              height: 36,
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: _getPriorityColor(),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    _cleanTitle(title),
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       height: 1.2,
