@@ -52,6 +52,13 @@ class SyncEngine {
   Future<void> _triggerSync() async {
     if (_isSyncing) return;
 
+    // Wait for auth token to be set before attempting authenticated operations
+    int waitCount = 0;
+    while (!_convex.hasAuthToken && waitCount < 20) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      waitCount++;
+    }
+
     try {
       _isSyncing = true;
       _updateStatus(SyncStatus.syncing);
