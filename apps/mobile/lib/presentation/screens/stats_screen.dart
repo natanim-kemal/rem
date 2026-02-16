@@ -682,6 +682,11 @@ DateTime _dayKey(DateTime date) => DateTime(date.year, date.month, date.day);
 int _calculateStreak(Set<DateTime> readDays, DateTime now) {
   var streak = 0;
   var cursor = _dayKey(now);
+
+  if (!readDays.contains(cursor)) {
+    cursor = cursor.subtract(const Duration(days: 1));
+  }
+
   while (readDays.contains(cursor)) {
     streak += 1;
     cursor = cursor.subtract(const Duration(days: 1));
