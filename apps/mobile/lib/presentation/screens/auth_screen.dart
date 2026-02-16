@@ -21,6 +21,13 @@ class AuthScreen extends ConsumerWidget {
             children: [
               const SizedBox(height: 20),
 
+              Image.asset(
+                'assets/images/ic_launcher.png',
+                width: 80,
+                height: 80,
+              ),
+              const SizedBox(height: 16),
+
               Text(
                 'rem',
                 style: theme.textTheme.displayLarge?.copyWith(
