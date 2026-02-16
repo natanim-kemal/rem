@@ -95,8 +95,8 @@ class NotificationService {
 
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'rem_channel',
-      'REM Notifications',
-      description: 'Notifications for REM app',
+      'rem Notifications',
+      description: 'Notifications for rem app',
       importance: Importance.high,
     );
 
@@ -141,8 +141,8 @@ class NotificationService {
     final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
           'rem_channel',
-          'REM Notifications',
-          channelDescription: 'Notifications for REM app',
+          'rem Notifications',
+          channelDescription: 'Notifications for rem app',
           importance: Importance.high,
           priority: Priority.high,
           showWhen: true,
@@ -192,7 +192,7 @@ class NotificationService {
         android: AndroidNotificationDetails(
           'daily_reminder_channel',
           'Daily Reminders',
-          channelDescription: 'Daily reminder to check your REM vault',
+          channelDescription: 'Daily reminder to check your rem vault',
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
         ),
