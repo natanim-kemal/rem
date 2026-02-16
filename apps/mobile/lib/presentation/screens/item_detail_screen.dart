@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:rem/providers/data_providers.dart';
+import 'package:dio/dio.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirmation_snackbar.dart';
 
@@ -237,20 +238,51 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     setState(() => _isLoadingContent = true);
 
     try {
-      // TODO: Implement actual content fetching from backend/URL
-      // For now, simulate loading
-      await Future.delayed(const Duration(seconds: 1));
+      final dio = Dio();
 
-      // Placeholder content - replace with actual content fetching
-      final content =
-          widget.item['content'] as String? ??
-          'Content will be loaded here. Implement the content fetching service to populate this area with the actual article/page content.';
+      final response = await dio.get(
+        url,
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+          receiveTimeout: const Duration(seconds: 30),
+          sendTimeout: const Duration(seconds: 30),
+        ),
+      );
 
+      if (response.statusCode == 200 && response.data != null) {
+        final html = response.data as String;
+
+        String content = _extractTextFromHtml(html);
+
+        if (content.isEmpty) {
+          content = widget.item['content'] as String? ??
+            'Unable to extract content from this page. Please open the original link.';
+        }
+
+        if (mounted) {
+          setState(() {
+            _loadedContent = content;
+            _isLoadingContent = false;
+          });
+        }
+      } else {
+        throw Exception('Failed to fetch content: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
       if (mounted) {
-        setState(() {
-          _loadedContent = content;
-          _isLoadingContent = false;
-        });
+        setState(() => _isLoadingContent = false);
+        String errorMessage = 'Failed to load content';
+        if (e.type == DioExceptionType.connectionTimeout) {
+          errorMessage = 'Connection timed out';
+        } else if (e.type == DioExceptionType.receiveTimeout) {
+          errorMessage = 'Server took too long to respond';
+        } else if (e.type == DioExceptionType.connectionError) {
+          errorMessage = 'No internet connection';
+        }
+        showWarningSnackBar(context, '$errorMessage: ${e.message}');
       }
     } catch (e) {
       if (mounted) {
@@ -260,7 +292,43 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     }
   }
 
+  String _extractTextFromHtml(String html) {
+    String text = html.replaceAll(RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false), '');
+    text = text.replaceAll(RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false), '');
+    text = text.replaceAll(RegExp(r'<header[^>]*>[\s\S]*?</header>', caseSensitive: false), '');
+    text = text.replaceAll(RegExp(r'<footer[^>]*>[\s\S]*?</footer>', caseSensitive: false), '');
+    text = text.replaceAll(RegExp(r'<nav[^>]*>[\s\S]*?</nav>', caseSensitive: false), '');
+    text = text.replaceAll(RegExp(r'<aside[^>]*>[\s\S]*?</aside>', caseSensitive: false), '');
+    text = text.replaceAll(RegExp(r'<iframe[^>]*>[\s\S]*?</iframe>', caseSensitive: false), '');
+    text = text.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
+
+    text = text.replaceAll(RegExp(r'<(p|div|h[1-6])[^>]*>', caseSensitive: false), '\n\n');
+    text = text.replaceAll(RegExp(r'<br[^>]*>', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'</(p|div|h[1-6]|li|tr)[^>]*>', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '\n• ');
+
+    text = text.replaceAll(RegExp(r'<[^>]+>'), '');
+
+    text = text.replaceAll('&nbsp;', ' ');
+    text = text.replaceAll('&amp;', '&');
+    text = text.replaceAll('&lt;', '<');
+    text = text.replaceAll('&gt;', '>');
+    text = text.replaceAll('&quot;', '"');
+    text = text.replaceAll('&#39;', "'");
+    text = text.replaceAll('&apos;', "'");
+    text = text.replaceAll('&mdash;', '—');
+    text = text.replaceAll('&ndash;', '–');
+    text = text.replaceAll('&hellip;', '...');
+
+    text = text.replaceAll(RegExp(r'\n\s*\n\s*\n+'), '\n\n');
+    text = text.replaceAll(RegExp(r'[ \t]+'), ' ');
+    text = text.trim();
+
+    return text;
+  }
+
   void _showEditPrioritySheet() {
+    final theme = Theme.of(context);
     showCupertinoModalPopup(
       context: context,
       builder: (context) => CupertinoActionSheet(
@@ -282,10 +350,17 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text('High'),
+                  Text(
+                    'High',
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                  ),
                   if (_priority == 'high') ...[
                     const SizedBox(width: 8),
-                    const Icon(CupertinoIcons.checkmark, size: 16),
+                    Icon(
+                      CupertinoIcons.checkmark,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
                   ],
                 ],
               ),
@@ -307,10 +382,17 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text('Medium'),
+                  Text(
+                    'Medium',
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                  ),
                   if (_priority == 'medium') ...[
                     const SizedBox(width: 8),
-                    const Icon(CupertinoIcons.checkmark, size: 16),
+                    Icon(
+                      CupertinoIcons.checkmark,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
                   ],
                 ],
               ),
@@ -332,10 +414,17 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text('Low'),
+                  Text(
+                    'Low',
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                  ),
                   if (_priority == 'low') ...[
                     const SizedBox(width: 8),
-                    const Icon(CupertinoIcons.checkmark, size: 16),
+                    Icon(
+                      CupertinoIcons.checkmark,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
                   ],
                 ],
               ),
@@ -709,7 +798,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasImage = widget.item['thumbnailUrl'] != null;
+
+    final url = widget.item['url'] as String? ?? '';
+    final isXUrl = url.contains('x.com') || url.contains('twitter.com');
+    final hasImage = widget.item['thumbnailUrl'] != null || isXUrl;
+
     final actionBackground = hasImage
         ? Colors.black.withValues(alpha: 0.45)
         : theme.colorScheme.surfaceContainerHighest;
@@ -732,13 +825,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     background: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(
-                          widget.item['thumbnailUrl'],
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Container(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                          ),
-                        ),
+                        if (widget.item['thumbnailUrl'] != null)
+                          Image.network(
+                            widget.item['thumbnailUrl'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => _buildDefaultImage(theme, isXUrl),
+                          )
+                        else if (isXUrl)
+                          _buildDefaultImage(theme, isXUrl),
                         DecoratedBox(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -982,7 +1076,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                                 ),
                               )
                             : const Icon(
-                                CupertinoIcons.arrow_down_circle_fill,
+                                CupertinoIcons.arrow_down_circle,
                                 size: 20,
                                 color: Colors.black,
                               ),
@@ -1060,6 +1154,33 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDefaultImage(ThemeData theme, bool isXUrl) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+      ),
+      child: Center(
+        child: isXUrl
+            ? Image.asset(
+                'assets/images/x-img.png',
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (_, __, ___) => Icon(
+                  CupertinoIcons.camera,
+                  size: 64,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              )
+            : Icon(
+                CupertinoIcons.camera,
+                size: 64,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
       ),
     );
   }
