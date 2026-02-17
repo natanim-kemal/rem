@@ -656,6 +656,36 @@ class SyncEngine {
     _triggerSync();
   }
 
+  Future<void> updateItemReadTime(String itemId, int readTime) async {
+    final item = await _db.getItemById(itemId);
+    if (item == null) return;
+
+    if (item.estimatedReadTime == readTime) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await _db.updateItemById(
+      itemId,
+      ItemsCompanion(
+        estimatedReadTime: Value(readTime),
+        updatedAt: Value(now),
+        syncStatus: const Value('pending'),
+      ),
+    );
+
+    await _db.addToSyncQueue(
+      tableName: 'items',
+      recordId: itemId,
+      operation: 'update',
+      payload: jsonEncode({
+        'convexId': item.convexId,
+        'estimatedReadTime': readTime,
+      }),
+    );
+
+    _triggerSync();
+  }
+
   Future<void> updateNotificationPreferences(
     String userId,
     NotificationPreferences preferences,

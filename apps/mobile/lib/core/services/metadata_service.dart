@@ -27,6 +27,54 @@ class MetadataService {
     return duration.inMinutes;
   }
 
+  String? extractYouTubeVideoId(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+
+    if (uri.host == 'youtu.be') {
+      return uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
+    }
+
+    if (uri.host.contains('youtube.com')) {
+      return uri.queryParameters['v'];
+    }
+    return null;
+  }
+
+  Future<Duration?> fetchYouTubeDuration(String url) async {
+    try {
+      final videoId = extractYouTubeVideoId(url);
+      if (videoId == null) return null;
+
+      final endpoint = Uri.https('www.youtube.com', '/oembed', {
+        'url': 'https://www.youtube.com/watch?v=$videoId',
+      });
+      final response = await http.get(endpoint);
+      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final durationStr = data['duration'] as String?;
+      if (durationStr == null) return null;
+
+      final parts = durationStr.split(':');
+      if (parts.length == 2) {
+        return Duration(
+          minutes: int.parse(parts[0]),
+          seconds: int.parse(parts[1]),
+        );
+      } else if (parts.length == 3) {
+        return Duration(
+          hours: int.parse(parts[0]),
+          minutes: int.parse(parts[1]),
+          seconds: int.parse(parts[2]),
+        );
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<TikTokOEmbed?> fetchTikTokOEmbed(String url) async {
     try {
       String oembedUrl = url;
