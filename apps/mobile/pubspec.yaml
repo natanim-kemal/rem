@@ -41,7 +41,7 @@ dependencies:
   uuid: ^4.2.2
   http: ^1.1.0
 
-  clerk_flutter: ^0.0.8-beta
+  clerk_flutter: ^0.0.14-beta
   metadata_fetch: ^0.4.2
   receive_sharing_intent: ^1.8.1
   image_picker: ^1.2.1
@@ -50,6 +50,7 @@ dependencies:
   flutter_local_notifications: ^18.0.0
   workmanager: ^0.9.0
   timezone: ^0.10.0
+  html: ^0.15.6
 
 dev_dependencies:
   flutter_test:

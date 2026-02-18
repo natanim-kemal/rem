@@ -155,6 +155,13 @@ class ItemCard extends StatelessWidget {
                         fit: BoxFit.cover,
                         cacheWidth: cacheSize,
                         cacheHeight: cacheSize,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Image.asset(
+                              'assets/images/fallback.png',
+                              width: 82,
+                              height: 82,
+                              fit: BoxFit.cover,
+                            ),
                       )
                     : isLocalThumbnail
                     ? Image.file(
@@ -164,16 +171,13 @@ class ItemCard extends StatelessWidget {
                         fit: BoxFit.cover,
                         cacheWidth: cacheSize,
                         cacheHeight: cacheSize,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 82,
-                          height: 82,
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            _getTypeIcon(),
-                            size: 30,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                        errorBuilder: (context, error, stackTrace) =>
+                            Image.asset(
+                              'assets/images/fallback.png',
+                              width: 82,
+                              height: 82,
+                              fit: BoxFit.cover,
+                            ),
                       )
                     : hasNetworkThumbnail
                     ? CachedNetworkImage(
@@ -191,32 +195,26 @@ class ItemCard extends StatelessWidget {
                             child: CupertinoActivityIndicator(),
                           ),
                         ),
-                        errorWidget: (context, url, error) => Container(
+                        errorWidget: (context, url, error) => Image.asset(
+                          'assets/images/fallback.png',
                           width: 82,
                           height: 82,
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            _getTypeIcon(),
-                            size: 30,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                          fit: BoxFit.cover,
                         ),
                       )
                     : const SizedBox.shrink(),
               ),
             ] else ...[
               const SizedBox(width: 14),
-              Container(
-                width: 82,
-                height: 82,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  _getTypeIcon(),
-                  size: 30,
-                  color: theme.colorScheme.onSurfaceVariant,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  'assets/images/fallback.png',
+                  width: 82,
+                  height: 82,
+                  fit: BoxFit.cover,
+                  cacheWidth: cacheSize,
+                  cacheHeight: cacheSize,
                 ),
               ),
             ],
@@ -238,21 +236,6 @@ class ItemCard extends StatelessWidget {
         return 'Note';
       default:
         return 'Link';
-    }
-  }
-
-  IconData _getTypeIcon() {
-    switch (type) {
-      case 'image':
-        return CupertinoIcons.photo;
-      case 'video':
-        return CupertinoIcons.play_circle;
-      case 'book':
-        return CupertinoIcons.book;
-      case 'note':
-        return CupertinoIcons.doc_text;
-      default:
-        return CupertinoIcons.link;
     }
   }
 
