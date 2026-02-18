@@ -3,29 +3,12 @@ import 'dart:convert';
 import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
+
 class MetadataService {
   static const int wordsPerMinute = 225;
 
-  Future<Metadata?> fetchMetadata(String url) async {
-    try {
-      final response = await http.get(Uri.parse(url));
-      final document = MetadataFetch.responseToDocument(response);
-      return MetadataParser.parse(document);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  int calculateReadingTime(String? text) {
-    if (text == null || text.isEmpty) return 0;
-    final wordCount = text.split(RegExp(r'\s+')).length;
-    return (wordCount / wordsPerMinute).ceil();
-  }
-
-  int calculateVideoReadingTime(Duration? duration) {
-    if (duration == null) return 0;
-    return duration.inMinutes;
-  }
+  String get _youtubeApiKey => AppConfig.youtubeApiKey;
 
   String? extractYouTubeVideoId(String url) {
     final uri = Uri.tryParse(url);
@@ -41,38 +24,72 @@ class MetadataService {
     return null;
   }
 
-  Future<Duration?> fetchYouTubeDuration(String url) async {
+  Future<Metadata?> fetchMetadata(String url) async {
+    try {
+      final response = await MetadataFetch.extract(url);
+      return response;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  int calculateReadingTime(String text) {
+    if (text.isEmpty) return 0;
+    final wordCount = text.split(RegExp(r'\s+')).length;
+    return (wordCount / wordsPerMinute).ceil();
+  }
+
+  int calculateVideoReadingTime(Duration? duration) {
+    if (duration == null) return 0;
+    return duration.inMinutes;
+  }
+
+  Future<Duration?> fetchYouTubeDurationFromApi(String url) async {
+    if (_youtubeApiKey.isEmpty) return null;
+    
     try {
       final videoId = extractYouTubeVideoId(url);
       if (videoId == null) return null;
 
-      final endpoint = Uri.https('www.youtube.com', '/oembed', {
-        'url': 'https://www.youtube.com/watch?v=$videoId',
-      });
+      final endpoint = Uri.parse(
+        'https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=$videoId&key=$_youtubeApiKey',
+      );
       final response = await http.get(endpoint);
       if (response.statusCode < 200 || response.statusCode >= 300) return null;
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final durationStr = data['duration'] as String?;
+      final items = data['items'] as List<dynamic>?;
+      if (items == null || items.isEmpty) return null;
+
+      final contentDetails =
+          items.first['contentDetails'] as Map<String, dynamic>?;
+      if (contentDetails == null) return null;
+
+      final durationStr = contentDetails['duration'] as String?;
       if (durationStr == null) return null;
 
-      final parts = durationStr.split(':');
-      if (parts.length == 2) {
-        return Duration(
-          minutes: int.parse(parts[0]),
-          seconds: int.parse(parts[1]),
-        );
-      } else if (parts.length == 3) {
-        return Duration(
-          hours: int.parse(parts[0]),
-          minutes: int.parse(parts[1]),
-          seconds: int.parse(parts[2]),
-        );
-      }
-      return null;
+      return _parseIso8601Duration(durationStr);
     } catch (_) {
       return null;
     }
+  }
+
+  Duration? _parseIso8601Duration(String duration) {
+    final match = RegExp(
+      r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?',
+    ).firstMatch(duration);
+    if (match == null) return null;
+
+    final hours = int.tryParse(match.group(1) ?? '0') ?? 0;
+    final minutes = int.tryParse(match.group(2) ?? '0') ?? 0;
+    final seconds = int.tryParse(match.group(3) ?? '0') ?? 0;
+
+    if (hours == 0 && minutes == 0 && seconds == 0) return null;
+    return Duration(hours: hours, minutes: minutes, seconds: seconds);
+  }
+
+  Future<Duration?> fetchYouTubeDuration(String url) async {
+    return fetchYouTubeDurationFromApi(url);
   }
 
   Future<TikTokOEmbed?> fetchTikTokOEmbed(String url) async {
