@@ -46,7 +46,7 @@ class MetadataService {
 
   Future<Duration?> fetchYouTubeDurationFromApi(String url) async {
     if (_youtubeApiKey.isEmpty) return null;
-    
+
     try {
       final videoId = extractYouTubeVideoId(url);
       if (videoId == null) return null;
