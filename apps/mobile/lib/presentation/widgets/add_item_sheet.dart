@@ -66,10 +66,19 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
     final metadata = await _metadataService.fetchMetadata(url);
     final isTikTok = _isTikTokUrl(url);
     final isX = _isXUrl(url);
+    final isYouTube = _isYouTubeUrl(url);
     final tiktokMetadata = isTikTok
         ? await _metadataService.fetchTikTokOEmbed(url)
         : null;
     final xMetadata = isX ? await _metadataService.fetchXOEmbed(url) : null;
+    Duration? videoDuration;
+    if (isYouTube || isTikTok) {
+      if (isYouTube) {
+        videoDuration = await _metadataService.fetchYouTubeDuration(url);
+      } else if (isTikTok && tiktokMetadata != null) {
+        videoDuration = Duration.zero;
+      }
+    }
     if (!mounted) {
       return;
     }
@@ -124,9 +133,15 @@ class _AddItemSheetState extends ConsumerState<AddItemSheet> {
       });
     }
 
-    String? description = metadata?.description;
-    if (description != null && description.isNotEmpty) {
-      _estimatedReadTime = _metadataService.calculateReadingTime(description);
+    if (videoDuration != null) {
+      _estimatedReadTime = _metadataService.calculateVideoReadingTime(
+        videoDuration,
+      );
+    } else {
+      String? description = metadata?.description;
+      if (description != null && description.isNotEmpty) {
+        _estimatedReadTime = _metadataService.calculateReadingTime(description);
+      }
     }
 
     setState(() => _isLoadingMetadata = false);

@@ -74,7 +74,7 @@ class NotificationService {
 
   Future<void> _initializeLocalNotifications() async {
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/ic_launcher');
 
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings(
@@ -105,6 +105,19 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.createNotificationChannel(channel);
+
+    const AndroidNotificationChannel dailyChannel = AndroidNotificationChannel(
+      'daily_reminder_channel',
+      'Daily Reminders',
+      description: 'Daily reminder to check your rem vault',
+      importance: Importance.defaultImportance,
+    );
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(dailyChannel);
   }
 
   void Function(String? payload)? onAction;
@@ -146,6 +159,7 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
           showWhen: true,
+          icon: '@drawable/ic_launcher',
           actions: actions,
         );
 
@@ -195,6 +209,7 @@ class NotificationService {
           channelDescription: 'Daily reminder to check your rem vault',
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
+          icon: '@drawable/ic_launcher',
         ),
         iOS: DarwinNotificationDetails(),
       ),
@@ -242,6 +257,7 @@ class NotificationService {
           channelDescription: 'Snoozed item reminders',
           importance: Importance.high,
           priority: Priority.high,
+          icon: '@drawable/ic_launcher',
         ),
         iOS: DarwinNotificationDetails(),
       ),

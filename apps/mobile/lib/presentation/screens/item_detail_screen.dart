@@ -5,8 +5,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:rem/providers/data_providers.dart';
 import 'package:dio/dio.dart';
+import 'package:html/parser.dart' as html_parser;
+import 'package:html/dom.dart' as html_dom;
 import '../theme/app_theme.dart';
 import '../widgets/confirmation_snackbar.dart';
+import '../../models/content_block.dart';
 
 class ItemDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> item;
@@ -20,7 +23,7 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _isDeleting = false;
   bool _isLoadingContent = false;
-  String? _loadedContent;
+  List<ContentBlock> _loadedContent = [];
 
   late String _priority;
   late String _status;
@@ -237,31 +240,61 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
 
     setState(() => _isLoadingContent = true);
 
+    bool isTimedOut = false;
+
     try {
       final dio = Dio();
 
-      final response = await dio.get(
-        url,
-        options: Options(
-          responseType: ResponseType.plain,
-          headers: {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          },
-          receiveTimeout: const Duration(seconds: 30),
-          sendTimeout: const Duration(seconds: 30),
+      final response = await Future.any([
+        dio.get(
+          url,
+          options: Options(
+            responseType: ResponseType.plain,
+            headers: {
+              'User-Agent':
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+            receiveTimeout: const Duration(seconds: 30),
+            sendTimeout: const Duration(seconds: 30),
+          ),
         ),
-      );
+        Future.delayed(const Duration(seconds: 10), () {
+          isTimedOut = true;
+          throw Exception('Timeout');
+        }),
+      ]);
+
+      if (isTimedOut) {
+        if (mounted) {
+          setState(() => _isLoadingContent = false);
+          _showUnableToExtract();
+        }
+        return;
+      }
 
       if (response.statusCode == 200 && response.data != null) {
         final html = response.data as String;
 
-        String content = _extractTextFromHtml(html);
+        final content = _extractTextFromHtml(html);
 
         if (content.isEmpty) {
-          content =
-              widget.item['content'] as String? ??
-              'Unable to extract content from this page. Please open the original link.';
+          if (widget.item['content'] != null &&
+              (widget.item['content'] as String).isNotEmpty) {
+            content.add(
+              ContentBlock(
+                type: ContentBlockType.paragraph,
+                content: widget.item['content'] as String,
+              ),
+            );
+          } else {
+            content.add(
+              const ContentBlock(
+                type: ContentBlockType.paragraph,
+                content:
+                    'Unable to extract content from this page. Please open the original link.',
+              ),
+            );
+          }
         }
 
         if (mounted) {
@@ -269,6 +302,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             _loadedContent = content;
             _isLoadingContent = false;
           });
+          _updateReadTimeFromContent(content);
         }
       } else {
         throw Exception('Failed to fetch content: ${response.statusCode}');
@@ -289,71 +323,149 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingContent = false);
-        showWarningSnackBar(context, 'Failed to load content: $e');
+        if (isTimedOut) {
+          _showUnableToExtract();
+        } else {
+          showWarningSnackBar(context, 'Failed to load content: $e');
+        }
       }
     }
   }
 
-  String _extractTextFromHtml(String html) {
-    String text = html.replaceAll(
-      RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<header[^>]*>[\s\S]*?</header>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<footer[^>]*>[\s\S]*?</footer>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<nav[^>]*>[\s\S]*?</nav>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<aside[^>]*>[\s\S]*?</aside>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<iframe[^>]*>[\s\S]*?</iframe>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
+  void _showUnableToExtract() {
+    setState(() {
+      _loadedContent = [
+        const ContentBlock(
+          type: ContentBlockType.paragraph,
+          content:
+              'Unable to extract content from this page. Please open the original link.',
+        ),
+      ];
+    });
+  }
 
-    text = text.replaceAll(
-      RegExp(r'<(p|div|h[1-6])[^>]*>', caseSensitive: false),
-      '\n\n',
-    );
-    text = text.replaceAll(RegExp(r'<br[^>]*>', caseSensitive: false), '\n');
-    text = text.replaceAll(
-      RegExp(r'</(p|div|h[1-6]|li|tr)[^>]*>', caseSensitive: false),
-      '\n',
-    );
-    text = text.replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '\n• ');
+  Future<void> _updateReadTimeFromContent(List<ContentBlock> content) async {
+    if (content.isEmpty) return;
 
-    text = text.replaceAll(RegExp(r'<[^>]+>'), '');
+    final isExtractionFailed =
+        content.length == 1 &&
+        content.first.content ==
+            'Unable to extract content from this page. Please open the original link.';
+    if (isExtractionFailed) return;
 
-    text = text.replaceAll('&nbsp;', ' ');
-    text = text.replaceAll('&amp;', '&');
-    text = text.replaceAll('&lt;', '<');
-    text = text.replaceAll('&gt;', '>');
-    text = text.replaceAll('&quot;', '"');
-    text = text.replaceAll('&#39;', "'");
-    text = text.replaceAll('&apos;', "'");
-    text = text.replaceAll('&mdash;', '—');
-    text = text.replaceAll('&ndash;', '–');
-    text = text.replaceAll('&hellip;', '...');
+    final textContent = content
+        .where((block) => block.type == ContentBlockType.paragraph)
+        .map((block) => block.content)
+        .join(' ');
 
-    text = text.replaceAll(RegExp(r'\n\s*\n\s*\n+'), '\n\n');
-    text = text.replaceAll(RegExp(r'[ \t]+'), ' ');
-    text = text.trim();
+    if (textContent.trim().isEmpty) return;
 
-    return text;
+    final wordCount = textContent.split(RegExp(r'\s+')).length;
+    final readTime = (wordCount / 225).ceil();
+
+    final currentReadTime = widget.item['estimatedReadTime'] as int?;
+    if (currentReadTime != readTime) {
+      final syncEngine = ref.read(syncEngineProvider);
+      await syncEngine.updateItemReadTime(
+        widget.item['id'] as String,
+        readTime,
+      );
+    }
+  }
+
+  List<ContentBlock> _extractTextFromHtml(String htmlString) {
+    final document = html_parser.parse(htmlString);
+    final List<ContentBlock> blocks = [];
+
+    final allowedTags = [
+      'p',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'ul',
+      'ol',
+      'li',
+      'img',
+      'blockquote',
+      'pre',
+      'code',
+    ];
+
+    void parseElement(html_dom.Element element) {
+      final tagName = element.localName?.toLowerCase() ?? '';
+
+      if (tagName == 'script' ||
+          tagName == 'style' ||
+          tagName == 'nav' ||
+          tagName == 'header' ||
+          tagName == 'footer' ||
+          tagName == 'aside') {
+        return;
+      }
+
+      if (allowedTags.contains(tagName)) {
+        if (tagName.startsWith('h') && tagName.length > 1) {
+          final levelStr = tagName.substring(1);
+          final level = int.tryParse(levelStr);
+          if (level != null) {
+            final text = element.text.trim();
+            if (text.isNotEmpty) {
+              if (level == 1) {
+                blocks.add(
+                  ContentBlock(type: ContentBlockType.heading1, content: text),
+                );
+              } else if (level == 2) {
+                blocks.add(
+                  ContentBlock(type: ContentBlockType.heading2, content: text),
+                );
+              } else {
+                blocks.add(
+                  ContentBlock(type: ContentBlockType.heading3, content: text),
+                );
+              }
+            }
+          }
+        } else if (tagName == 'p' || tagName == 'blockquote') {
+          final text = element.text.trim();
+          if (text.isNotEmpty) {
+            blocks.add(
+              ContentBlock(type: ContentBlockType.paragraph, content: text),
+            );
+          }
+        } else if (tagName == 'li') {
+          final text = element.text.trim();
+          if (text.isNotEmpty) {
+            blocks.add(
+              ContentBlock(type: ContentBlockType.listItem, content: text),
+            );
+          }
+        } else if (tagName == 'img') {
+          final src = element.attributes['src'];
+          if (src != null && src.isNotEmpty) {
+            blocks.add(
+              ContentBlock(
+                type: ContentBlockType.image,
+                content: '',
+                imageUrl: src,
+              ),
+            );
+          }
+        }
+      }
+
+      for (final child in element.children) {
+        parseElement(child);
+      }
+    }
+
+    for (final body in document.body?.children ?? []) {
+      parseElement(body);
+    }
+
+    return blocks;
   }
 
   void _showEditPrioritySheet() {
@@ -1127,7 +1239,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ],
                 ),
-                if (_loadedContent != null) ...[
+                if (_loadedContent.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   Container(
                     width: double.infinity,
@@ -1161,20 +1273,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Divider(
                           color: theme.colorScheme.outline.withValues(
                             alpha: 0.2,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        SelectableText(
-                          _loadedContent!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            height: 1.6,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
+                        const SizedBox(height: 8),
+                        _buildContentList(theme),
                       ],
                     ),
                   ),
@@ -1186,6 +1292,128 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildContentList(ThemeData theme) {
+    if (_loadedContent.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _loadedContent.length,
+      itemBuilder: (context, index) {
+        return _buildContentBlock(theme, _loadedContent[index]);
+      },
+    );
+  }
+
+  Widget _buildContentBlock(ThemeData theme, ContentBlock block) {
+    switch (block.type) {
+      case ContentBlockType.heading1:
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16, top: 8),
+          child: Text(
+            block.content,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              height: 1.3,
+            ),
+          ),
+        );
+      case ContentBlockType.heading2:
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12, top: 8),
+          child: Text(
+            block.content,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              height: 1.3,
+            ),
+          ),
+        );
+      case ContentBlockType.heading3:
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8, top: 4),
+          child: Text(
+            block.content,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              height: 1.3,
+            ),
+          ),
+        );
+      case ContentBlockType.image:
+        if (block.imageUrl == null || block.imageUrl!.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              block.imageUrl!,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(child: CupertinoActivityIndicator());
+              },
+            ),
+          ),
+        );
+      case ContentBlockType.listItem:
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 4, left: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('• ', style: theme.textTheme.bodyMedium),
+              Expanded(
+                child: Text(block.content, style: theme.textTheme.bodyMedium),
+              ),
+            ],
+          ),
+        );
+      case ContentBlockType.paragraph:
+      default:
+        final isExtractionFailed =
+            block.content ==
+            'Unable to extract content from this page. Please open the original link.';
+        if (isExtractionFailed) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  CupertinoIcons.info_circle,
+                  color: Colors.orange,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SelectableText(
+                    block.content,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      height: 1.6,
+                      color: Colors.orange,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SelectableText(
+            block.content,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+          ),
+        );
+    }
   }
 
   Widget _buildDefaultImage(ThemeData theme, bool isXUrl) {
@@ -1200,16 +1428,18 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
-                errorBuilder: (context, error, stackTrace) => Icon(
-                  CupertinoIcons.camera,
-                  size: 64,
-                  color: theme.colorScheme.onSurfaceVariant,
+                errorBuilder: (context, error, stackTrace) => Image.asset(
+                  'assets/images/fallback.png',
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
                 ),
               )
-            : Icon(
-                CupertinoIcons.camera,
-                size: 64,
-                color: theme.colorScheme.onSurfaceVariant,
+            : Image.asset(
+                'assets/images/fallback.png',
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
               ),
       ),
     );
