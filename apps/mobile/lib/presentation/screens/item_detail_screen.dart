@@ -5,11 +5,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:rem/providers/data_providers.dart';
 import 'package:dio/dio.dart';
-import 'package:html/parser.dart' as html_parser;
-import 'package:html/dom.dart' as html_dom;
 import '../theme/app_theme.dart';
 import '../widgets/confirmation_snackbar.dart';
 import '../../models/content_block.dart';
+import '../../core/services/metadata_service.dart';
 
 class ItemDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> item;
@@ -137,9 +136,18 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     final confirmed = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Delete Item'),
-        content: const Text(
-          'Are you sure you want to delete this item? This action cannot be undone.',
+        title: Column(
+          children: [
+            const Text('Delete Item'),
+            const SizedBox(height: 8),
+            Divider(color: CupertinoColors.separator.resolveFrom(context)),
+          ],
+        ),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Text(
+            'Are you sure you want to delete this item? This action cannot be undone.',
+          ),
         ),
         actions: [
           CupertinoDialogAction(
@@ -229,6 +237,64 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     }
   }
 
+  bool _isXUrl(String url) {
+    return url.contains('x.com') || url.contains('twitter.com');
+  }
+
+  String? _extractXPostText(String? html) {
+    if (html == null || html.isEmpty) return null;
+    final match = RegExp(r'<p[^>]*>([\s\S]*?)</p>').firstMatch(html);
+    if (match == null) return null;
+    final raw = match.group(1) ?? '';
+    final noTags = raw.replaceAll(RegExp(r'<[^>]+>'), ' ');
+    return noTags.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  Future<void> _loadXContent(String url) async {
+    try {
+      final metadataService = MetadataService();
+      final xEmbed = await metadataService.fetchXOEmbed(url);
+
+      if (!mounted) return;
+
+      if (xEmbed?.html != null) {
+        final extractedText = _extractXPostText(xEmbed!.html);
+        if (extractedText != null && extractedText.isNotEmpty) {
+          setState(() {
+            _loadedContent = [
+              ContentBlock(
+                type: ContentBlockType.paragraph,
+                content: extractedText,
+              ),
+            ];
+            _isLoadingContent = false;
+          });
+          return;
+        }
+      }
+
+      _showUnableToExtract();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingContent = false);
+        _showUnableToExtract();
+      }
+    }
+  }
+
+  void _showUnableToExtract() {
+    setState(() {
+      _loadedContent = [
+        ContentBlock(
+          type: ContentBlockType.paragraph,
+          content:
+              'Unable to extract content from this page. Please open the original link.',
+        ),
+      ];
+      _isLoadingContent = false;
+    });
+  }
+
   Future<void> _loadContent() async {
     final url = widget.item['url'] as String?;
     if (url == null || url.isEmpty) {
@@ -239,6 +305,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     }
 
     setState(() => _isLoadingContent = true);
+
+    if (_isXUrl(url)) {
+      await _loadXContent(url);
+      return;
+    }
 
     bool isTimedOut = false;
 
@@ -252,13 +323,21 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             responseType: ResponseType.plain,
             headers: {
               'User-Agent':
-                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept':
+                  'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.9',
+              'Accept-Encoding': 'gzip, deflate',
+              'Cache-Control': 'no-cache',
+              'Connection': 'keep-alive',
+              'Pragma': 'no-cache',
+              'Upgrade-Insecure-Requests': '1',
             },
             receiveTimeout: const Duration(seconds: 30),
             sendTimeout: const Duration(seconds: 30),
           ),
         ),
-        Future.delayed(const Duration(seconds: 10), () {
+        Future.delayed(const Duration(seconds: 20), () {
           isTimedOut = true;
           throw Exception('Timeout');
         }),
@@ -275,26 +354,32 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       if (response.statusCode == 200 && response.data != null) {
         final html = response.data as String;
 
-        final content = _extractTextFromHtml(html);
+        final fallbackContent = _extractTextFromHtmlFallback(html);
 
-        if (content.isEmpty) {
-          if (widget.item['content'] != null &&
-              (widget.item['content'] as String).isNotEmpty) {
-            content.add(
-              ContentBlock(
-                type: ContentBlockType.paragraph,
-                content: widget.item['content'] as String,
-              ),
-            );
-          } else {
-            content.add(
-              const ContentBlock(
-                type: ContentBlockType.paragraph,
-                content:
-                    'Unable to extract content from this page. Please open the original link.',
-              ),
-            );
-          }
+        List<ContentBlock> content;
+        if (fallbackContent.isNotEmpty) {
+          content = [
+            ContentBlock(
+              type: ContentBlockType.paragraph,
+              content: fallbackContent,
+            ),
+          ];
+        } else if (widget.item['content'] != null &&
+            (widget.item['content'] as String).isNotEmpty) {
+          content = [
+            ContentBlock(
+              type: ContentBlockType.paragraph,
+              content: widget.item['content'] as String,
+            ),
+          ];
+        } else {
+          content = [
+            ContentBlock(
+              type: ContentBlockType.paragraph,
+              content:
+                  'Unable to extract content from this page. Please open the original link.',
+            ),
+          ];
         }
 
         if (mounted) {
@@ -310,6 +395,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     } on DioException catch (e) {
       if (mounted) {
         setState(() => _isLoadingContent = false);
+        if (e.response?.statusCode == 403) {
+          _showUnableToExtract();
+          return;
+        }
         String errorMessage = 'Failed to load content';
         if (e.type == DioExceptionType.connectionTimeout) {
           errorMessage = 'Connection timed out';
@@ -330,18 +419,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         }
       }
     }
-  }
-
-  void _showUnableToExtract() {
-    setState(() {
-      _loadedContent = [
-        const ContentBlock(
-          type: ContentBlockType.paragraph,
-          content:
-              'Unable to extract content from this page. Please open the original link.',
-        ),
-      ];
-    });
   }
 
   Future<void> _updateReadTimeFromContent(List<ContentBlock> content) async {
@@ -373,99 +450,85 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     }
   }
 
-  List<ContentBlock> _extractTextFromHtml(String htmlString) {
-    final document = html_parser.parse(htmlString);
-    final List<ContentBlock> blocks = [];
+  String _extractTextFromHtmlFallback(String html) {
+    String text = html.replaceAll(
+      RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<header[^>]*>[\s\S]*?</header>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<footer[^>]*>[\s\S]*?</footer>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<nav[^>]*>[\s\S]*?</nav>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<aside[^>]*>[\s\S]*?</aside>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(
+      RegExp(r'<iframe[^>]*>[\s\S]*?</iframe>', caseSensitive: false),
+      '',
+    );
+    text = text.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
 
-    final allowedTags = [
-      'p',
-      'h1',
-      'h2',
-      'h3',
-      'h4',
-      'h5',
-      'h6',
-      'ul',
-      'ol',
-      'li',
-      'img',
-      'blockquote',
-      'pre',
-      'code',
-    ];
+    text = text.replaceAll(
+      RegExp(r'<(p|div|h[1-6])[^>]*>', caseSensitive: false),
+      '\n\n',
+    );
+    text = text.replaceAll(RegExp(r'<br[^>]*>', caseSensitive: false), '\n');
+    text = text.replaceAll(
+      RegExp(r'</(p|div|h[1-6]|li|tr)[^>]*>', caseSensitive: false),
+      '\n',
+    );
+    text = text.replaceAll(RegExp(r'</li[^>]*>', caseSensitive: false), '\n');
+    text = text.replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '• ');
 
-    void parseElement(html_dom.Element element) {
-      final tagName = element.localName?.toLowerCase() ?? '';
+    text = text.replaceAll(RegExp(r'<[^>]+>'), '');
 
-      if (tagName == 'script' ||
-          tagName == 'style' ||
-          tagName == 'nav' ||
-          tagName == 'header' ||
-          tagName == 'footer' ||
-          tagName == 'aside') {
-        return;
+    text = text.replaceAll('&nbsp;', ' ');
+    text = text.replaceAll('&amp;', '&');
+    text = text.replaceAll('&lt;', '<');
+    text = text.replaceAll('&gt;', '>');
+    text = text.replaceAll('&quot;', '"');
+    text = text.replaceAll('&#39;', "'");
+    text = text.replaceAll('&apos;', "'");
+    text = text.replaceAll('&mdash;', '—');
+    text = text.replaceAll('&ndash;', '–');
+    text = text.replaceAll('&hellip;', '...');
+
+    text = text.replaceAllMapped(RegExp(r'&#(\d+);'), (match) {
+      final code = int.tryParse(match.group(1) ?? '');
+      if (code != null) {
+        return String.fromCharCode(code);
       }
+      return match.group(0) ?? '';
+    });
 
-      if (allowedTags.contains(tagName)) {
-        if (tagName.startsWith('h') && tagName.length > 1) {
-          final levelStr = tagName.substring(1);
-          final level = int.tryParse(levelStr);
-          if (level != null) {
-            final text = element.text.trim();
-            if (text.isNotEmpty) {
-              if (level == 1) {
-                blocks.add(
-                  ContentBlock(type: ContentBlockType.heading1, content: text),
-                );
-              } else if (level == 2) {
-                blocks.add(
-                  ContentBlock(type: ContentBlockType.heading2, content: text),
-                );
-              } else {
-                blocks.add(
-                  ContentBlock(type: ContentBlockType.heading3, content: text),
-                );
-              }
-            }
-          }
-        } else if (tagName == 'p' || tagName == 'blockquote') {
-          final text = element.text.trim();
-          if (text.isNotEmpty) {
-            blocks.add(
-              ContentBlock(type: ContentBlockType.paragraph, content: text),
-            );
-          }
-        } else if (tagName == 'li') {
-          final text = element.text.trim();
-          if (text.isNotEmpty) {
-            blocks.add(
-              ContentBlock(type: ContentBlockType.listItem, content: text),
-            );
-          }
-        } else if (tagName == 'img') {
-          final src = element.attributes['src'];
-          if (src != null && src.isNotEmpty) {
-            blocks.add(
-              ContentBlock(
-                type: ContentBlockType.image,
-                content: '',
-                imageUrl: src,
-              ),
-            );
-          }
-        }
+    text = text.replaceAllMapped(RegExp(r'&#x([0-9a-fA-F]+);'), (match) {
+      final code = int.tryParse(match.group(1) ?? '', radix: 16);
+      if (code != null) {
+        return String.fromCharCode(code);
       }
+      return match.group(0) ?? '';
+    });
 
-      for (final child in element.children) {
-        parseElement(child);
-      }
-    }
-
-    for (final body in document.body?.children ?? []) {
-      parseElement(body);
-    }
-
-    return blocks;
+    text = text.replaceAll(RegExp(r'\n\s*\n\s*\n+'), '\n\n');
+    text = text.replaceAll(RegExp(r'[ \t]+'), ' ');
+    text = text.replaceAll(RegExp(r'•\s*\n'), '\n');
+    text = text.replaceAll(RegExp(r'\n\s*•\s*\n'), '\n');
+    text = text.replaceAll(RegExp(r'^\s*•\s*\n', multiLine: true), '');
+    text = text.replaceAll(RegExp(r'^\s*•\s*$', multiLine: true), '');
+    return text.trim();
   }
 
   void _showEditPrioritySheet() {
@@ -1349,17 +1412,34 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         }
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              block.imageUrl!,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return const Center(child: CupertinoActivityIndicator());
-              },
+          child: GestureDetector(
+            onTap: () => _showFullScreenImage(context, block.imageUrl!),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 400),
+                width: double.infinity,
+                child: Image.network(
+                  block.imageUrl!,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildImageError(theme, block.imageUrl!),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return SizedBox(
+                      height: 200,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         );
@@ -1408,12 +1488,144 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         }
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: SelectableText(
-            block.content,
-            style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
-          ),
+          child: _buildTextWithLinks(theme, block.content),
         );
     }
+  }
+
+  Widget _buildTextWithLinks(ThemeData theme, String text) {
+    final urlPattern = RegExp(r'https?://[^\s<>"{}|\\^`\[\]]+');
+    final matches = urlPattern.allMatches(text).toList();
+
+    if (matches.isEmpty) {
+      return SelectableText(
+        text,
+        style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+      );
+    }
+
+    final List<InlineSpan> spans = [];
+    int lastEnd = 0;
+
+    for (final match in matches) {
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
+      }
+      final url = match.group(0) ?? '';
+      spans.add(
+        WidgetSpan(
+          child: GestureDetector(
+            onTap: () => _openUrl(url),
+            child: Text(
+              url,
+              style: TextStyle(
+                color: theme.colorScheme.primary,
+                decoration: TextDecoration.underline,
+                decorationColor: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+        ),
+      );
+      lastEnd = match.end;
+    }
+
+    if (lastEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastEnd)));
+    }
+
+    return SelectableText.rich(
+      TextSpan(children: spans),
+      style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+    );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Widget _buildImageError(ThemeData theme, String imageUrl) {
+    return Container(
+      height: 150,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              CupertinoIcons.photo,
+              size: 40,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Image failed to load',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            GestureDetector(
+              onTap: () => _openUrl(imageUrl),
+              child: Text(
+                'Open in browser',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(BuildContext ctx, String imageUrl) {
+    Navigator.of(ctx).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+            actions: [
+              IconButton(
+                icon: const Icon(CupertinoIcons.share),
+                onPressed: () =>
+                    SharePlus.instance.share(ShareParams(text: imageUrl)),
+              ),
+              IconButton(
+                icon: const Icon(CupertinoIcons.arrow_up_square),
+                onPressed: () => _openUrl(imageUrl),
+              ),
+            ],
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                imageUrl,
+                errorBuilder: (context, error, stackTrace) => const Center(
+                  child: Icon(
+                    CupertinoIcons.exclamationmark_triangle,
+                    color: Colors.white,
+                    size: 50,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildDefaultImage(ThemeData theme, bool isXUrl) {
