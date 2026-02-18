@@ -410,11 +410,20 @@ class ProfileScreen extends ConsumerWidget {
     final confirmed = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Clear Cache'),
-        content: const Text(
-          'This will clear all local data including saved items and settings. '
-          'Your data on the server will not be affected. '
-          'Are you sure you want to continue?',
+        title: Column(
+          children: [
+            const Text('Clear Cache'),
+            const SizedBox(height: 8),
+            Divider(color: CupertinoColors.separator.resolveFrom(context)),
+          ],
+        ),
+        content: const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Text(
+            'This will clear all local data including saved items and settings. '
+            'Your data on the server will not be affected. '
+            'Are you sure you want to continue?',
+          ),
         ),
         actions: [
           CupertinoDialogAction(
@@ -523,8 +532,17 @@ class ProfileScreen extends ConsumerWidget {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
+        title: Column(
+          children: [
+            const Text('Error'),
+            const SizedBox(height: 8),
+            Divider(color: CupertinoColors.separator.resolveFrom(context)),
+          ],
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(message),
+        ),
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
@@ -539,8 +557,17 @@ class ProfileScreen extends ConsumerWidget {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Success'),
-        content: Text(message),
+        title: Column(
+          children: [
+            const Text('Success'),
+            const SizedBox(height: 8),
+            Divider(color: CupertinoColors.separator.resolveFrom(context)),
+          ],
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(message),
+        ),
         actions: [
           CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
