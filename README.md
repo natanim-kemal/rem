@@ -1,13 +1,26 @@
-# rem
+<div align="center">
+  
+  <h1>rem</h1>
+  <a href="https://flutter.dev">
+    <img src="https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white" alt="Flutter">
+  </a>
+  <a href="https://dart.dev">
+    <img src="https://img.shields.io/badge/Dart-0175C2?logo=dart&logoColor=white" alt="Dart">
+  </a>
+  <a href="https://clerk.com">
+    <img src="https://img.shields.io/badge/Clerk-6C47FF?logo=clerk&logoColor=white" alt="Clerk">
+  </a>
+  <a href="https://convex.dev">
+    <img src="https://img.shields.io/badge/Convex-F28C28?logo=convex&logoColor=white" alt="Convex">
+  </a>
+  <br>
+  <br>
+  <b>Your intelligent content consumption vault</b>
+  <br>
+  <br>
+  <i>Stop letting saved links become digital graveyards. rem turns your "read later" list into a "read now" habit with smart reminders and beautiful organization.</i>
 
-[![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-0175C2?logo=dart&logoColor=white)](https://dart.dev)
-[![Clerk](https://img.shields.io/badge/Clerk-6C47FF?logo=clerk&logoColor=white)](https://clerk.com)
-[![Convex](https://img.shields.io/badge/Convex-F28C28?logo=convex&logoColor=white)](https://convex.dev)
-
-Your intelligent content consumption vault
-
-Stop letting saved links become digital graveyards. rem turns your "read later" list into a "read now" habit with smart reminders and beautiful organization.
+</div>
 
 ## Why rem?
 
