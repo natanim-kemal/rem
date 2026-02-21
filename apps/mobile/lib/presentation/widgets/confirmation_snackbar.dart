@@ -6,7 +6,7 @@ void showConfirmationSnackBar(BuildContext context, String message) {
   _showStatusSnackBar(
     context,
     message,
-    backgroundColor: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
+    backgroundColor: isDark ? const Color(0xFF141414) : const Color(0xFFF2F2F7),
     accentColor: const Color(0xFF34C759),
     icon: CupertinoIcons.checkmark_circle_fill,
   );
@@ -22,7 +22,7 @@ void showWarningSnackBar(
   _showStatusSnackBar(
     context,
     message,
-    backgroundColor: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
+    backgroundColor: isDark ? const Color(0xFF141414) : const Color(0xFFF2F2F7),
     accentColor: Colors.orange,
     icon: CupertinoIcons.exclamationmark_triangle_fill,
     actionLabel: actionLabel,
@@ -39,7 +39,7 @@ void showUndoSnackBar(
   _showStatusSnackBar(
     context,
     message,
-    backgroundColor: isDark ? const Color(0xFF1C1C1E) : const Color(0xFFF2F2F7),
+    backgroundColor: isDark ? const Color(0xFF141414) : const Color(0xFFF2F2F7),
     accentColor: const Color(0xFF2FBF9A),
     icon: CupertinoIcons.checkmark_circle_fill,
     actionLabel: 'UNDO',
