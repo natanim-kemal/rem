@@ -236,10 +236,10 @@ class ProfileScreen extends ConsumerWidget {
                           itemBuilder: (context, index) {
                             final item = items[index] as Map<String, dynamic>;
                             final sentAtValue = item['sentAt'];
-                            final sentAt = sentAtValue != null 
-                                ? (sentAtValue is int 
-                                    ? sentAtValue 
-                                    : (sentAtValue as double).toInt())
+                            final sentAt = sentAtValue != null
+                                ? (sentAtValue is int
+                                      ? sentAtValue
+                                      : (sentAtValue as double).toInt())
                                 : null;
                             final timestamp = sentAt != null
                                 ? DateTime.fromMillisecondsSinceEpoch(sentAt)
