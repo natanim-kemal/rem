@@ -285,7 +285,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       return;
     }
 
-
     bool isTimedOut = false;
 
     try {
@@ -1214,7 +1213,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       FilledButton.icon(
                         onPressed: () {
                           _loadContent();
-                          
+
                           final url = widget.item['url'] as String?;
                           final title =
                               widget.item['title'] as String? ?? 'Content';
@@ -1258,9 +1257,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       ),
     );
   }
-
-
-
 
   Widget _buildDefaultImage(ThemeData theme, bool isXUrl) {
     return Container(

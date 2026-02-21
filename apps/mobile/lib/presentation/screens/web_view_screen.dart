@@ -150,10 +150,7 @@ class _WebViewScreenState extends State<WebViewScreen>
                       color: CupertinoColors.systemRed,
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'Invalid URL',
-                      style: theme.textTheme.titleLarge,
-                    ),
+                    Text('Invalid URL', style: theme.textTheme.titleLarge),
                     const SizedBox(height: 8),
                     Text(
                       'The URL "${widget.url}" could not be loaded.',
