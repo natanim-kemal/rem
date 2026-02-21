@@ -13,13 +13,13 @@ class AppTheme {
   static const _lightTextTertiary = Color(0xFF9A9A9A);
   static const _lightDivider = Color(0xFFE5E3DE);
 
-  static const _darkBackground = Color(0xFF1F1F1F);
-  static const _darkSurface = Color(0xFF262626);
-  static const _darkSurfaceElevated = Color(0xFF2B2B2B);
-  static const _darkTextPrimary = Color(0xFFF2F2F2);
-  static const _darkTextSecondary = Color(0xFFB0B0B0);
-  static const _darkTextTertiary = Color(0xFF7A7A7A);
-  static const _darkDivider = Color(0xFF2F2F2F);
+  static const _darkBackground = Color(0xFF0F0F0F);
+  static const _darkSurface = Color(0xFF141414);
+  static const _darkSurfaceElevated = Color(0xFF1A1A1A);
+  static const _darkTextPrimary = Color(0xFFC8C8C8);
+  static const _darkTextSecondary = Color(0xFF707070);
+  static const _darkTextTertiary = Color(0xFF505050);
+  static const _darkDivider = Color(0xFF181818);
 
   static const accent = Color(0xFF2FBF9A);
   static const destructive = Color(0xFF1A8A6E);
