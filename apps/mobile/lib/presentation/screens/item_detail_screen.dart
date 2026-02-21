@@ -4,11 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:rem/providers/data_providers.dart';
-import 'package:dio/dio.dart';
-import '../theme/app_theme.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../widgets/confirmation_snackbar.dart';
 import '../../models/content_block.dart';
 import '../../core/services/metadata_service.dart';
+import '../../core/services/jina_service.dart';
 
 class ItemDetailScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> item;
@@ -23,6 +24,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _isDeleting = false;
   bool _isLoadingContent = false;
   List<ContentBlock> _loadedContent = [];
+  String? _loadedHtmlContent;
 
   late String _priority;
   late String _status;
@@ -103,6 +105,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     }
   }
 
+  String _extractDomain(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.host.replaceFirst('www.', '');
+    } catch (e) {
+      return url;
+    }
+  }
+
   Widget _buildTagsPreview() {
     if (_tags.isEmpty) {
       return Text(
@@ -133,9 +144,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   Future<void> _deleteItem() async {
-    final confirmed = await showCupertinoDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Column(
           children: [
             const Text('Delete Item'),
@@ -150,13 +162,12 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           ),
         ),
         actions: [
-          CupertinoDialogAction(
-            isDefaultAction: true,
+          TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Delete'),
           ),
@@ -291,6 +302,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               'Unable to extract content from this page. Please open the original link.',
         ),
       ];
+      _loadedHtmlContent = null;
       _isLoadingContent = false;
     });
   }
@@ -311,133 +323,37 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       return;
     }
 
-    bool isTimedOut = false;
-
     try {
-      final dio = Dio();
+      final jinaService = JinaService();
+      final htmlContent = await jinaService.extractHtmlContent(url);
 
-      final response = await Future.any([
-        dio.get(
-          url,
-          options: Options(
-            responseType: ResponseType.plain,
-            headers: {
-              'User-Agent':
-                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept':
-                  'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              'Accept-Language': 'en-US,en;q=0.9',
-              'Accept-Encoding': 'gzip, deflate',
-              'Cache-Control': 'no-cache',
-              'Connection': 'keep-alive',
-              'Pragma': 'no-cache',
-              'Upgrade-Insecure-Requests': '1',
-            },
-            receiveTimeout: const Duration(seconds: 30),
-            sendTimeout: const Duration(seconds: 30),
-          ),
-        ),
-        Future.delayed(const Duration(seconds: 20), () {
-          isTimedOut = true;
-          throw Exception('Timeout');
-        }),
-      ]);
+      if (!mounted) return;
 
-      if (isTimedOut) {
-        if (mounted) {
-          setState(() => _isLoadingContent = false);
-          _showUnableToExtract();
-        }
-        return;
-      }
-
-      if (response.statusCode == 200 && response.data != null) {
-        final html = response.data as String;
-
-        final fallbackContent = _extractTextFromHtmlFallback(html);
-
-        List<ContentBlock> content;
-        if (fallbackContent.isNotEmpty) {
-          content = [
-            ContentBlock(
-              type: ContentBlockType.paragraph,
-              content: fallbackContent,
-            ),
-          ];
-        } else if (widget.item['content'] != null &&
-            (widget.item['content'] as String).isNotEmpty) {
-          content = [
-            ContentBlock(
-              type: ContentBlockType.paragraph,
-              content: widget.item['content'] as String,
-            ),
-          ];
-        } else {
-          content = [
-            ContentBlock(
-              type: ContentBlockType.paragraph,
-              content:
-                  'Unable to extract content from this page. Please open the original link.',
-            ),
-          ];
-        }
-
-        if (mounted) {
-          setState(() {
-            _loadedContent = content;
-            _isLoadingContent = false;
-          });
-          _updateReadTimeFromContent(content);
-        }
+      if (htmlContent != null && htmlContent.isNotEmpty) {
+        setState(() {
+          _loadedHtmlContent = htmlContent;
+          _isLoadingContent = false;
+        });
+        _updateReadTimeFromHtml(htmlContent);
       } else {
-        throw Exception('Failed to fetch content: ${response.statusCode}');
-      }
-    } on DioException catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingContent = false);
-        if (e.response?.statusCode == 403) {
-          _showUnableToExtract();
-          return;
-        }
-        String errorMessage = 'Failed to load content';
-        if (e.type == DioExceptionType.connectionTimeout) {
-          errorMessage = 'Connection timed out';
-        } else if (e.type == DioExceptionType.receiveTimeout) {
-          errorMessage = 'Server took too long to respond';
-        } else if (e.type == DioExceptionType.connectionError) {
-          errorMessage = 'No internet connection';
-        }
-        showWarningSnackBar(context, '$errorMessage: ${e.message}');
+        _showUnableToExtract();
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingContent = false);
-        if (isTimedOut) {
-          _showUnableToExtract();
-        } else {
-          showWarningSnackBar(context, 'Failed to load content: $e');
-        }
+        _showUnableToExtract();
       }
     }
   }
 
-  Future<void> _updateReadTimeFromContent(List<ContentBlock> content) async {
-    if (content.isEmpty) return;
+  Future<void> _updateReadTimeFromHtml(String content) async {
+    if (content.trim().isEmpty) return;
 
-    final isExtractionFailed =
-        content.length == 1 &&
-        content.first.content ==
-            'Unable to extract content from this page. Please open the original link.';
-    if (isExtractionFailed) return;
-
-    final textContent = content
-        .where((block) => block.type == ContentBlockType.paragraph)
-        .map((block) => block.content)
-        .join(' ');
-
-    if (textContent.trim().isEmpty) return;
-
-    final wordCount = textContent.split(RegExp(r'\s+')).length;
+    final textOnly = content.replaceAll(RegExp(r'<[^>]*>'), ' ');
+    final wordCount = textOnly
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .length;
     final readTime = (wordCount / 225).ceil();
 
     final currentReadTime = widget.item['estimatedReadTime'] as int?;
@@ -450,89 +366,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     }
   }
 
-  String _extractTextFromHtmlFallback(String html) {
-    String text = html.replaceAll(
-      RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<header[^>]*>[\s\S]*?</header>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<footer[^>]*>[\s\S]*?</footer>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<nav[^>]*>[\s\S]*?</nav>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<aside[^>]*>[\s\S]*?</aside>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(
-      RegExp(r'<iframe[^>]*>[\s\S]*?</iframe>', caseSensitive: false),
-      '',
-    );
-    text = text.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
-
-    text = text.replaceAll(
-      RegExp(r'<(p|div|h[1-6])[^>]*>', caseSensitive: false),
-      '\n\n',
-    );
-    text = text.replaceAll(RegExp(r'<br[^>]*>', caseSensitive: false), '\n');
-    text = text.replaceAll(
-      RegExp(r'</(p|div|h[1-6]|li|tr)[^>]*>', caseSensitive: false),
-      '\n',
-    );
-    text = text.replaceAll(RegExp(r'</li[^>]*>', caseSensitive: false), '\n');
-    text = text.replaceAll(RegExp(r'<li[^>]*>', caseSensitive: false), '• ');
-
-    text = text.replaceAll(RegExp(r'<[^>]+>'), '');
-
-    text = text.replaceAll('&nbsp;', ' ');
-    text = text.replaceAll('&amp;', '&');
-    text = text.replaceAll('&lt;', '<');
-    text = text.replaceAll('&gt;', '>');
-    text = text.replaceAll('&quot;', '"');
-    text = text.replaceAll('&#39;', "'");
-    text = text.replaceAll('&apos;', "'");
-    text = text.replaceAll('&mdash;', '—');
-    text = text.replaceAll('&ndash;', '–');
-    text = text.replaceAll('&hellip;', '...');
-
-    text = text.replaceAllMapped(RegExp(r'&#(\d+);'), (match) {
-      final code = int.tryParse(match.group(1) ?? '');
-      if (code != null) {
-        return String.fromCharCode(code);
-      }
-      return match.group(0) ?? '';
-    });
-
-    text = text.replaceAllMapped(RegExp(r'&#x([0-9a-fA-F]+);'), (match) {
-      final code = int.tryParse(match.group(1) ?? '', radix: 16);
-      if (code != null) {
-        return String.fromCharCode(code);
-      }
-      return match.group(0) ?? '';
-    });
-
-    text = text.replaceAll(RegExp(r'\n\s*\n\s*\n+'), '\n\n');
-    text = text.replaceAll(RegExp(r'[ \t]+'), ' ');
-    text = text.replaceAll(RegExp(r'•\s*\n'), '\n');
-    text = text.replaceAll(RegExp(r'\n\s*•\s*\n'), '\n');
-    text = text.replaceAll(RegExp(r'^\s*•\s*\n', multiLine: true), '');
-    text = text.replaceAll(RegExp(r'^\s*•\s*$', multiLine: true), '');
-    return text.trim();
-  }
-
   void _showEditPrioritySheet() {
-    final theme = Theme.of(context);
     showCupertinoModalPopup(
       context: context,
       builder: (context) => CupertinoActionSheet(
@@ -554,18 +388,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'High',
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                  ),
-                  if (_priority == 'high') ...[
-                    const SizedBox(width: 8),
-                    Icon(
-                      CupertinoIcons.checkmark,
-                      size: 16,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ],
+                  const Text('High'),
                 ],
               ),
             ),
@@ -586,18 +409,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'Medium',
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                  ),
-                  if (_priority == 'medium') ...[
-                    const SizedBox(width: 8),
-                    Icon(
-                      CupertinoIcons.checkmark,
-                      size: 16,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ],
+                  const Text('Medium'),
                 ],
               ),
             ),
@@ -618,18 +430,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'Low',
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                  ),
-                  if (_priority == 'low') ...[
-                    const SizedBox(width: 8),
-                    Icon(
-                      CupertinoIcons.checkmark,
-                      size: 16,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ],
+                  const Text('Low'),
                 ],
               ),
             ),
@@ -1030,10 +831,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       fit: StackFit.expand,
                       children: [
                         if (widget.item['thumbnailUrl'] != null)
-                          Image.network(
-                            widget.item['thumbnailUrl'],
+                          CachedNetworkImage(
+                            imageUrl: widget.item['thumbnailUrl']!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
+                            placeholder: (context, url) => Container(color: theme.colorScheme.surfaceContainerHighest),
+                            errorWidget: (context, url, error) =>
                                 _buildDefaultImage(theme, isXUrl),
                           )
                         else if (isXUrl)
@@ -1197,27 +999,84 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   widget.item['title'] ?? 'No Title',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
+                    height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 24),
-                _MetaRow(
-                  icon: CupertinoIcons.link,
-                  text: widget.item['url'] ?? '',
-                  onTap: () => _launchUrl(context),
-                  isLink: true,
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () => _launchUrl(context),
+                        child: Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.link,
+                              size: 14,
+                              color: theme.colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _extractDomain(widget.item['url'] ?? ''),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Icon(
+                              CupertinoIcons.arrow_up_right_square,
+                              size: 14,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.calendar,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            widget.item['createdAt'] != null 
+                                ? _formatDate(widget.item['createdAt'] as int)
+                                : '',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Icon(
+                            CupertinoIcons.time,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${widget.item['estimatedReadTime'] ?? 0} min read',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
-                _MetaRow(
-                  icon: CupertinoIcons.calendar,
-                  text:
-                      'Added ${widget.item['createdAt'] != null ? _formatDate(widget.item['createdAt'] as int) : ''}',
-                ),
-                const SizedBox(height: 16),
-                _MetaRow(
-                  icon: CupertinoIcons.time,
-                  text: '${widget.item['estimatedReadTime'] ?? 0} min read',
-                ),
-                const SizedBox(height: 24),
                 GestureDetector(
                   onTap: _showEditTagsSheet,
                   child: Container(
@@ -1302,16 +1161,17 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ),
                   ],
                 ),
-                if (_loadedContent.isNotEmpty) ...[
+                if (_loadedContent.isNotEmpty ||
+                    _loadedHtmlContent != null) ...[
                   const SizedBox(height: 24),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.15),
                       ),
                     ),
                     child: Column(
@@ -1319,30 +1179,35 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(
-                              CupertinoIcons.doc_text,
-                              size: 18,
-                              color: theme.colorScheme.primary.withValues(
-                                alpha: 0.9,
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                CupertinoIcons.doc_text,
+                                size: 16,
+                                color: theme.colorScheme.primary,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 12),
                             Text(
-                              'Content',
-                              style: theme.textTheme.titleSmall?.copyWith(
+                              'Extracted Content',
+                              style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.primary,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
                         Divider(
+                          height: 1,
                           color: theme.colorScheme.outline.withValues(
-                            alpha: 0.2,
+                            alpha: 0.15,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
                         _buildContentList(theme),
                       ],
                     ),
@@ -1358,6 +1223,174 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   }
 
   Widget _buildContentList(ThemeData theme) {
+    if (_loadedHtmlContent != null) {
+      return Html(
+        data: _loadedHtmlContent!,
+        style: {
+          'body': Style(
+            fontSize: FontSize(16),
+            lineHeight: LineHeight(1.6),
+            margin: Margins.zero,
+            padding: HtmlPaddings.zero,
+          ),
+          'p': Style(margin: Margins.only(bottom: 12)),
+          'h1': Style(
+            fontSize: FontSize(24),
+            fontWeight: FontWeight.bold,
+            margin: Margins.only(bottom: 16, top: 16),
+          ),
+          'h2': Style(
+            fontSize: FontSize(22),
+            fontWeight: FontWeight.bold,
+            margin: Margins.only(bottom: 12, top: 12),
+          ),
+          'h3': Style(
+            fontSize: FontSize(20),
+            fontWeight: FontWeight.w600,
+            margin: Margins.only(bottom: 10, top: 10),
+          ),
+          'h4': Style(
+            fontSize: FontSize(18),
+            fontWeight: FontWeight.w600,
+            margin: Margins.only(bottom: 8, top: 8),
+          ),
+          'blockquote': Style(
+            fontStyle: FontStyle.italic,
+            margin: Margins.only(bottom: 12),
+            padding: HtmlPaddings.only(left: 16),
+            border: Border(
+              left: BorderSide(color: theme.colorScheme.primary, width: 4),
+            ),
+          ),
+          'pre': Style(
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            padding: HtmlPaddings.all(12),
+            margin: Margins.only(bottom: 12),
+          ),
+          'code': Style(
+            fontFamily: 'monospace',
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            padding: HtmlPaddings.symmetric(horizontal: 4, vertical: 2),
+          ),
+          'ul': Style(
+            margin: Margins.only(bottom: 12),
+            padding: HtmlPaddings.only(left: 20),
+          ),
+          'ol': Style(
+            margin: Margins.only(bottom: 12),
+            padding: HtmlPaddings.only(left: 20),
+          ),
+          'li': Style(margin: Margins.only(bottom: 4)),
+          'a': Style(
+            color: theme.colorScheme.primary,
+            textDecoration: TextDecoration.underline,
+          ),
+          'img': Style(
+            width: Width(double.infinity),
+            margin: Margins.only(bottom: 12),
+          ),
+        },
+        onLinkTap: (url, attributes, element) {
+          if (url != null) {
+            _openUrl(url);
+          }
+        },
+        extensions: [
+          TagExtension(
+            tagsToExtend: {'img'},
+            builder: (extensionContext) {
+              final src = extensionContext.attributes['src'];
+              final alt = extensionContext.attributes['alt'] ?? '';
+              if (src == null) return const SizedBox.shrink();
+
+              final isProfileImage = _isProfileImage(src, alt);
+
+              if (isProfileImage) {
+                return Container(
+                  width: 40,
+                  height: 40,
+                  margin: const EdgeInsets.only(bottom: 8, right: 8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.colorScheme.surfaceContainerHighest,
+                  ),
+                  child: ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: src,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Icon(
+                        CupertinoIcons.person,
+                        size: 24,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      errorWidget: (context, url, error) => Icon(
+                        CupertinoIcons.person,
+                        size: 24,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              return GestureDetector(
+                onTap: () => _showFullScreenImage(context, src),
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 400),
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: CachedNetworkImage(
+                      imageUrl: src,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        height: 200,
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        child: Center(child: CupertinoActivityIndicator()),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        height: 150,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                CupertinoIcons.photo,
+                                size: 40,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(height: 8),
+                              GestureDetector(
+                                onTap: () => _openUrl(src),
+                                child: Text(
+                                  'Open image',
+                                  style: TextStyle(
+                                    color: theme.colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      );
+    }
+
     if (_loadedContent.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -1371,11 +1404,47 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     );
   }
 
+  bool _isProfileImage(String src, String alt) {
+    final profileKeywords = [
+      'avatar',
+      'profile',
+      'user',
+      'author',
+      'photo',
+      'thumb',
+      'icon',
+    ];
+    final srcLower = src.toLowerCase();
+    final altLower = alt.toLowerCase();
+
+    for (final keyword in profileKeywords) {
+      if (srcLower.contains(keyword) || altLower.contains(keyword)) {
+        return true;
+      }
+    }
+
+    final uri = Uri.tryParse(src);
+    if (uri != null) {
+      final path = uri.path.toLowerCase();
+      final dimensions = RegExp(r'(\d{1,3})[x×](\d{1,3})');
+      final match = dimensions.firstMatch(path);
+      if (match != null) {
+        final width = int.tryParse(match.group(1) ?? '0') ?? 0;
+        final height = int.tryParse(match.group(2) ?? '0') ?? 0;
+        if (width > 0 && height > 0 && width == height && width <= 200) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   Widget _buildContentBlock(ThemeData theme, ContentBlock block) {
     switch (block.type) {
       case ContentBlockType.heading1:
         return Padding(
-          padding: const EdgeInsets.only(bottom: 16, top: 8),
+          padding: const EdgeInsets.only(bottom: 20, top: 12),
           child: Text(
             block.content,
             style: theme.textTheme.headlineSmall?.copyWith(
@@ -1386,7 +1455,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         );
       case ContentBlockType.heading2:
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12, top: 8),
+          padding: const EdgeInsets.only(bottom: 16, top: 12),
           child: Text(
             block.content,
             style: theme.textTheme.titleLarge?.copyWith(
@@ -1397,11 +1466,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         );
       case ContentBlockType.heading3:
         return Padding(
-          padding: const EdgeInsets.only(bottom: 8, top: 4),
+          padding: const EdgeInsets.only(bottom: 12, top: 8),
           child: Text(
             block.content,
             style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               height: 1.3,
             ),
           ),
@@ -1411,7 +1480,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
           return const SizedBox.shrink();
         }
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: GestureDetector(
             onTap: () => _showFullScreenImage(context, block.imageUrl!),
             child: ClipRRect(
@@ -1445,13 +1514,27 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
         );
       case ContentBlockType.listItem:
         return Padding(
-          padding: const EdgeInsets.only(bottom: 4, left: 8),
+          padding: const EdgeInsets.only(bottom: 8, left: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('• ', style: theme.textTheme.bodyMedium),
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
-                child: Text(block.content, style: theme.textTheme.bodyMedium),
+                child: Text(
+                  block.content, 
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    height: 1.6,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1668,49 +1751,5 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays} days ago';
     return '${date.month}/${date.day}/${date.year}';
-  }
-}
-
-class _MetaRow extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final VoidCallback? onTap;
-  final bool isLink;
-
-  const _MetaRow({
-    required this.icon,
-    required this.text,
-    this.onTap,
-    this.isLink = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 20,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: isLink
-                    ? AppTheme.accent
-                    : Theme.of(context).colorScheme.onSurface,
-                decoration: null,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
