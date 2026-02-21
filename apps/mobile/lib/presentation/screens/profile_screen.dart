@@ -27,22 +27,24 @@ class ProfileScreen extends ConsumerWidget {
     WidgetRef ref,
   ) async {
     final controller = TextEditingController(text: preferences.dailyDigestTime);
-    await showCupertinoDialog<void>(
+    await showDialog<void>(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
+      builder: (context) => AlertDialog(
         title: const Text('Daily Digest Time'),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 12),
             CupertinoTextField(controller: controller, placeholder: 'HH:MM'),
           ],
         ),
         actions: [
-          CupertinoDialogAction(
+          TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          CupertinoDialogAction(
+          TextButton(
             onPressed: () async {
               final value = controller.text.trim();
               if (userId != null && value.isNotEmpty) {
@@ -131,11 +133,13 @@ class ProfileScreen extends ConsumerWidget {
       text: preferences.quietHoursEnd,
     );
 
-    await showCupertinoDialog<void>(
+    await showDialog<void>(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: const Text('Quiet Hours'),
         content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 12),
             CupertinoTextField(
@@ -150,11 +154,11 @@ class ProfileScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          CupertinoDialogAction(
+          TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          CupertinoDialogAction(
+          TextButton(
             onPressed: () async {
               if (userId != null) {
                 await syncEngine.updateNotificationPreferences(
@@ -231,21 +235,29 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                           itemBuilder: (context, index) {
                             final item = items[index] as Map<String, dynamic>;
-                            final sentAt = item['sentAt'] as int?;
+                            final sentAtValue = item['sentAt'];
+                            final sentAt = sentAtValue != null 
+                                ? (sentAtValue is int 
+                                    ? sentAtValue 
+                                    : (sentAtValue as double).toInt())
+                                : null;
                             final timestamp = sentAt != null
                                 ? DateTime.fromMillisecondsSinceEpoch(sentAt)
                                 : null;
-                            return ListTile(
-                              title: Text(item['title']?.toString() ?? ''),
-                              subtitle: Text(item['body']?.toString() ?? ''),
-                              trailing: timestamp != null
-                                  ? Text(
-                                      '${timestamp.month}/${timestamp.day}',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.labelSmall,
-                                    )
-                                  : null,
+                            return Material(
+                              color: Colors.transparent,
+                              child: ListTile(
+                                title: Text(item['title']?.toString() ?? ''),
+                                subtitle: Text(item['body']?.toString() ?? ''),
+                                trailing: timestamp != null
+                                    ? Text(
+                                        '${timestamp.month}/${timestamp.day}',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.labelSmall,
+                                      )
+                                    : null,
+                              ),
                             );
                           },
                         );
@@ -407,9 +419,10 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _clearCache(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showCupertinoDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Column(
           children: [
             const Text('Clear Cache'),
@@ -426,12 +439,12 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          CupertinoDialogAction(
+          TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Clear'),
           ),
@@ -439,27 +452,27 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
 
-    if (confirmed == true && context.mounted) {
-      showCupertinoDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) =>
-            const Center(child: CupertinoActivityIndicator()),
-      );
+    if (confirmed != true || !context.mounted) return;
 
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.clear();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) =>
+          const Center(child: CupertinoActivityIndicator()),
+    );
 
-        if (context.mounted) {
-          Navigator.pop(context);
-          _showSuccess(context, 'Cache cleared successfully');
-        }
-      } catch (e) {
-        if (context.mounted) {
-          Navigator.pop(context);
-          _showError(context, 'Failed to clear cache: $e');
-        }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      if (context.mounted) {
+        Navigator.pop(context);
+        _showSuccess(context, 'Cache cleared successfully');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        _showError(context, 'Failed to clear cache: $e');
       }
     }
   }
@@ -529,9 +542,10 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   void _showError(BuildContext context, String message) {
-    showCupertinoDialog(
+    showDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Column(
           children: [
             const Text('Error'),
@@ -544,7 +558,7 @@ class ProfileScreen extends ConsumerWidget {
           child: Text(message),
         ),
         actions: [
-          CupertinoDialogAction(
+          TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
           ),
@@ -554,9 +568,10 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   void _showSuccess(BuildContext context, String message) {
-    showCupertinoDialog(
+    showDialog(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Column(
           children: [
             const Text('Success'),
@@ -569,7 +584,7 @@ class ProfileScreen extends ConsumerWidget {
           child: Text(message),
         ),
         actions: [
-          CupertinoDialogAction(
+          TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
           ),
@@ -636,47 +651,61 @@ class ProfileScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'profile',
-                    style: Theme.of(context).textTheme.displayMedium,
+                  const SizedBox.shrink(),
+                  IconButton(
+                    onPressed: () {
+                      if (authState.isAuthenticated) {
+                        showCupertinoModalPopup(
+                          context: context,
+                          builder: (context) => CupertinoActionSheet(
+                            title: Text(
+                              'Signed in as ${authState.displayName}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            actions: [
+                              CupertinoActionSheetAction(
+                                onPressed: () {
+                                  ref.read(authProvider.notifier).signOut();
+                                  Navigator.pop(context);
+                                },
+                                child: Text(
+                                  'Sign Out',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(color: Colors.orange.shade700),
+                                ),
+                              ),
+                            ],
+                            cancelButton: CupertinoActionSheetAction(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                'Cancel',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                          ),
+                        );
+                      } else {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const AuthScreen()),
+                        );
+                      }
+                    },
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.surface,
+                    ),
+                    icon: Icon(
+                      authState.isAuthenticated
+                          ? CupertinoIcons.square_arrow_right
+                          : CupertinoIcons.person,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
-                  const SizedBox(width: 120),
                 ],
               ),
               const SizedBox(height: 16),
               GestureDetector(
                 onTap: () {
-                  if (authState.isAuthenticated) {
-                    showCupertinoModalPopup(
-                      context: context,
-                      builder: (context) => CupertinoActionSheet(
-                        title: Text(
-                          'Signed in as ${authState.displayName}',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        actions: [
-                          CupertinoActionSheetAction(
-                            onPressed: () {
-                              ref.read(authProvider.notifier).signOut();
-                              Navigator.pop(context);
-                            },
-                            child: Text(
-                              'Sign Out',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: Colors.orange.shade700),
-                            ),
-                          ),
-                        ],
-                        cancelButton: CupertinoActionSheetAction(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(
-                            'Cancel',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                      ),
-                    );
-                  } else {
+                  if (!authState.isAuthenticated) {
                     Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const AuthScreen()),
                     );
