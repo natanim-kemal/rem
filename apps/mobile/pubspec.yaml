@@ -41,6 +41,8 @@ dependencies:
   uuid: ^4.2.2
   http: ^1.1.0
   flutter_dotenv: ^5.1.0
+  flutter_markdown: ^0.7.4+3
+  flutter_html: ^3.0.0-beta.2
 
   clerk_flutter: ^0.0.14-beta
   metadata_fetch: ^0.4.2
