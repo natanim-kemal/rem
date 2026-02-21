@@ -67,8 +67,8 @@
         notification.id = 'rem-notification';
 
         const colors = type === 'success'
-            ? { bg: '#2FBF9A', text: '#1F1F1F' }
-            : { bg: '#FF3B30', text: '#FFFFFF' };
+            ? { bg: '#2FBF9A', text: '#0F0F0F' }
+            : { bg: '#1A8A6E', text: '#FFFFFF' };
 
         notification.style.cssText = `
             position: fixed;
