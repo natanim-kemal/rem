@@ -101,6 +101,9 @@ class _StatsBody extends ConsumerWidget {
         : (totalReadMinutes / readItems.length).round();
 
     final readRate = total == 0 ? 0.0 : (readItems.length / total);
+    final readRateWithInProgress = total == 0 
+        ? 0.0 
+        : ((readItems.length + inProgressItems.length) / total);
 
     final weekDays = List.generate(
       7,
@@ -129,14 +132,6 @@ class _StatsBody extends ConsumerWidget {
       return timestamp >= weekDays.first.millisecondsSinceEpoch;
     }).length;
 
-    final typeCounts = <String, int>{};
-    for (final item in items) {
-      final type = item.type.isEmpty ? 'other' : item.type.toLowerCase();
-      typeCounts[type] = (typeCounts[type] ?? 0) + 1;
-    }
-    final sortedTypes = typeCounts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       child: Column(
@@ -147,7 +142,7 @@ class _StatsBody extends ConsumerWidget {
           _HeroCard(
             streak: streak,
             savedThisWeek: savedByDay.values.fold<int>(0, (a, b) => a + b),
-            readRate: readRate,
+            readRate: readRateWithInProgress,
             readThisWeek: readThisWeek,
           ),
           const SizedBox(height: 20),
@@ -239,38 +234,6 @@ class _StatsBody extends ConsumerWidget {
             child: _WeekChart(savedByDay: savedByDay, now: now),
           ),
           const SizedBox(height: 20),
-          _SectionTitle(title: 'Library breakdown'),
-          const SizedBox(height: 12),
-          _StatCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: sortedTypes.isEmpty
-                      ? [_TypeChip(label: 'No items yet', count: 0)]
-                      : sortedTypes
-                            .map(
-                              (entry) => _TypeChip(
-                                label: entry.key,
-                                count: entry.value,
-                              ),
-                            )
-                            .toList(),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  sortedTypes.isEmpty
-                      ? 'Add a few items to unlock insights.'
-                      : 'Most saved: ${sortedTypes.first.key}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: context.textSecondary),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -287,7 +250,7 @@ class _HeaderRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('stats', style: Theme.of(context).textTheme.displayMedium),
+        const SizedBox.shrink(),
         SizedBox(
           width: 120,
           child: Align(
@@ -616,44 +579,6 @@ class _DayBar extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _TypeChip extends StatelessWidget {
-  final String label;
-  final int count;
-
-  const _TypeChip({required this.label, required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: context.surfaceElevated,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppTheme.accent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '$count',
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: AppTheme.accent),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
