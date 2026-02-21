@@ -52,6 +52,7 @@ dependencies:
   workmanager: ^0.9.0
   timezone: ^0.10.0
   html: ^0.15.6
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_test:

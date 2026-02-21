@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:rem/providers/data_providers.dart';
 import 'package:dio/dio.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'web_view_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirmation_snackbar.dart';
 import '../../models/content_block.dart';
@@ -1030,10 +1032,13 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       fit: StackFit.expand,
                       children: [
                         if (widget.item['thumbnailUrl'] != null)
-                          Image.network(
-                            widget.item['thumbnailUrl'],
+                          CachedNetworkImage(
+                            imageUrl: widget.item['thumbnailUrl'] as String,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
+                            placeholder: (context, url) => Container(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                            ),
+                            errorWidget: (context, url, error) =>
                                 _buildDefaultImage(theme, isXUrl),
                           )
                         else if (isXUrl)
@@ -1248,59 +1253,63 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FilledButton.icon(
                         onPressed: () => _launchUrl(context),
-                        icon: const Icon(CupertinoIcons.compass, size: 20),
+                        icon: const Icon(CupertinoIcons.compass, size: 16),
                         label: const Text(
                           'Open Original',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
+                          minimumSize: const Size(180, 40),
                           backgroundColor: theme.colorScheme.primary,
                           foregroundColor: theme.colorScheme.onPrimary,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _isLoadingContent ? null : _loadContent,
-                        icon: _isLoadingContent
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CupertinoActivityIndicator(
-                                  color: Colors.black,
-                                ),
-                              )
-                            : const Icon(
-                                CupertinoIcons.arrow_down_circle,
-                                size: 20,
-                                color: Colors.black,
+                      const SizedBox(width: 12),
+                      FilledButton.icon(
+                        onPressed: () {
+                          final url = widget.item['url'] as String?;
+                          final title =
+                              widget.item['title'] as String? ?? 'Content';
+                          if (url != null && url.isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    WebViewScreen(url: url, title: title),
                               ),
-                        label: Text(
-                          _isLoadingContent ? 'Loading...' : 'Load Content',
-                          style: const TextStyle(
-                            fontSize: 14,
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          CupertinoIcons.arrow_down_circle,
+                          size: 16,
+                          color: Colors.black,
+                        ),
+                        label: const Text(
+                          'Load Content',
+                          style: TextStyle(
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,
                           ),
                         ),
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
+                          minimumSize: const Size(180, 40),
                           backgroundColor: theme.colorScheme.primary,
                           foregroundColor: theme.colorScheme.onPrimary,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 if (_loadedContent.isNotEmpty) ...[
                   const SizedBox(height: 24),
@@ -1419,25 +1428,15 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 400),
                 width: double.infinity,
-                child: Image.network(
-                  block.imageUrl!,
+                child: CachedNetworkImage(
+                  imageUrl: block.imageUrl!,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) =>
+                  placeholder: (context, url) => SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  errorWidget: (context, url, error) =>
                       _buildImageError(theme, block.imageUrl!),
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return SizedBox(
-                      height: 200,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      ),
-                    );
-                  },
                 ),
               ),
             ),
@@ -1611,9 +1610,11 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             child: InteractiveViewer(
               minScale: 0.5,
               maxScale: 4.0,
-              child: Image.network(
-                imageUrl,
-                errorBuilder: (context, error, stackTrace) => const Center(
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                placeholder: (context, url) =>
+                    const Center(child: CircularProgressIndicator()),
+                errorWidget: (context, url, error) => const Center(
                   child: Icon(
                     CupertinoIcons.exclamationmark_triangle,
                     color: Colors.white,

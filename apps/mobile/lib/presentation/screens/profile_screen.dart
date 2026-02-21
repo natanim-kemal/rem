@@ -690,19 +690,15 @@ class ProfileScreen extends ConsumerWidget {
                         );
                       }
                     },
-                    style: IconButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.surface,
-                    ),
                     icon: Icon(
                       authState.isAuthenticated
                           ? CupertinoIcons.square_arrow_right
                           : CupertinoIcons.person,
-                      color: Theme.of(context).colorScheme.onSurface,
+                      size: 20,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
               GestureDetector(
                 onTap: () {
                   if (!authState.isAuthenticated) {
