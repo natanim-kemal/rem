@@ -101,8 +101,8 @@ class _StatsBody extends ConsumerWidget {
         : (totalReadMinutes / readItems.length).round();
 
     final readRate = total == 0 ? 0.0 : (readItems.length / total);
-    final readRateWithInProgress = total == 0 
-        ? 0.0 
+    final readRateWithInProgress = total == 0
+        ? 0.0
         : ((readItems.length + inProgressItems.length) / total);
 
     final weekDays = List.generate(
