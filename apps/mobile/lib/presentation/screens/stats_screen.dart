@@ -64,10 +64,72 @@ class StatsScreen extends ConsumerWidget {
   }
 }
 
-class _StatsBody extends ConsumerWidget {
+class _StatsBody extends ConsumerStatefulWidget {
   final List<Item> items;
 
   const _StatsBody({required this.items});
+
+  @override
+  ConsumerState<_StatsBody> createState() => _StatsBodyState();
+}
+
+class _StatsBodyState extends ConsumerState<_StatsBody> {
+  String _selectedRange = '7days';
+
+  final List<String> _ranges = ['24hours', '7days', '30days', '365days'];
+
+  void _cycleRange() {
+    setState(() {
+      final currentIndex = _ranges.indexOf(_selectedRange);
+      final nextIndex = (currentIndex + 1) % _ranges.length;
+      _selectedRange = _ranges[nextIndex];
+    });
+  }
+
+  String get _rangeLabel {
+    switch (_selectedRange) {
+      case '24hours':
+        return 'Last 24 hours';
+      case '7days':
+        return 'Last 7 days';
+      case '30days':
+        return 'Last month';
+      case '365days':
+        return 'Last year';
+      default:
+        return 'Last 7 days';
+    }
+  }
+
+  String get _chartTitle {
+    switch (_selectedRange) {
+      case '24hours':
+        return 'Today';
+      case '7days':
+        return 'This week';
+      case '30days':
+        return 'This month';
+      case '365days':
+        return 'This year';
+      default:
+        return 'This week';
+    }
+  }
+
+  int get _daysToSubtract {
+    switch (_selectedRange) {
+      case '24hours':
+        return 1;
+      case '7days':
+        return 7;
+      case '30days':
+        return 30;
+      case '365days':
+        return 365;
+      default:
+        return 7;
+    }
+  }
 
   void _navigateToHomeWithFilter(
     BuildContext context,
@@ -79,16 +141,16 @@ class _StatsBody extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final now = DateTime.now();
-    final total = items.length;
+    final total = widget.items.length;
 
-    final readItems = items.where((item) => item.status == 'read').toList();
-    final archivedItems = items
+    final readItems = widget.items.where((item) => item.status == 'read').toList();
+    final archivedItems = widget.items
         .where((item) => item.status == 'archived')
         .toList();
-    final unreadItems = items.where((item) => item.status == 'unread').toList();
-    final inProgressItems = items
+    final unreadItems = widget.items.where((item) => item.status == 'unread').toList();
+    final inProgressItems = widget.items
         .where((item) => item.status == 'in_progress')
         .toList();
 
@@ -105,13 +167,14 @@ class _StatsBody extends ConsumerWidget {
         ? 0.0
         : ((readItems.length + inProgressItems.length) / total);
 
+    final daysToSubtract = _daysToSubtract;
     final weekDays = List.generate(
-      7,
-      (index) => _dayKey(now.subtract(Duration(days: 6 - index))),
+      daysToSubtract,
+      (index) => _dayKey(now.subtract(Duration(days: daysToSubtract - 1 - index))),
     );
 
     final savedByDay = {for (final day in weekDays) day: 0};
-    for (final item in items) {
+    for (final item in widget.items) {
       final day = _dayKey(DateTime.fromMillisecondsSinceEpoch(item.createdAt));
       if (savedByDay.containsKey(day)) {
         savedByDay[day] = (savedByDay[day] ?? 0) + 1;
@@ -127,7 +190,7 @@ class _StatsBody extends ConsumerWidget {
     }
     final streak = _calculateStreak(readDays, now);
 
-    final readThisWeek = readItems.where((item) {
+    final readThisPeriod = readItems.where((item) {
       final timestamp = item.readAt ?? item.updatedAt;
       return timestamp >= weekDays.first.millisecondsSinceEpoch;
     }).length;
@@ -137,13 +200,13 @@ class _StatsBody extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _HeaderRow(total: total),
+          _HeaderRow(total: total, rangeLabel: _rangeLabel, onTap: _cycleRange),
           const SizedBox(height: 16),
           _HeroCard(
             streak: streak,
-            savedThisWeek: savedByDay.values.fold<int>(0, (a, b) => a + b),
+            savedThisPeriod: savedByDay.values.fold<int>(0, (a, b) => a + b),
             readRate: readRateWithInProgress,
-            readThisWeek: readThisWeek,
+            readThisPeriod: readThisPeriod,
           ),
           const SizedBox(height: 20),
           _SectionTitle(title: 'Overview'),
@@ -228,7 +291,7 @@ class _StatsBody extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 20),
-          _SectionTitle(title: 'This week'),
+          _SectionTitle(title: _chartTitle),
           const SizedBox(height: 12),
           _StatCard(
             child: _WeekChart(savedByDay: savedByDay, now: now),
@@ -242,8 +305,14 @@ class _StatsBody extends ConsumerWidget {
 
 class _HeaderRow extends StatelessWidget {
   final int total;
+  final String rangeLabel;
+  final VoidCallback onTap;
 
-  const _HeaderRow({required this.total});
+  const _HeaderRow({
+    required this.total,
+    required this.rangeLabel,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -251,21 +320,18 @@ class _HeaderRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const SizedBox.shrink(),
-        SizedBox(
-          width: 120,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: context.surfaceElevated,
-                borderRadius: BorderRadius.circular(20),
-              ),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: context.surfaceElevated,
+              borderRadius: BorderRadius.circular(20),
+            ),
               child: Text(
-                total == 0 ? 'Get started' : 'Last 7 days',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+              total == 0 ? 'Get started' : rangeLabel,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
@@ -277,15 +343,15 @@ class _HeaderRow extends StatelessWidget {
 
 class _HeroCard extends StatelessWidget {
   final int streak;
-  final int savedThisWeek;
+  final int savedThisPeriod;
   final double readRate;
-  final int readThisWeek;
+  final int readThisPeriod;
 
   const _HeroCard({
     required this.streak,
-    required this.savedThisWeek,
+    required this.savedThisPeriod,
     required this.readRate,
-    required this.readThisWeek,
+    required this.readThisPeriod,
   });
 
   @override
@@ -330,7 +396,7 @@ class _HeroCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   Text(
-                    '$savedThisWeek saved • $readThisWeek read this week',
+                    '$savedThisPeriod saved • $readThisPeriod read',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: context.textSecondary,
                     ),
@@ -509,25 +575,62 @@ class _WeekChart extends StatelessWidget {
 
   const _WeekChart({required this.savedByDay, required this.now});
 
+  String _getDayLabel(DateTime date, int totalDays) {
+    if (totalDays <= 7) {
+      return _weekdayLabel(date.weekday);
+    } else if (totalDays <= 30) {
+      return '${date.day}';
+    } else {
+      return '${date.month}/${date.day}';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final maxValue = savedByDay.values.fold<int>(1, (a, b) => a > b ? a : b);
+    final dayCount = savedByDay.length;
+    final isCompact = dayCount <= 7;
+
+    if (isCompact) {
+      return SizedBox(
+        height: 140,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: savedByDay.entries.map((entry) {
+            final isToday = _dayKey(now) == entry.key;
+            final heightFactor = maxValue == 0 ? 0.0 : entry.value / maxValue;
+            return _DayBar(
+              day: _getDayLabel(entry.key, dayCount),
+              value: heightFactor,
+              count: entry.value,
+              isToday: isToday,
+            );
+          }).toList(),
+        ),
+      );
+    }
 
     return SizedBox(
       height: 140,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: savedByDay.entries.map((entry) {
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: dayCount,
+        padding: EdgeInsets.zero,
+        itemBuilder: (context, index) {
+          final entry = savedByDay.entries.elementAt(index);
           final isToday = _dayKey(now) == entry.key;
           final heightFactor = maxValue == 0 ? 0.0 : entry.value / maxValue;
-          return _DayBar(
-            day: _weekdayLabel(entry.key.weekday),
-            value: heightFactor,
-            count: entry.value,
-            isToday: isToday,
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: _DayBar(
+              day: _getDayLabel(entry.key, dayCount),
+              value: heightFactor,
+              count: entry.value,
+              isToday: isToday,
+            ),
           );
-        }).toList(),
+        },
       ),
     );
   }
