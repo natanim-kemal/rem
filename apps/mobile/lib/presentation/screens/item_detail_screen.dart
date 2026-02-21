@@ -23,8 +23,6 @@ class ItemDetailScreen extends ConsumerStatefulWidget {
 
 class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _isDeleting = false;
-  bool _isLoadingContent = false;
-  List<ContentBlock> _loadedContent = [];
 
   late String _priority;
   late String _status;
@@ -262,56 +260,31 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       if (xEmbed?.html != null) {
         final extractedText = _extractXPostText(xEmbed!.html);
         if (extractedText != null && extractedText.isNotEmpty) {
-          setState(() {
-            _loadedContent = [
-              ContentBlock(
-                type: ContentBlockType.paragraph,
-                content: extractedText,
-              ),
-            ];
-            _isLoadingContent = false;
-          });
-          return;
+          final content = [
+            ContentBlock(
+              type: ContentBlockType.paragraph,
+              content: extractedText,
+            ),
+          ];
+          _updateReadTimeFromContent(content);
         }
       }
-
-      _showUnableToExtract();
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingContent = false);
-        _showUnableToExtract();
-      }
+    } catch (_) {
+      // Background logic, ignore errors
     }
-  }
-
-  void _showUnableToExtract() {
-    setState(() {
-      _loadedContent = [
-        ContentBlock(
-          type: ContentBlockType.paragraph,
-          content:
-              'Unable to extract content from this page. Please open the original link.',
-        ),
-      ];
-      _isLoadingContent = false;
-    });
   }
 
   Future<void> _loadContent() async {
     final url = widget.item['url'] as String?;
     if (url == null || url.isEmpty) {
-      if (mounted) {
-        showWarningSnackBar(context, 'No URL to load content from');
-      }
       return;
     }
-
-    setState(() => _isLoadingContent = true);
 
     if (_isXUrl(url)) {
       await _loadXContent(url);
       return;
     }
+
 
     bool isTimedOut = false;
 
@@ -346,10 +319,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
       ]);
 
       if (isTimedOut) {
-        if (mounted) {
-          setState(() => _isLoadingContent = false);
-          _showUnableToExtract();
-        }
         return;
       }
 
@@ -375,51 +344,19 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
             ),
           ];
         } else {
-          content = [
-            ContentBlock(
-              type: ContentBlockType.paragraph,
-              content:
-                  'Unable to extract content from this page. Please open the original link.',
-            ),
-          ];
+          return;
         }
 
         if (mounted) {
-          setState(() {
-            _loadedContent = content;
-            _isLoadingContent = false;
-          });
           _updateReadTimeFromContent(content);
         }
       } else {
         throw Exception('Failed to fetch content: ${response.statusCode}');
       }
-    } on DioException catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingContent = false);
-        if (e.response?.statusCode == 403) {
-          _showUnableToExtract();
-          return;
-        }
-        String errorMessage = 'Failed to load content';
-        if (e.type == DioExceptionType.connectionTimeout) {
-          errorMessage = 'Connection timed out';
-        } else if (e.type == DioExceptionType.receiveTimeout) {
-          errorMessage = 'Server took too long to respond';
-        } else if (e.type == DioExceptionType.connectionError) {
-          errorMessage = 'No internet connection';
-        }
-        showWarningSnackBar(context, '$errorMessage: ${e.message}');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingContent = false);
-        if (isTimedOut) {
-          _showUnableToExtract();
-        } else {
-          showWarningSnackBar(context, 'Failed to load content: $e');
-        }
-      }
+    } on DioException catch (_) {
+      // Background logic, ignore errors
+    } catch (_) {
+      // Background logic, ignore errors
     }
   }
 
@@ -1276,6 +1213,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       const SizedBox(width: 12),
                       FilledButton.icon(
                         onPressed: () {
+                          _loadContent();
+                          
                           final url = widget.item['url'] as String?;
                           final title =
                               widget.item['title'] as String? ?? 'Content';
@@ -1311,52 +1250,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                     ],
                   ),
                 ),
-                if (_loadedContent.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              CupertinoIcons.doc_text,
-                              size: 18,
-                              color: theme.colorScheme.primary.withValues(
-                                alpha: 0.9,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Content',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Divider(
-                          color: theme.colorScheme.outline.withValues(
-                            alpha: 0.2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildContentList(theme),
-                      ],
-                    ),
-                  ),
-                ],
                 const SizedBox(height: 100),
               ]),
             ),
@@ -1366,268 +1259,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
     );
   }
 
-  Widget _buildContentList(ThemeData theme) {
-    if (_loadedContent.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _loadedContent.length,
-      itemBuilder: (context, index) {
-        return _buildContentBlock(theme, _loadedContent[index]);
-      },
-    );
-  }
 
-  Widget _buildContentBlock(ThemeData theme, ContentBlock block) {
-    switch (block.type) {
-      case ContentBlockType.heading1:
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16, top: 8),
-          child: Text(
-            block.content,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              height: 1.3,
-            ),
-          ),
-        );
-      case ContentBlockType.heading2:
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12, top: 8),
-          child: Text(
-            block.content,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              height: 1.3,
-            ),
-          ),
-        );
-      case ContentBlockType.heading3:
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8, top: 4),
-          child: Text(
-            block.content,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              height: 1.3,
-            ),
-          ),
-        );
-      case ContentBlockType.image:
-        if (block.imageUrl == null || block.imageUrl!.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: GestureDetector(
-            onTap: () => _showFullScreenImage(context, block.imageUrl!),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 400),
-                width: double.infinity,
-                child: CachedNetworkImage(
-                  imageUrl: block.imageUrl!,
-                  fit: BoxFit.contain,
-                  placeholder: (context, url) => SizedBox(
-                    height: 200,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  errorWidget: (context, url, error) =>
-                      _buildImageError(theme, block.imageUrl!),
-                ),
-              ),
-            ),
-          ),
-        );
-      case ContentBlockType.listItem:
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 4, left: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('• ', style: theme.textTheme.bodyMedium),
-              Expanded(
-                child: Text(block.content, style: theme.textTheme.bodyMedium),
-              ),
-            ],
-          ),
-        );
-      case ContentBlockType.paragraph:
-      default:
-        final isExtractionFailed =
-            block.content ==
-            'Unable to extract content from this page. Please open the original link.';
-        if (isExtractionFailed) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  CupertinoIcons.info_circle,
-                  color: Colors.orange,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SelectableText(
-                    block.content,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      height: 1.6,
-                      color: Colors.orange,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildTextWithLinks(theme, block.content),
-        );
-    }
-  }
 
-  Widget _buildTextWithLinks(ThemeData theme, String text) {
-    final urlPattern = RegExp(r'https?://[^\s<>"{}|\\^`\[\]]+');
-    final matches = urlPattern.allMatches(text).toList();
-
-    if (matches.isEmpty) {
-      return SelectableText(
-        text,
-        style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
-      );
-    }
-
-    final List<InlineSpan> spans = [];
-    int lastEnd = 0;
-
-    for (final match in matches) {
-      if (match.start > lastEnd) {
-        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
-      }
-      final url = match.group(0) ?? '';
-      spans.add(
-        WidgetSpan(
-          child: GestureDetector(
-            onTap: () => _openUrl(url),
-            child: Text(
-              url,
-              style: TextStyle(
-                color: theme.colorScheme.primary,
-                decoration: TextDecoration.underline,
-                decorationColor: theme.colorScheme.primary,
-              ),
-            ),
-          ),
-        ),
-      );
-      lastEnd = match.end;
-    }
-
-    if (lastEnd < text.length) {
-      spans.add(TextSpan(text: text.substring(lastEnd)));
-    }
-
-    return SelectableText.rich(
-      TextSpan(children: spans),
-      style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
-    );
-  }
-
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Widget _buildImageError(ThemeData theme, String imageUrl) {
-    return Container(
-      height: 150,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              CupertinoIcons.photo,
-              size: 40,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Image failed to load',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            GestureDetector(
-              onTap: () => _openUrl(imageUrl),
-              child: Text(
-                'Open in browser',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showFullScreenImage(BuildContext ctx, String imageUrl) {
-    Navigator.of(ctx).push(
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            iconTheme: const IconThemeData(color: Colors.white),
-            actions: [
-              IconButton(
-                icon: const Icon(CupertinoIcons.share),
-                onPressed: () =>
-                    SharePlus.instance.share(ShareParams(text: imageUrl)),
-              ),
-              IconButton(
-                icon: const Icon(CupertinoIcons.arrow_up_square),
-                onPressed: () => _openUrl(imageUrl),
-              ),
-            ],
-          ),
-          body: Center(
-            child: InteractiveViewer(
-              minScale: 0.5,
-              maxScale: 4.0,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                placeholder: (context, url) =>
-                    const Center(child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => const Center(
-                  child: Icon(
-                    CupertinoIcons.exclamationmark_triangle,
-                    color: Colors.white,
-                    size: 50,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildDefaultImage(ThemeData theme, bool isXUrl) {
     return Container(

@@ -17,6 +17,7 @@ class _WebViewScreenState extends State<WebViewScreen>
   late final WebViewController _controller;
   bool _isLoading = true;
   bool _isDarkMode = false;
+  bool _hasInvalidUrl = false;
   late AnimationController _refreshAnimationController;
 
   static const String _darkModeScript = '''
@@ -34,6 +35,7 @@ class _WebViewScreenState extends State<WebViewScreen>
         filter: invert(1) hue-rotate(180deg);
       }
     `;
+    style.setAttribute('data-inverted', 'true');
     document.head.appendChild(style);
   })();
 ''';
@@ -64,16 +66,19 @@ class _WebViewScreenState extends State<WebViewScreen>
           onPageFinished: (String url) {
             setState(() => _isLoading = false);
             _refreshAnimationController.reset();
-            if (_isDarkMode) {
-              _controller.runJavaScript(_darkModeScript);
-            }
           },
           onNavigationRequest: (NavigationRequest request) {
             return NavigationDecision.navigate;
           },
         ),
-      )
-      ..loadRequest(Uri.parse(widget.url));
+      );
+
+    final parsedUri = Uri.tryParse(widget.url);
+    if (parsedUri != null) {
+      _controller.loadRequest(parsedUri);
+    } else {
+      setState(() => _hasInvalidUrl = true);
+    }
   }
 
   @override
@@ -84,6 +89,10 @@ class _WebViewScreenState extends State<WebViewScreen>
 
   void _toggleDarkMode() {
     setState(() => _isDarkMode = !_isDarkMode);
+    _applyDarkMode();
+  }
+
+  void _applyDarkMode() {
     if (_isDarkMode) {
       _controller.runJavaScript(_darkModeScript);
     } else {
@@ -128,18 +137,47 @@ class _WebViewScreenState extends State<WebViewScreen>
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(),
+      body: _hasInvalidUrl
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.exclamationmark_triangle,
+                      size: 48,
+                      color: CupertinoColors.systemRed,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Invalid URL',
+                      style: theme.textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'The URL "${widget.url}" could not be loaded.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : Stack(
+              children: [
+                WebViewWidget(controller: _controller),
+                if (_isLoading)
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(),
+                  ),
+              ],
             ),
-        ],
-      ),
     );
   }
 }
