@@ -834,7 +834,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           CachedNetworkImage(
                             imageUrl: widget.item['thumbnailUrl']!,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(color: theme.colorScheme.surfaceContainerHighest),
+                            placeholder: (context, url) => Container(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                            ),
                             errorWidget: (context, url, error) =>
                                 _buildDefaultImage(theme, isXUrl),
                           )
@@ -1051,7 +1053,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            widget.item['createdAt'] != null 
+                            widget.item['createdAt'] != null
                                 ? _formatDate(widget.item['createdAt'] as int)
                                 : '',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -1171,7 +1173,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.15),
+                        color: theme.colorScheme.outline.withValues(
+                          alpha: 0.15,
+                        ),
                       ),
                     ),
                     child: Column(
@@ -1182,7 +1186,9 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
@@ -1530,10 +1536,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  block.content, 
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.6,
-                  ),
+                  block.content,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
                 ),
               ),
             ],
