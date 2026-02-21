@@ -145,11 +145,15 @@ class _StatsBodyState extends ConsumerState<_StatsBody> {
     final now = DateTime.now();
     final total = widget.items.length;
 
-    final readItems = widget.items.where((item) => item.status == 'read').toList();
+    final readItems = widget.items
+        .where((item) => item.status == 'read')
+        .toList();
     final archivedItems = widget.items
         .where((item) => item.status == 'archived')
         .toList();
-    final unreadItems = widget.items.where((item) => item.status == 'unread').toList();
+    final unreadItems = widget.items
+        .where((item) => item.status == 'unread')
+        .toList();
     final inProgressItems = widget.items
         .where((item) => item.status == 'in_progress')
         .toList();
@@ -170,7 +174,8 @@ class _StatsBodyState extends ConsumerState<_StatsBody> {
     final daysToSubtract = _daysToSubtract;
     final weekDays = List.generate(
       daysToSubtract,
-      (index) => _dayKey(now.subtract(Duration(days: daysToSubtract - 1 - index))),
+      (index) =>
+          _dayKey(now.subtract(Duration(days: daysToSubtract - 1 - index))),
     );
 
     final savedByDay = {for (final day in weekDays) day: 0};
@@ -328,7 +333,7 @@ class _HeaderRow extends StatelessWidget {
               color: context.surfaceElevated,
               borderRadius: BorderRadius.circular(20),
             ),
-              child: Text(
+            child: Text(
               total == 0 ? 'Get started' : rangeLabel,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: Theme.of(context).colorScheme.primary,

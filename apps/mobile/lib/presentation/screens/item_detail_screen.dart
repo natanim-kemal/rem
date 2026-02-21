@@ -26,7 +26,6 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
   bool _isLoadingContent = false;
   List<ContentBlock> _loadedContent = [];
 
-
   late String _priority;
   late String _status;
   late List<String> _tags;
@@ -1089,14 +1088,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   child: CupertinoActivityIndicator(),
                 )
               else
-               IconButton(
-        onPressed: _deleteItem,
-        style: IconButton.styleFrom(
-          backgroundColor: actionBackground,
-          foregroundColor: actionForeground,
-        ),
-        icon: const Icon(CupertinoIcons.trash),
-      ),
+                IconButton(
+                  onPressed: _deleteItem,
+                  style: IconButton.styleFrom(
+                    backgroundColor: actionBackground,
+                    foregroundColor: actionForeground,
+                  ),
+                  icon: const Icon(CupertinoIcons.trash),
+                ),
             ],
           ),
           SliverPadding(
@@ -1278,15 +1277,14 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                       FilledButton.icon(
                         onPressed: () {
                           final url = widget.item['url'] as String?;
-                          final title = widget.item['title'] as String? ?? 'Content';
+                          final title =
+                              widget.item['title'] as String? ?? 'Content';
                           if (url != null && url.isNotEmpty) {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => WebViewScreen(
-                                  url: url,
-                                  title: title,
-                                ),
+                                builder: (context) =>
+                                    WebViewScreen(url: url, title: title),
                               ),
                             );
                           }
@@ -1435,9 +1433,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   fit: BoxFit.contain,
                   placeholder: (context, url) => SizedBox(
                     height: 200,
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
+                    child: Center(child: CircularProgressIndicator()),
                   ),
                   errorWidget: (context, url, error) =>
                       _buildImageError(theme, block.imageUrl!),
@@ -1616,9 +1612,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
               maxScale: 4.0,
               child: CachedNetworkImage(
                 imageUrl: imageUrl,
-                placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                placeholder: (context, url) =>
+                    const Center(child: CircularProgressIndicator()),
                 errorWidget: (context, url, error) => const Center(
                   child: Icon(
                     CupertinoIcons.exclamationmark_triangle,
