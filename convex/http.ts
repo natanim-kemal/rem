@@ -24,7 +24,15 @@ http.route({
                 });
             }
 
-            const body = await request.json();
+            let body;
+            try {
+                body = await request.json();
+            } catch (e) {
+                return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
 
             if (!body.title) {
                 return new Response(JSON.stringify({ error: "Title is required" }), {
@@ -46,10 +54,41 @@ http.route({
                 .first();
 
             if (!user) {
-                return new Response(JSON.stringify({ error: "User not found" }), {
-                    status: 404,
-                    headers: { "Content-Type": "application/json" },
+                const now = Date.now();
+                const userId = await ctx.db.insert("users", {
+                    clerkId: identity.subject,
+                    email: identity.email ?? "",
+                    displayName: identity.name,
+                    avatarUrl: identity.pictureUrl,
+                    isPremium: false,
+                    notificationPreferences: {
+                        enabled: true,
+                        dailyDigestTime: "09:00",
+                        maxPerDay: 3,
+                        quietHoursStart: "22:00",
+                        quietHoursEnd: "08:00",
+                        timezoneOffsetMinutes: 0,
+                    },
+                    createdAt: now,
+                    updatedAt: now,
                 });
+
+                await ctx.db.insert("userStats", {
+                    userId,
+                    itemsSavedTotal: 0,
+                    itemsReadTotal: 0,
+                    itemsSavedThisWeek: 0,
+                    itemsReadThisWeek: 0,
+                    currentStreak: 0,
+                    longestStreak: 0,
+                    updatedAt: now,
+                });
+
+                var newUser = await ctx.db.get(userId);
+                if (!newUser) throw new Error("Failed to create user");
+                var currentUser = newUser;
+            } else {
+                var currentUser = user;
             }
 
             const now = Date.now();
@@ -57,7 +96,7 @@ http.route({
             if (body.url) {
                 const existing = await ctx.db
                     .query("items")
-                    .withIndex("by_user_status", (q) => q.eq("userId", user._id))
+                    .withIndex("by_user_status", (q) => q.eq("userId", currentUser._id))
                     .filter((q) => q.eq(q.field("url"), body.url))
                     .first();
 
@@ -73,7 +112,7 @@ http.route({
             }
 
             const itemId = await ctx.db.insert("items", {
-                userId: user._id,
+                userId: currentUser._id,
                 type: body.type,
                 url: body.url,
                 title: body.title,
@@ -91,7 +130,7 @@ http.route({
 
             const stats = await ctx.db
                 .query("userStats")
-                .withIndex("by_user", (q) => q.eq("userId", user._id))
+                .withIndex("by_user", (q) => q.eq("userId", currentUser._id))
                 .first();
 
             if (stats) {
@@ -152,10 +191,49 @@ http.route({
                 .first();
 
             if (!user) {
-                return new Response(JSON.stringify({ error: "User not found" }), {
-                    status: 404,
-                    headers: { "Content-Type": "application/json" },
+                const now = Date.now();
+                const userId = await ctx.db.insert("users", {
+                    clerkId: identity.subject,
+                    email: identity.email ?? "",
+                    displayName: identity.name,
+                    avatarUrl: identity.pictureUrl,
+                    isPremium: false,
+                    notificationPreferences: {
+                        enabled: true,
+                        dailyDigestTime: "09:00",
+                        maxPerDay: 3,
+                        quietHoursStart: "22:00",
+                        quietHoursEnd: "08:00",
+                        timezoneOffsetMinutes: 0,
+                    },
+                    createdAt: now,
+                    updatedAt: now,
                 });
+
+                await ctx.db.insert("userStats", {
+                    userId,
+                    itemsSavedTotal: 0,
+                    itemsReadTotal: 0,
+                    itemsSavedThisWeek: 0,
+                    itemsReadThisWeek: 0,
+                    currentStreak: 0,
+                    longestStreak: 0,
+                    updatedAt: now,
+                });
+
+                return new Response(
+                    JSON.stringify({
+                        id: userId.toString(),
+                        email: identity.email ?? "",
+                        displayName: identity.name,
+                        isPremium: false,
+                        created: true,
+                    }),
+                    {
+                        status: 200,
+                        headers: { "Content-Type": "application/json" },
+                    }
+                );
             }
 
             return new Response(

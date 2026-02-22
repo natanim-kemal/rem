@@ -126,4 +126,13 @@ export default defineSchema({
     })
         .index("by_owner", ["ownerId"])
         .index("by_share_code", ["shareCode"]),
+
+    pairingCodes: defineTable({
+        code: v.string(),
+        userId: v.id("users"),
+        status: v.union(v.literal("pending"), v.literal("approved"), v.literal("expired")),
+        token: v.optional(v.string()),
+        expiresAt: v.number(),
+        createdAt: v.number(),
+    }).index("by_code", ["code"]),
 });
