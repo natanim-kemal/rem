@@ -7,7 +7,20 @@ const views = {
     auth: document.getElementById('auth-view'),
     settings: document.getElementById('settings-view'),
     success: document.getElementById('success-view'),
+    pairing: document.getElementById('pairing-view'),
 };
+
+let pairingInterval = null;
+let currentPairingCode = null;
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     await initializeExtension();
@@ -19,13 +32,19 @@ async function initializeExtension() {
     authState.token = storage.authToken || null;
     authState.convexUrl = storage.convexUrl || null;
 
-    if (!authState.token || !authState.convexUrl) {
+    if (!authState.convexUrl) {
+        showView('settings');
+        loadSettings();
+        return;
+    }
+
+    if (!authState.token) {
         showView('auth');
         return;
     }
 
-    const isValid = await verifyAuthToken();
-    if (!isValid) {
+    const result = await verifyAuthToken();
+    if (!result.success) {
         showView('auth');
         return;
     }
@@ -36,15 +55,32 @@ async function initializeExtension() {
 
 async function verifyAuthToken() {
     try {
-        const response = await fetch(`${authState.convexUrl}/api/me`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${authState.token}`,
+        const response = await fetch(`${authState.convexUrl}/api/query`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authState.token}`
             },
+            body: JSON.stringify({
+                path: 'users:getCurrentUser',
+                args: {}
+            })
         });
-        return response.ok;
+
+        const text = await response.text();
+        if (!text) {
+            return { success: false, message: "Empty response" };
+        }
+
+        const data = JSON.parse(text);
+
+        if (data.status === 'success' && data.value) {
+            return { success: true, data: data.value };
+        }
+
+        return { success: false, message: "User not found" };
     } catch (error) {
-        return false;
+        return { success: false, message: error.message };
     }
 }
 
@@ -52,15 +88,21 @@ async function loadPageInfo() {
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        if (!tab || !tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
-            document.getElementById('page-title').textContent = 'No page available';
-            document.getElementById('page-url').textContent = 'Navigate to a webpage to save it';
+        const isInternalPage = !tab || !tab.url ||
+            tab.url.startsWith('chrome://') ||
+            tab.url.startsWith('edge://') ||
+            tab.url.startsWith('about:') ||
+            tab.url.startsWith('chrome-extension://');
+
+        if (isInternalPage) {
+            document.getElementById('page-title').textContent = 'Restricted Page';
+            document.getElementById('page-url').textContent = 'Browser settings and internal pages cannot be saved.';
             document.getElementById('save-btn').disabled = true;
             return;
         }
 
         pageData = {
-            title: tab.title || 'Untitled',
+            title: cleanTitle(tab.title) || 'Untitled',
             url: tab.url,
             description: '',
             thumbnailUrl: '',
@@ -71,6 +113,10 @@ async function loadPageInfo() {
 
         fetchMetadata(tab.url).then(metadata => {
             if (metadata) {
+                if (metadata.title) {
+                    pageData.title = metadata.title;
+                    document.getElementById('page-title').textContent = metadata.title;
+                }
                 pageData.description = metadata.description || '';
                 pageData.thumbnailUrl = metadata.thumbnailUrl || '';
             }
@@ -82,44 +128,173 @@ async function loadPageInfo() {
 
 async function fetchMetadata(url) {
     try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'text/html',
-            },
-        });
+        if (!url.startsWith('http')) return null;
 
-        if (!response.ok) return null;
+        const isTikTok = url.includes('tiktok.com') || url.includes('vm.tiktok.com') || url.includes('vt.tiktok.com');
+        const isX = url.includes('x.com') || url.includes('twitter.com') || url.includes('mobile.twitter.com');
 
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
+        let title = '';
+        let thumbnailUrl = '';
+        let description = '';
 
-        const getMeta = (name) => {
-            const meta = doc.querySelector(`meta[name="${name}"], meta[property="og:${name}"], meta[property="twitter:${name}"]`);
-            return meta?.getAttribute('content') || '';
-        };
-
-        const description = getMeta('description') || getMeta('og:description');
-        const thumbnailUrl = getMeta('image') || getMeta('og:image') || getMeta('twitter:image');
-
-        const resolveUrl = (relativeUrl) => {
-            if (!relativeUrl) return '';
-            if (relativeUrl.startsWith('http')) return relativeUrl;
+        if (isTikTok) {
+            const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
             try {
-                return new URL(relativeUrl, url).href;
-            } catch {
-                return '';
+                const oembedResp = await fetch(oembedUrl);
+                if (oembedResp.ok) {
+                    const oembedData = await oembedResp.json();
+                    title = oembedData.title || '';
+                    thumbnailUrl = oembedData.thumbnail_url || '';
+                }
+            } catch (e) {}
+        } else if (isX) {
+            const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`;
+            try {
+                const oembedResp = await fetch(oembedUrl);
+                if (oembedResp.ok) {
+                    const oembedData = await oembedResp.json();
+                    title = oembedData.title || '';
+                }
+            } catch (e) {}
+        }
+
+        if (!title) {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html',
+                },
+            });
+
+            if (!response.ok) return null;
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const getMeta = (name) => {
+                const meta = doc.querySelector(`meta[name="${name}"], meta[property="og:${name}"], meta[property="twitter:${name}"]`);
+                return meta?.getAttribute('content') || '';
+            };
+
+            const metadataTitle = getMeta('title') || getMeta('og:title') || getMeta('twitter:title') || doc.title || '';
+            description = getMeta('description') || getMeta('og:description');
+            
+            if (!thumbnailUrl) {
+                thumbnailUrl = getMeta('image') || getMeta('og:image') || getMeta('twitter:image');
             }
-        };
+
+            if (isTikTok) {
+                title = metadataTitle;
+            } else if (isX) {
+                title = pickXTitle(metadataTitle, description, html);
+            } else {
+                title = metadataTitle;
+            }
+
+            if (title && !isGenericTitle(title, isX)) {
+                title = stripHashtags(title);
+            } else {
+                title = '';
+            }
+        }
 
         return {
+            title: cleanTitle(title),
             description: description.slice(0, 500),
-            thumbnailUrl: resolveUrl(thumbnailUrl),
+            thumbnailUrl: resolveUrl(thumbnailUrl, url),
         };
     } catch (error) {
         return null;
     }
+}
+
+function resolveUrl(relativeUrl, baseUrl) {
+    if (!relativeUrl) return '';
+    if (relativeUrl.startsWith('http')) return relativeUrl;
+    try {
+        return new URL(relativeUrl, baseUrl).href;
+    } catch {
+        return '';
+    }
+}
+
+function pickXTitle(title, description, html) {
+    const trimmedTitle = (title || '').trim();
+    if (trimmedTitle && !isGenericXTitle(trimmedTitle.toLowerCase())) {
+        return trimmedTitle;
+    }
+    
+    const htmlText = extractXPostText(html);
+    if (htmlText) {
+        return takeWords(htmlText, 5);
+    }
+    
+    const trimmedDesc = (description || '').trim();
+    if (trimmedDesc) {
+        return takeWords(trimmedDesc, 5);
+    }
+    
+    return '';
+}
+
+function extractXPostText(html) {
+    if (!html) return null;
+    const match = html.match(/<p[^>]*>([\s\S]*?)<\/p>/);
+    if (!match) return null;
+    const raw = match[1] || '';
+    const noTags = raw.replace(/<[^>]+>/g, ' ');
+    const normalized = noTags.replace(/\s+/g, ' ').trim();
+    return normalized;
+}
+
+function isGenericTitle(title, isX) {
+    const normalized = (title || '').trim().toLowerCase();
+    if (!normalized) return true;
+    if (normalized === 'tiktok - make your day' || normalized === 'tiktok' || normalized === 'make your day') return true;
+    if (isX && isGenericXTitle(normalized)) return true;
+    return false;
+}
+
+function isGenericXTitle(title) {
+    return title === 'x' || title === 'twitter' || title === 'x / twitter' || title === 'twitter / x';
+}
+
+function takeWords(text, count) {
+    if (!text) return '';
+    const words = text.split(/\s+/);
+    return words.slice(0, count).join(' ').trim();
+}
+
+function stripHashtags(title) {
+    const trimmed = (title || '').trim();
+    if (!trimmed) return '';
+    const parts = trimmed.split(/\s+/);
+    const kept = parts.filter(part => !part.startsWith('#'));
+    return kept.join(' ').trim();
+}
+
+function cleanTitle(title) {
+    if (!title) return '';
+    
+    let cleaned = title.trim();
+    
+    const separators = [' | ', ' - ', ' — ', ' :: ', ' « ', ' » '];
+    for (const sep of separators) {
+        const idx = cleaned.lastIndexOf(sep);
+        if (idx > 10) {
+            cleaned = cleaned.substring(0, idx);
+            break;
+        }
+    }
+    
+    cleaned = cleaned.replace(/[|\-—:»«]$/, '').trim();
+    
+    if (cleaned.length > 100) {
+        cleaned = cleaned.substring(0, 100);
+    }
+    
+    return cleaned;
 }
 
 function setupEventListeners() {
@@ -133,8 +308,10 @@ function setupEventListeners() {
 
     document.getElementById('save-btn')?.addEventListener('click', saveItem);
 
-    document.getElementById('auth-btn')?.addEventListener('click', () => {
-        chrome.tabs.create({ url: 'https://rem.app/auth' });
+    document.getElementById('show-manual-input')?.addEventListener('click', () => {
+        document.getElementById('manual-url-section').classList.remove('hidden');
+        document.getElementById('manual-toggle').classList.add('hidden');
+        document.getElementById('manual-url-input').focus();
     });
 
     document.getElementById('open-settings')?.addEventListener('click', () => {
@@ -151,6 +328,13 @@ function setupEventListeners() {
     });
 
     document.getElementById('save-settings-btn')?.addEventListener('click', saveSettings);
+
+    document.getElementById('link-device-btn')?.addEventListener('click', startPairing);
+
+    document.getElementById('cancel-pairing-btn')?.addEventListener('click', () => {
+        stopPolling();
+        showView('auth');
+    });
 }
 
 function showView(viewName) {
@@ -159,41 +343,39 @@ function showView(viewName) {
 }
 
 function loadSettings() {
-    document.getElementById('convex-url').value = authState.convexUrl || '';
-    document.getElementById('auth-token').value = authState.token || '';
+    const convexUrlInput = document.getElementById('convex-url');
+    if (convexUrlInput) convexUrlInput.value = authState.convexUrl || '';
 }
 
 async function saveSettings() {
-    const convexUrl = document.getElementById('convex-url').value.trim();
-    const authToken = document.getElementById('auth-token').value.trim();
+    const convexUrlInput = document.getElementById('convex-url');
 
-    if (!convexUrl || !authToken) {
-        alert('Please enter both Convex URL and Auth Token');
+    if (!convexUrlInput) {
+        showToast('Settings form not loaded correctly');
+        return;
+    }
+
+    const convexUrl = convexUrlInput.value.trim();
+
+    if (!convexUrl) {
+        showToast('Please enter a Convex URL');
         return;
     }
 
     try {
         new URL(convexUrl);
     } catch {
-        alert('Please enter a valid Convex URL');
+        showToast('Please enter a valid Convex URL');
         return;
     }
 
     await chrome.storage.sync.set({
         convexUrl: convexUrl,
-        authToken: authToken,
     });
 
     authState.convexUrl = convexUrl;
-    authState.token = authToken;
-
-    const isValid = await verifyAuthToken();
-    if (isValid) {
-        showView('main');
-        await loadPageInfo();
-    } else {
-        alert('Authentication failed. Please check your credentials.');
-    }
+    
+    showView('auth');
 }
 
 async function saveItem() {
@@ -204,11 +386,21 @@ async function saveItem() {
     saveBtn.innerHTML = '<span class="spinner"></span> Saving...';
 
     try {
-        const type = detectContentType(pageData.url);
+        const manualUrlInput = document.getElementById('manual-url-input');
+        const manualUrl = manualUrlInput?.value.trim();
+        
+        const urlToSave = manualUrl || pageData.url;
+        const titleToSave = manualUrl ? manualUrl : pageData.title;
+
+        if (!urlToSave) {
+            throw new Error("No URL to save");
+        }
+
+        const type = detectContentType(urlToSave);
 
         const payload = {
-            url: pageData.url,
-            title: pageData.title,
+            url: urlToSave,
+            title: titleToSave,
             description: pageData.description || undefined,
             thumbnailUrl: pageData.thumbnailUrl || undefined,
             type: type,
@@ -216,40 +408,32 @@ async function saveItem() {
             tags: [],
         };
 
-        const response = await fetch(`${authState.convexUrl}/api/items`, {
+        const response = await fetch(`${authState.convexUrl}/api/mutation`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authState.token}`,
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+                path: 'items:createItem',
+                args: payload
+            })
         });
 
-        if (response.status === 401) {
-            showView('auth');
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            showView('success');
+            setTimeout(() => window.close(), 2000);
             return;
         }
 
-        if (response.status === 409) {
-            alert('This URL is already in your vault.');
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalText;
-            return;
-        }
-
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-            throw new Error(error.error || `HTTP ${response.status}`);
-        }
-
-        showView('success');
-
-        setTimeout(() => window.close(), 2000);
+        throw new Error(data.errorMessage || 'Failed to save');
 
     } catch (error) {
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
-        alert(`Failed to save: ${error.message}`);
+        showToast(`Failed to save: ${error.message}`);
     }
 }
 
@@ -277,4 +461,114 @@ function detectContentType(url) {
     }
 
     return 'link';
+}
+
+function generateCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+        if (i === 4) code += '-';
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+}
+
+async function startPairing() {
+    if (!authState.convexUrl) {
+        showToast("Please set up Convex URL in Settings first.");
+        showView('settings');
+        loadSettings();
+        return;
+    }
+
+    showView('pairing');
+    
+    currentPairingCode = generateCode();
+    document.getElementById('pairing-code').textContent = currentPairingCode;
+    document.getElementById('pairing-status').textContent = 'Waiting for approval...';
+    
+    startPolling();
+}
+
+function startPolling() {
+    if (!authState.convexUrl) {
+        document.getElementById('pairing-status').textContent = 'Error: Convex URL not set.';
+        return;
+    }
+
+    if (pairingInterval) clearInterval(pairingInterval);
+    
+    pairingInterval = setInterval(async () => {
+        if (!currentPairingCode) return;
+
+        try {
+            const response = await fetch(`${authState.convexUrl}/api/query`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: 'pairing:getPairingStatus',
+                    args: { code: currentPairingCode }
+                })
+            });
+
+            if (!response.ok) {
+                document.getElementById('pairing-status').textContent = 'Connection error: ' + response.status;
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.status === 'success' && data.value) {
+                const status = data.value.status;
+                const token = data.value.token;
+
+                if (status === 'approved' && token) {
+                    stopPolling();
+                    document.getElementById('pairing-status').textContent = 'Approved! Linking...';
+                    await saveTokenAndLogin(token);
+                } else if (status === 'expired') {
+                    stopPolling();
+                    document.getElementById('pairing-status').textContent = 'Code expired.';
+                    setTimeout(() => showView('auth'), 2000);
+                }
+            }
+        } catch (e) {
+        }
+    }, 2000);
+}
+
+function stopPolling() {
+    if (pairingInterval) {
+        clearInterval(pairingInterval);
+        pairingInterval = null;
+    }
+    currentPairingCode = null;
+}
+
+async function saveTokenAndLogin(token) {
+    try {
+        await chrome.storage.sync.set({ authToken: token });
+        authState.token = token;
+        
+        for (let i = 0; i < 3; i++) {
+            const result = await verifyAuthToken();
+            
+            if (result.success) {
+                document.getElementById('pairing-status').textContent = 'Linked Successfully!';
+                await new Promise(r => setTimeout(r, 1000));
+                await initializeExtension();
+                return;
+            }
+            
+            if (i < 2) {
+                await new Promise(r => setTimeout(r, 2000));
+            }
+        }
+        
+        showToast("Link failed: Could not verify user.");
+        showView('auth');
+    } catch (e) {
+        showToast("Error saving token: " + e.message);
+        showView('auth');
+    }
 }

@@ -20,26 +20,35 @@
     }
 
     function saveCurrentPage() {
-        const pageData = {
-            url: window.location.href,
-            title: document.title,
-            contentType: detectContentType(),
-        };
+        const metadata = extractPageMetadata();
+        
+        chrome.storage.sync.get(['defaultPriority'], (result) => {
+            const priority = result.defaultPriority || 'medium';
+            
+            const pageData = {
+                url: window.location.href,
+                title: document.title,
+                contentType: detectContentType(),
+                thumbnailUrl: metadata.thumbnailUrl,
+                description: metadata.description,
+                priority: priority
+            };
 
-        chrome.runtime.sendMessage({
-            type: 'SAVE_ITEM',
-            ...pageData
-        }, (response) => {
-            if (chrome.runtime.lastError) {
-                showNotification('Failed to save - extension error', 'error');
-                return;
-            }
+            chrome.runtime.sendMessage({
+                type: 'SAVE_ITEM',
+                ...pageData
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    showNotification('Failed to save - extension error', 'error');
+                    return;
+                }
 
-            if (response?.success) {
-                showNotification('Saved to rem', 'success');
-            } else {
-                showNotification(response?.error || 'Failed to save', 'error');
-            }
+                if (response?.success) {
+                    showNotification('Saved to rem', 'success');
+                } else {
+                    showNotification(response?.error || 'Failed to save', 'error');
+                }
+            });
         });
     }
 

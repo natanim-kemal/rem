@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,9 +19,9 @@
       --divider: #181818;
       --accent: #2FBF9A;
       --destructive: #1A8A6E;
-      --priority-high: #FF3B30;
-      --priority-medium: #B0B0B0;
-      --priority-low: #7A7A7A;
+      --priority-high: #1A8A6E;
+      --priority-medium: #2FBF9A;
+      --priority-low: #7DDBC4;
     }
 
     * {
@@ -31,6 +32,7 @@
 
     body {
       width: 360px;
+      min-height: 500px;
       font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text-primary);
@@ -199,6 +201,10 @@
     .success {
       text-align: center;
       padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 500px;
     }
 
     .success-icon {
@@ -232,6 +238,10 @@
     .auth-view {
       text-align: center;
       padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 500px;
     }
 
     .auth-icon {
@@ -391,25 +401,89 @@
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .pairing-instructions {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .pairing-code {
+      font-family: monospace;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-align: center;
+      padding: 20px;
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid var(--divider);
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+
+    .pairing-status {
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-size: 14px;
+      z-index: 1000;
+      display: none;
+      text-align: center;
+      max-width: 320px;
+    }
+
+    #toast.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
   </style>
 </head>
+
 <body>
+  <div id="toast"></div>
   <div id="main-view">
     <div class="header">
-      <div class="logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-        </svg>
-      </div>
+      <img src="icons/icon.png" alt="rem" style="width: 32px; height: 32px; border-radius: 8px;">
       <h1>Save to rem</h1>
     </div>
 
     <div class="page-info">
       <div id="page-title" class="page-title">Loading...</div>
       <div id="page-url" class="page-url">-</div>
+    </div>
+
+    <div id="manual-toggle" style="text-align: center; margin-bottom: 16px;">
+      <span style="font-size: 12px; color: var(--text-tertiary); cursor: pointer; text-decoration: underline;"
+        id="show-manual-input">Add manually</span>
+    </div>
+
+    <div id="manual-url-section" class="hidden" style="margin-bottom: 16px;">
+      <input type="text" id="manual-url-input" placeholder="Paste URL here..."
+        style="width: 100%; padding: 12px; border: 1px solid var(--divider); border-radius: 8px; background: var(--surface); color: var(--text-primary); font-size: 14px; font-family: inherit;">
     </div>
 
     <div class="priority-label">Priority</div>
@@ -429,7 +503,8 @@
     </div>
 
     <button id="save-btn" class="save-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+        stroke-linejoin="round">
         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
         <polyline points="17 21 17 13 7 13 7 21"></polyline>
         <polyline points="7 3 7 8 15 8"></polyline>
@@ -440,21 +515,25 @@
 
   <div id="auth-view" class="auth-view hidden">
     <div class="auth-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+        <line x1="12" y1="18" x2="12.01" y2="18"></line>
       </svg>
     </div>
-    <h2>Authentication Required</h2>
-    <p>Please sign in to rem to save items from the web.</p>
-    <button id="auth-btn" class="auth-btn">Sign In</button>
+    <h2>Link your Account</h2>
+    <p>Open the Rem app on your phone and link this extension to start saving.</p>
+
+    <button id="link-device-btn" class="save-btn" style="margin-top: 20px;">Link Mobile App</button>
+
     <div class="settings-link" id="open-settings">Configure Extension</div>
   </div>
 
   <div id="settings-view" class="settings-view hidden">
     <div class="settings-header">
       <button id="back-btn" class="back-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
@@ -463,20 +542,17 @@
 
     <div class="input-group">
       <label for="convex-url">Convex URL</label>
-      <input type="text" id="convex-url" placeholder="https://your-app.convex.cloud">
+      <input type="text" id="convex-url" placeholder="https://curious-lemming-834.convex.cloud"
+        value="https://curious-lemming-834.convex.cloud">
     </div>
 
-    <div class="input-group">
-      <label for="auth-token">Auth Token</label>
-      <input type="password" id="auth-token" placeholder="Your Clerk session token">
-    </div>
-
-    <button id="save-settings-btn" class="save-btn">Save Settings</button>
+    <button id="save-settings-btn" class="save-btn">Save</button>
   </div>
 
   <div id="success-view" class="success hidden">
     <div class="success-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+        stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
     </div>
@@ -484,6 +560,31 @@
     <p>Your item is now in the vault.</p>
   </div>
 
+  <div id="pairing-view" class="hidden">
+    <div class="header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+      </div>
+      <h1>Link Device</h1>
+    </div>
+
+    <div class="pairing-instructions">
+      <p>Open the Rem app on your phone.</p>
+      <p>Go to <strong>Settings > Link Extension</strong> and enter this code:</p>
+    </div>
+
+    <div id="pairing-code" class="pairing-code">Loading...</div>
+
+    <div id="pairing-status" class="pairing-status">Waiting for approval...</div>
+
+    <button id="cancel-pairing-btn" class="auth-btn">Cancel</button>
+  </div>
+
   <script src="popup.js"></script>
 </body>
+
 </html>

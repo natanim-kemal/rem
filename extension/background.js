@@ -1,7 +1,7 @@
 const CONFIG = {
     API_ENDPOINTS: {
-        items: '/api/items',
-        me: '/api/me',
+        items: '/items',
+        me: '/users/me',
     },
 };
 
@@ -60,6 +60,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     let url = info.pageUrl;
     let title = tab?.title || 'Untitled';
     let description = '';
+    let thumbnailUrl = '';
 
     if (info.menuItemId === 'save-high') priority = 'high';
     else if (info.menuItemId === 'save-medium') priority = 'medium';
@@ -74,10 +75,25 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         url = info.linkUrl;
         title = info.linkText || url;
         type = detectContentType(url);
+        try {
+            const metadata = await fetchMetadata(url);
+            if (metadata) {
+                description = metadata.description;
+                thumbnailUrl = metadata.thumbnailUrl;
+            }
+        } catch (e) {}
     } else if (info.srcUrl) {
         url = info.srcUrl;
         title = 'Image';
         type = info.mediaType === 'image' ? 'image' : detectContentType(url);
+    } else {
+        try {
+            const metadata = await fetchMetadata(tab.url);
+            if (metadata) {
+                description = metadata.description;
+                thumbnailUrl = metadata.thumbnailUrl;
+            }
+        } catch (e) {}
     }
 
     showBadge('...', '#6B7280');
@@ -87,6 +103,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             url,
             title,
             description,
+            thumbnailUrl,
             type,
             priority,
         });
@@ -281,11 +298,14 @@ chrome.commands?.onCommand?.addListener((command) => {
             showBadge('...', '#6B7280');
 
             try {
+                const metadata = await fetchMetadata(tab.url);
                 await saveToRem({
                     url: tab.url,
                     title: tab.title,
                     type: detectContentType(tab.url),
                     priority: 'medium',
+                    thumbnailUrl: metadata?.thumbnailUrl,
+                    description: metadata?.description
                 });
                 showBadge('ok', '#2FBF9A');
             } catch (error) {
