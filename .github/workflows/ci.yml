@@ -29,7 +29,10 @@ jobs:
         run: flutter pub get
 
       - name: Create dummy .env
-        run: touch .env
+        run: |
+          touch .env
+          echo "CONVEX_URL=https://dummy.convex.cloud" >> .env
+          echo "CLERK_PUBLISHABLE_KEY=pk_test_dummy" >> .env
 
       - name: Create Firebase options
         run: |
@@ -133,8 +136,34 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create dummy .env
+        run: |
+          touch .env
+          echo "CONVEX_URL=https://dummy.convex.cloud" >> .env
+          echo "CLERK_PUBLISHABLE_KEY=pk_test_dummy" >> .env
+
+      - name: Create Firebase options
+        run: |
+          cat > lib/firebase_options.dart << 'EOF'
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform {
+              return const FirebaseOptions(
+                apiKey: 'ci-api-key',
+                appId: 'ci-app-id',
+                messagingSenderId: 'ci-sender-id',
+                projectId: 'ci-project',
+              );
+            }
+          }
+          EOF
+
+      - name: Generate code
+        run: dart run build_runner build --delete-conflicting-outputs
+
       - name: Build APK (debug)
-        run: flutter build apk --debug
+        run: flutter build apk --debug --dart-define=CONVEX_URL=https://dummy.convex.cloud --dart-define=CLERK_PUBLISHABLE_KEY=pk_test_dummy
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
