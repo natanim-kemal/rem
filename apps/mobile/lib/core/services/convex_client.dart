@@ -14,6 +14,8 @@ class ConvexClient {
 
   bool get hasAuthToken => _authToken != null && _authToken!.isNotEmpty;
 
+  String? get authToken => _authToken;
+
   Future<dynamic> query(
     String functionPath, [
     Map<String, dynamic>? args,

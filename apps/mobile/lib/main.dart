@@ -18,7 +18,11 @@ void main() async {
 
   await dotenv.load(fileName: ".env");
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {}
 
   runApp(ProviderScope(child: RemApp()));
 }
