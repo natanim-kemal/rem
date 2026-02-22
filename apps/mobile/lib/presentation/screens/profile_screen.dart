@@ -896,7 +896,9 @@ class ProfileScreen extends ConsumerWidget {
                     title: 'Link Browser Extension',
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const LinkExtensionScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const LinkExtensionScreen(),
+                        ),
                       );
                     },
                   ),

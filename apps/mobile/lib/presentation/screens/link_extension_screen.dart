@@ -7,7 +7,8 @@ class LinkExtensionScreen extends ConsumerStatefulWidget {
   const LinkExtensionScreen({super.key});
 
   @override
-  ConsumerState<LinkExtensionScreen> createState() => _LinkExtensionScreenState();
+  ConsumerState<LinkExtensionScreen> createState() =>
+      _LinkExtensionScreenState();
 }
 
 class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
@@ -57,7 +58,7 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
         _isLoading = false;
         _successMessage = 'Device linked successfully!';
       });
-      
+
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) {
         Navigator.of(context).pop();
@@ -73,9 +74,7 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Link Extension'),
-      ),
+      appBar: AppBar(title: const Text('Link Extension')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -108,10 +107,7 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
               ],
               if (_successMessage != null) ...[
                 const SizedBox(height: 16),
-                Text(
-                  _successMessage!,
-                  style: TextStyle(color: Colors.green),
-                ),
+                Text(_successMessage!, style: TextStyle(color: Colors.green)),
               ],
               const SizedBox(height: 24),
               SizedBox(
