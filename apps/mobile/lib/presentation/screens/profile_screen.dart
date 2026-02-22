@@ -15,6 +15,7 @@ import '../../data/sync/sync_engine.dart';
 import 'auth_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
+import 'link_extension_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -890,6 +891,15 @@ class ProfileScreen extends ConsumerWidget {
               _SettingsSection(
                 title: 'Data',
                 children: [
+                  _SettingsTile(
+                    icon: CupertinoIcons.device_laptop,
+                    title: 'Link Browser Extension',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LinkExtensionScreen()),
+                      );
+                    },
+                  ),
                   _SettingsTile(
                     icon: CupertinoIcons.bell,
                     title: 'Test Notification',
