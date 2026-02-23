@@ -220,8 +220,6 @@ async function sendFcmNotification(
     );
 
     if (!response.ok) {
-      const text = await response.text();
-      console.error(`FCM error for token ${token.substring(0, 20)}...: ${text}`);
     } else {
       results.push(await response.json());
     }
