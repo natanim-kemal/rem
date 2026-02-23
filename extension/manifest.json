@@ -7,14 +7,14 @@
         "activeTab",
         "storage",
         "contextMenus",
-        "notifications",
-        "cookies"
+        "notifications"
     ],
     "host_permissions": [
-        "https://*.convex.cloud/*",
-        "http://localhost:*/",
-        "https://*/"
+        "https://*.convex.cloud/*"
     ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self';"
+    },
     "action": {
         "default_popup": "popup.html",
         "default_icon": {
