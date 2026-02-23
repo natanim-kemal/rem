@@ -41,7 +41,6 @@ class ShareService {
         }
       },
       onError: (err) {
-        debugPrint('getMediaStream error: $err');
       },
     );
 
