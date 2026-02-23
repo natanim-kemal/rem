@@ -34,8 +34,15 @@ http.route({
                 });
             }
 
-            if (!body.title) {
+            if (!body.title || typeof body.title !== "string" || body.title.trim().length === 0) {
                 return new Response(JSON.stringify({ error: "Title is required" }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+
+            if (body.title.length > 200) {
+                return new Response(JSON.stringify({ error: "Title too long (max 200 chars)" }), {
                     status: 400,
                     headers: { "Content-Type": "application/json" },
                 });
@@ -46,6 +53,79 @@ http.route({
                     status: 400,
                     headers: { "Content-Type": "application/json" },
                 });
+            }
+
+            if (body.url !== undefined) {
+                if (typeof body.url !== "string") {
+                    return new Response(JSON.stringify({ error: "URL must be a string" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+                if (body.url.length > 2048) {
+                    return new Response(JSON.stringify({ error: "URL too long (max 2048 chars)" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+                try {
+                    const url = new URL(body.url);
+                    if (!["http:", "https:"].includes(url.protocol)) {
+                        return new Response(JSON.stringify({ error: "Invalid URL scheme" }), {
+                            status: 400,
+                            headers: { "Content-Type": "application/json" },
+                        });
+                    }
+                } catch (e) {
+                    return new Response(JSON.stringify({ error: "Invalid URL format" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+            }
+
+            if (body.description !== undefined) {
+                if (typeof body.description !== "string" || body.description.length > 2000) {
+                    return new Response(JSON.stringify({ error: "Description too long (max 2000 chars)" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+            }
+
+            if (body.thumbnailUrl !== undefined) {
+                if (typeof body.thumbnailUrl !== "string" || body.thumbnailUrl.length > 2048) {
+                    return new Response(JSON.stringify({ error: "Thumbnail URL too long" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+            }
+
+            if (body.priority !== undefined) {
+                if (!["high", "medium", "low"].includes(body.priority)) {
+                    return new Response(JSON.stringify({ error: "Invalid priority" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+            }
+
+            if (body.tags !== undefined) {
+                if (!Array.isArray(body.tags) || body.tags.length > 50) {
+                    return new Response(JSON.stringify({ error: "Invalid tags (max 50)" }), {
+                        status: 400,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+                for (const tag of body.tags) {
+                    if (typeof tag !== "string" || tag.length > 15) {
+                        return new Response(JSON.stringify({ error: "Invalid tag format (max 15 chars)" }), {
+                            status: 400,
+                            headers: { "Content-Type": "application/json" },
+                        });
+                    }
+                }
             }
 
             const user = await ctx.db
@@ -152,7 +232,6 @@ http.route({
                 }
             );
         } catch (error) {
-            console.error("Error creating item:", error);
             return new Response(
                 JSON.stringify({ error: "Internal server error" }),
                 {
@@ -249,7 +328,6 @@ http.route({
                 }
             );
         } catch (error) {
-            console.error("Error getting user:", error);
             return new Response(
                 JSON.stringify({ error: "Internal server error" }),
                 {
