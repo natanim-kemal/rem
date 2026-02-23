@@ -1,4 +1,4 @@
-name: 
+name: rem
 on:
   push:
     branches: [main, develop]
@@ -156,11 +156,12 @@ jobs:
   dast:
     name: security-dast
     runs-on: ubuntu-latest
+    if: vars.PREVIEW_URL != ''
     steps:
       - name: OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.13.0
         with:
-          target: 'https://preview.rem.dev' 
+          target: ${{ vars.PREVIEW_URL }}
           fail_action: false 
 
   build-android:
