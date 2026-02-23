@@ -51,6 +51,35 @@ jobs:
           }
           EOF
 
+      - name: Create dummy google-services.json
+        run: |
+          cat > android/app/google-services.json << 'EOF'
+          {
+            "project_info": {
+              "project_number": "1234567890",
+              "project_id": "ci-project",
+              "storage_bucket": "ci-project.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:1234567890:android:1234567890",
+                  "android_client_info": {
+                    "package_name": "com.rem.rem"
+                  }
+                },
+                "api_key": [
+                  {
+                    "current_key": "ci-api-key"
+                  }
+                ],
+                "services": {}
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
       - name: Generate code
         run: dart run build_runner build --delete-conflicting-outputs
 
@@ -156,6 +185,35 @@ jobs:
                 projectId: 'ci-project',
               );
             }
+          }
+          EOF
+
+      - name: Create dummy google-services.json
+        run: |
+          cat > android/app/google-services.json << 'EOF'
+          {
+            "project_info": {
+              "project_number": "1234567890",
+              "project_id": "ci-project",
+              "storage_bucket": "ci-project.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:1234567890:android:1234567890",
+                  "android_client_info": {
+                    "package_name": "com.rem.rem"
+                  }
+                },
+                "api_key": [
+                  {
+                    "current_key": "ci-api-key"
+                  }
+                ],
+                "services": {}
+              }
+            ],
+            "configuration_version": "1"
           }
           EOF
 
