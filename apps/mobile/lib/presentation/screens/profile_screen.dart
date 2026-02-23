@@ -518,10 +518,9 @@ class ProfileScreen extends ConsumerWidget {
                 'token': freshToken,
                 'platform': 'android',
               })
-              .catchError((e) => debugPrint('Push token register warning: $e'));
+              .catchError((e) {});
         }
       } catch (e) {
-        debugPrint('Failed to get fresh token: $e');
       }
 
       await convex.action('notifications:sendTestNotification', {
@@ -534,10 +533,9 @@ class ProfileScreen extends ConsumerWidget {
         _showSuccess(context, 'Test notification sent!');
       }
     } catch (e) {
-      debugPrint('Failed to send test notification: $e');
       if (context.mounted) {
         Navigator.pop(context);
-        _showError(context, 'Failed to send test: $e');
+        _showError(context, 'Failed to send test notification');
       }
     }
   }
@@ -811,7 +809,6 @@ class ProfileScreen extends ConsumerWidget {
                                 {'token': token, 'platform': 'android'},
                               );
                             } catch (e) {
-                              debugPrint('Failed to register push token: $e');
                             }
                           }
                         }
