@@ -91,7 +91,6 @@ class SyncEngine {
           );
         }
       } catch (e) {
-        debugPrint('Failed to create/get user: $e');
       }
 
       await _pushLocalChanges();
@@ -99,7 +98,6 @@ class SyncEngine {
 
       _updateStatus(SyncStatus.idle);
     } catch (e) {
-      debugPrint('Sync error: $e');
       _updateStatus(SyncStatus.error);
     } finally {
       _isSyncing = false;
@@ -132,7 +130,6 @@ class SyncEngine {
 
         await _db.removeSyncItem(item.id);
       } catch (e) {
-        debugPrint('Failed to sync ${item.syncTableName}/${item.recordId}: $e');
         await _db.markSyncItemFailed(item.id, e.toString());
       }
     }
@@ -241,7 +238,6 @@ class SyncEngine {
     SyncQueueData syncItem,
     Map<String, dynamic> payload,
   ) async {
-    debugPrint('Tag sync skipped - tags are synced via items');
     await _db.removeSyncItem(syncItem.id);
   }
 
@@ -297,7 +293,6 @@ class SyncEngine {
 
       await _setLastSyncTimestamp(DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
-      debugPrint('Error pulling remote changes: $e');
     }
   }
 
