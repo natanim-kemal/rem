@@ -68,7 +68,11 @@ class _WebViewScreenState extends State<WebViewScreen>
             _refreshAnimationController.reset();
           },
           onNavigationRequest: (NavigationRequest request) {
-            return NavigationDecision.navigate;
+            final uri = Uri.tryParse(request.url);
+            if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+              return NavigationDecision.navigate;
+            }
+            return NavigationDecision.prevent;
           },
         ),
       );
