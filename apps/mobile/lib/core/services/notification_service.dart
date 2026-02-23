@@ -10,7 +10,6 @@ import 'package:timezone/data/latest.dart' as tz_data;
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint('Handling a background message: ${message.messageId}');
 }
 
 class NotificationService {
@@ -123,7 +122,6 @@ class NotificationService {
   void Function(String? payload)? onAction;
 
   void _onNotificationTapped(NotificationResponse response) {
-    debugPrint('Notification tapped: ${response.payload}');
     final payload = response.payload;
     final actionId = response.actionId;
     if (payload != null && actionId != null && actionId.isNotEmpty) {
@@ -183,7 +181,6 @@ class NotificationService {
         payload: message.data['itemId'],
       );
     } catch (e) {
-      debugPrint('Error showing local notification: $e');
     }
   }
 
@@ -219,7 +216,6 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.time,
     );
 
-    debugPrint('Scheduled daily reminder for $hour:$minute');
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
@@ -267,7 +263,6 @@ class NotificationService {
       payload: itemId,
     );
 
-    debugPrint('Snoozed notification for $minutes minutes');
   }
 
   Future<void> cancelAllNotifications() async {
@@ -293,7 +288,6 @@ class NotificationService {
         platform: platform,
       );
     } catch (e) {
-      debugPrint('Failed to sync token with backend: $e');
     }
   }
 
@@ -308,7 +302,6 @@ class NotificationService {
       try {
         await registerFn(fcmToken, os);
       } catch (e) {
-        debugPrint('Failed to register push token: $e');
       }
     }
   }
