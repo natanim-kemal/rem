@@ -1,6 +1,97 @@
 let currentPriority = 'medium';
 let pageData = { title: '', url: '', description: '', thumbnailUrl: '' };
 let authState = { token: null, convexUrl: null };
+let cryptoKey = null;
+
+const ENCRYPTION_KEY_NAME = 'rem_encryption_key';
+
+async function migrateFromSyncStorage() {
+    const syncStorage = await chrome.storage.sync.get(['authToken', 'convexUrl']);
+    const localStorage = await chrome.storage.local.get(['authToken', 'convexUrl']);
+    
+    if (syncStorage.authToken && !localStorage.authToken) {
+        const encryptedToken = await encryptToken(syncStorage.authToken);
+        await chrome.storage.local.set({ authToken: encryptedToken });
+        await chrome.storage.sync.remove(['authToken']);
+    }
+    
+    if (syncStorage.convexUrl && !localStorage.convexUrl) {
+        await chrome.storage.local.set({ convexUrl: syncStorage.convexUrl });
+        await chrome.storage.sync.remove(['convexUrl']);
+    }
+}
+
+async function getOrCreateEncryptionKey() {
+    if (cryptoKey) return cryptoKey;
+    
+    const stored = await chrome.storage.local.get([ENCRYPTION_KEY_NAME]);
+    
+    if (stored[ENCRYPTION_KEY_NAME]) {
+        const keyData = Uint8Array.from(atob(stored[ENCRYPTION_KEY_NAME]), c => c.charCodeAt(0));
+        cryptoKey = await crypto.subtle.importKey(
+            'raw',
+            keyData,
+            { name: 'AES-GCM' },
+            false,
+            ['encrypt', 'decrypt']
+        );
+        return cryptoKey;
+    }
+    
+    cryptoKey = await crypto.subtle.generateKey(
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+    );
+    
+    const exportedKey = await crypto.subtle.exportKey('raw', cryptoKey);
+    const keyBase64 = btoa(String.fromCharCode(...new Uint8Array(exportedKey)));
+    await chrome.storage.local.set({ [ENCRYPTION_KEY_NAME]: keyBase64 });
+    
+    return cryptoKey;
+}
+
+async function encryptToken(token) {
+    if (!token) return null;
+    const key = await getOrCreateEncryptionKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoder = new TextEncoder();
+    const data = encoder.encode(token);
+    
+    const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        data
+    );
+    
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    
+    return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptToken(encryptedToken) {
+    if (!encryptedToken) return null;
+    try {
+        const key = await getOrCreateEncryptionKey();
+        const combined = Uint8Array.from(atob(encryptedToken), c => c.charCodeAt(0));
+        
+        const iv = combined.slice(0, 12);
+        const data = combined.slice(12);
+        
+        const decrypted = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: iv },
+            key,
+            data
+        );
+        
+        const decoder = new TextDecoder();
+        return decoder.decode(decrypted);
+    } catch (e) {
+        return null;
+    }
+}
 
 const views = {
     main: document.getElementById('main-view'),
@@ -28,9 +119,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function initializeExtension() {
-    const storage = await chrome.storage.sync.get(['authToken', 'convexUrl']);
-    authState.token = storage.authToken || null;
+    await migrateFromSyncStorage();
+    
+    const storage = await chrome.storage.local.get(['authToken', 'convexUrl']);
     authState.convexUrl = storage.convexUrl || null;
+    authState.token = storage.authToken ? await decryptToken(storage.authToken) : null;
 
     if (!authState.convexUrl) {
         showView('settings');
@@ -369,7 +462,7 @@ async function saveSettings() {
         return;
     }
 
-    await chrome.storage.sync.set({
+    await chrome.storage.local.set({
         convexUrl: convexUrl,
     });
 
@@ -547,7 +640,8 @@ function stopPolling() {
 
 async function saveTokenAndLogin(token) {
     try {
-        await chrome.storage.sync.set({ authToken: token });
+        const encryptedToken = await encryptToken(token);
+        await chrome.storage.local.set({ authToken: encryptedToken });
         authState.token = token;
         
         for (let i = 0; i < 3; i++) {
