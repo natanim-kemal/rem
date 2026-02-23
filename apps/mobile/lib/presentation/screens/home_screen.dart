@@ -363,7 +363,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         try {
           await ref.read(syncEngineProvider).syncNow();
         } catch (e) {
-          debugPrint('Sync error: $e');
         }
         ref.invalidate(userByClerkIdProvider(clerkId));
       });
