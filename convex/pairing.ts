@@ -43,7 +43,7 @@ export const startPairing = mutation({
         }
 
         const code = generateCode();
-        const expiresAt = Date.now() + 5 * 60 * 1000;
+        const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
 
         await ctx.db.insert("pairingCodes", {
             code,
@@ -101,7 +101,7 @@ export const approvePairing = mutation({
                 token: args.token 
             });
         } else {
-            const expiresAt = Date.now() + 5 * 60 * 1000;
+            const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
             await ctx.db.insert("pairingCodes", {
                 code: args.code,
                 userId: user._id,
@@ -138,5 +138,63 @@ export const getPairingStatus = query({
             status: pairingRecord.status,
             token: pairingRecord.status === "approved" ? pairingRecord.token : null
         };
+    },
+});
+
+export const getLinkedDevices = query({
+    args: {},
+    handler: async (ctx) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthenticated");
+
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .first();
+
+        if (!user) throw new Error("User not found");
+
+        const now = Date.now();
+        const allPairings = await ctx.db
+            .query("pairingCodes")
+            .filter((q) => q.eq(q.field("userId"), user._id))
+            .collect();
+
+        const validPairings = allPairings.filter(
+            (p) => p.status === "approved" && p.expiresAt > now
+        );
+
+        return validPairings.map((p) => ({
+            code: p.code,
+            status: p.status,
+            expiresAt: p.expiresAt,
+            createdAt: p.createdAt,
+        }));
+    },
+});
+
+export const revokeAllDevices = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthenticated");
+
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+            .first();
+
+        if (!user) throw new Error("User not found");
+
+        const allPairings = await ctx.db
+            .query("pairingCodes")
+            .filter((q) => q.eq(q.field("userId"), user._id))
+            .collect();
+
+        for (const pairing of allPairings) {
+            await ctx.db.delete(pairing._id);
+        }
+
+        return { success: true, revokedCount: allPairings.length };
     },
 });
