@@ -23,7 +23,6 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    debugPrint('Firebase initialization failed: $e');
   }
 
   runApp(ProviderScope(child: RemApp()));
@@ -70,8 +69,6 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
   void _handleNotificationAction(String? payload) {
     if (payload == null) return;
 
-    debugPrint('Notification action: $payload');
-
     final params = Uri.splitQueryString(payload);
     final itemId = params['itemId'];
     final action = params['action'];
@@ -98,7 +95,6 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
       final syncEngine = ref.read(syncEngineProvider);
       await syncEngine.updateItemStatus(itemId, 'read');
     } catch (e) {
-      debugPrint('Error marking item as read: $e');
     }
   }
 
@@ -108,7 +104,6 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
       await syncEngine.snoozeItem(itemId, const Duration(minutes: 30));
       _notificationService.snoozeNotification(minutes: 30, itemId: itemId);
     } catch (e) {
-      debugPrint('Error snoozing item: $e');
     }
   }
 
@@ -117,7 +112,6 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
       final syncEngine = ref.read(syncEngineProvider);
       await syncEngine.updateItemPriority(itemId, 'low');
     } catch (e) {
-      debugPrint('Error lowering priority: $e');
     }
   }
 
@@ -165,7 +159,6 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
             }
           })
           .catchError((e) {
-            debugPrint('Error getting Convex token: $e');
             final currentState = ref.read(authProvider);
             if (!currentState.isAuthenticated ||
                 currentState.userId != user.id) {
