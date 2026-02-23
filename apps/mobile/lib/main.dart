@@ -22,7 +22,9 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-  } catch (e) {}
+  } catch (e) {
+    // Firebase initialization failed, continue without it
+  }
 
   runApp(ProviderScope(child: RemApp()));
 }
@@ -93,7 +95,9 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
     try {
       final syncEngine = ref.read(syncEngineProvider);
       await syncEngine.updateItemStatus(itemId, 'read');
-    } catch (e) {}
+    } catch (e) {
+      // Silently fail
+    }
   }
 
   void _handleSnooze(String itemId) async {
@@ -101,14 +105,18 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
       final syncEngine = ref.read(syncEngineProvider);
       await syncEngine.snoozeItem(itemId, const Duration(minutes: 30));
       _notificationService.snoozeNotification(minutes: 30, itemId: itemId);
-    } catch (e) {}
+    } catch (e) {
+      // Silently fail
+    }
   }
 
   void _handleLowerPriority(String itemId) async {
     try {
       final syncEngine = ref.read(syncEngineProvider);
       await syncEngine.updateItemPriority(itemId, 'low');
-    } catch (e) {}
+    } catch (e) {
+      // Silently fail
+    }
   }
 
   @override

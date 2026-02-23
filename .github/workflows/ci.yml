@@ -1,5 +1,3 @@
-name: CI
-
 on:
   push:
     branches: [main, develop]
@@ -9,7 +7,7 @@ on:
 
 jobs:
   flutter:
-    name: Flutter CI
+    name: flutter 
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -99,7 +97,7 @@ jobs:
           fail_ci_if_error: false
 
   convex:
-    name: Convex CI
+    name: convex 
     runs-on: ubuntu-latest
 
     steps:
@@ -120,7 +118,7 @@ jobs:
         run: npx convex codegen
 
   extension:
-    name: Extension CI
+    name: extension
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -138,10 +136,36 @@ jobs:
           cat manifest.json | python -m json.tool > /dev/null
           echo "Manifest valid"
 
-  build-android:
-    name: Build Android
+  sast:
+    name: security-sast
     runs-on: ubuntu-latest
-    needs: [flutter]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/setup@master
+      - name: Snyk Scan
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          snyk test --all-projects --severity-threshold=high || true
+          # Note: Added || true to prevent blocking if tokens are not set yet, 
+          # move to strict mode once SNYK_TOKEN is in secrets.
+
+  dast:
+    name: security-dast
+    runs-on: ubuntu-latest
+    steps:
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          target: 'https://preview.rem.dev' 
+          fail_action: false 
+
+  build-android:
+    name: build android
+    runs-on: ubuntu-latest
+    needs: [flutter, sast, dast]
     defaults:
       run:
         working-directory: apps/mobile

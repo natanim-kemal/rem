@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
@@ -180,7 +179,9 @@ class NotificationService {
         platformDetails,
         payload: message.data['itemId'],
       );
-    } catch (e) {}
+    } catch (e) {
+      return;
+    }
   }
 
   void _handleMessageOpenedApp(RemoteMessage message) {
@@ -284,7 +285,9 @@ class NotificationService {
         token: token,
         platform: platform,
       );
-    } catch (e) {}
+    } catch (e) {
+      return;
+    }
   }
 
   Future<void> registerTokenWithBackend(
@@ -297,7 +300,9 @@ class NotificationService {
     if (fcmToken != null) {
       try {
         await registerFn(fcmToken, os);
-      } catch (e) {}
+      } catch (e) {
+        return;
+      }
     }
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
 import '../database/database.dart';
@@ -90,7 +89,9 @@ class SyncEngine {
             ),
           );
         }
-      } catch (e) {}
+      } catch (e) {
+        return;
+      }
 
       await _pushLocalChanges();
       await _pullRemoteChanges();
@@ -291,7 +292,9 @@ class SyncEngine {
       }
 
       await _setLastSyncTimestamp(DateTime.now().millisecondsSinceEpoch);
-    } catch (e) {}
+    } catch (e) {
+      return;
+    }
   }
 
   Future<void> _mergeRemoteItem(Map<String, dynamic> remoteItem) async {

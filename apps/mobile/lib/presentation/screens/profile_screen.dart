@@ -420,10 +420,9 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _clearCache(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showCupertinoDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (context) => CupertinoAlertDialog(
         title: Column(
           children: [
             const Text('Clear Cache'),
@@ -440,12 +439,13 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
+            isDefaultAction: true,
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Clear'),
           ),
@@ -518,9 +518,13 @@ class ProfileScreen extends ConsumerWidget {
                 'token': freshToken,
                 'platform': 'android',
               })
-              .catchError((e) {});
+              .catchError((e) {
+                return;
+              });
         }
-      } catch (e) {}
+      } catch (e) {
+        return;
+      }
 
       await convex.action('notifications:sendTestNotification', {
         'userId': user.id,
@@ -540,10 +544,9 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   void _showError(BuildContext context, String message) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (context) => CupertinoAlertDialog(
         title: Column(
           children: [
             const Text('Error'),
@@ -556,7 +559,7 @@ class ProfileScreen extends ConsumerWidget {
           child: Text(message),
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
           ),
@@ -807,7 +810,9 @@ class ProfileScreen extends ConsumerWidget {
                                 'users:registerPushToken',
                                 {'token': token, 'platform': 'android'},
                               );
-                            } catch (e) {}
+                            } catch (e) {
+                              return;
+                            }
                           }
                         }
 

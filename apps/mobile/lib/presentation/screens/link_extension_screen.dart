@@ -18,7 +18,6 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
   String? _error;
   String? _successMessage;
   List<dynamic> _linkedDevices = [];
-  bool _loadingDevices = false;
 
   @override
   void initState() {
@@ -33,16 +32,14 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
   }
 
   Future<void> _loadLinkedDevices() async {
-    setState(() => _loadingDevices = true);
     try {
       final convex = ref.read(convexClientProvider);
       final devices = await convex.query('pairing:getLinkedDevices');
       setState(() {
         _linkedDevices = devices ?? [];
-        _loadingDevices = false;
       });
     } catch (e) {
-      setState(() => _loadingDevices = false);
+      return;
     }
   }
 

@@ -1,5 +1,4 @@
-# Deploy Convex Backend
-name: Deploy Convex
+name: 
 
 on:
   push:
