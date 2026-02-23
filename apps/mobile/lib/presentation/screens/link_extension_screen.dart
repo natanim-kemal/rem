@@ -169,7 +169,9 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
                 const SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -200,7 +202,9 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.error.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(

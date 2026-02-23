@@ -19,30 +19,28 @@ class ShareService {
   StreamSubscription? _mediaSub;
 
   void initialize() {
-    _mediaSub = ReceiveSharingIntent.instance.getMediaStream().listen(
-      (List<SharedMediaFile> value) {
-        if (value.isEmpty) return;
+    _mediaSub = ReceiveSharingIntent.instance.getMediaStream().listen((
+      List<SharedMediaFile> value,
+    ) {
+      if (value.isEmpty) return;
 
-        final firstFile = value.first;
-        final isTextOrUrl =
-            firstFile.type == SharedMediaType.text ||
-            firstFile.type == SharedMediaType.url;
+      final firstFile = value.first;
+      final isTextOrUrl =
+          firstFile.type == SharedMediaType.text ||
+          firstFile.type == SharedMediaType.url;
 
-        if (isTextOrUrl) {
-          _controller.add(
-            SharedContent(
-              text: firstFile.path,
-              type: ShareType.text,
-              files: value,
-            ),
-          );
-        } else {
-          _controller.add(SharedContent(files: value, type: ShareType.media));
-        }
-      },
-      onError: (err) {
-      },
-    );
+      if (isTextOrUrl) {
+        _controller.add(
+          SharedContent(
+            text: firstFile.path,
+            type: ShareType.text,
+            files: value,
+          ),
+        );
+      } else {
+        _controller.add(SharedContent(files: value, type: ShareType.media));
+      }
+    }, onError: (err) {});
 
     ReceiveSharingIntent.instance.getInitialMedia().then((
       List<SharedMediaFile> value,

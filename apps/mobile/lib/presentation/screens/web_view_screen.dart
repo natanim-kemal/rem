@@ -69,7 +69,8 @@ class _WebViewScreenState extends State<WebViewScreen>
           },
           onNavigationRequest: (NavigationRequest request) {
             final uri = Uri.tryParse(request.url);
-            if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+            if (uri != null &&
+                (uri.scheme == 'http' || uri.scheme == 'https')) {
               return NavigationDecision.navigate;
             }
             return NavigationDecision.prevent;

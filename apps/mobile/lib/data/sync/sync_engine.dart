@@ -90,8 +90,7 @@ class SyncEngine {
             ),
           );
         }
-      } catch (e) {
-      }
+      } catch (e) {}
 
       await _pushLocalChanges();
       await _pullRemoteChanges();
@@ -292,8 +291,7 @@ class SyncEngine {
       }
 
       await _setLastSyncTimestamp(DateTime.now().millisecondsSinceEpoch);
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   Future<void> _mergeRemoteItem(Map<String, dynamic> remoteItem) async {

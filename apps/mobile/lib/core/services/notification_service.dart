@@ -180,8 +180,7 @@ class NotificationService {
         platformDetails,
         payload: message.data['itemId'],
       );
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   void _handleMessageOpenedApp(RemoteMessage message) {
@@ -215,7 +214,6 @@ class NotificationService {
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
-
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
@@ -262,7 +260,6 @@ class NotificationService {
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: itemId,
     );
-
   }
 
   Future<void> cancelAllNotifications() async {
@@ -287,8 +284,7 @@ class NotificationService {
         token: token,
         platform: platform,
       );
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   Future<void> registerTokenWithBackend(
@@ -301,8 +297,7 @@ class NotificationService {
     if (fcmToken != null) {
       try {
         await registerFn(fcmToken, os);
-      } catch (e) {
-      }
+      } catch (e) {}
     }
   }
 }

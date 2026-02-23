@@ -362,8 +362,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       Future.microtask(() async {
         try {
           await ref.read(syncEngineProvider).syncNow();
-        } catch (e) {
-        }
+        } catch (e) {}
         ref.invalidate(userByClerkIdProvider(clerkId));
       });
     }

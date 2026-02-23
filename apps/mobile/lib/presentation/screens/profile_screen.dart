@@ -520,8 +520,7 @@ class ProfileScreen extends ConsumerWidget {
               })
               .catchError((e) {});
         }
-      } catch (e) {
-      }
+      } catch (e) {}
 
       await convex.action('notifications:sendTestNotification', {
         'userId': user.id,
@@ -808,8 +807,7 @@ class ProfileScreen extends ConsumerWidget {
                                 'users:registerPushToken',
                                 {'token': token, 'platform': 'android'},
                               );
-                            } catch (e) {
-                            }
+                            } catch (e) {}
                           }
                         }
 
