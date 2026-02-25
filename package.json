@@ -9,7 +9,7 @@
     "convex:logs": "convex logs"
   },
   "devDependencies": {
-    "convex": "^1.17.0",
+    "convex": "^1.32.0",
     "lefthook": "^2.0.16"
   },
   "engines": {
