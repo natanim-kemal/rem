@@ -10,6 +10,7 @@ import '../../core/services/share_service.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/data_providers.dart';
 import '../../data/sync/sync_engine.dart';
+import '../../core/services/update_service.dart';
 
 class ShellScreen extends ConsumerStatefulWidget {
   const ShellScreen({super.key});
@@ -32,6 +33,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     final notificationService = ref.read(notificationServiceProvider);
     notificationService.onAction = _handleNotificationAction;
     ref.read(syncEngineProvider);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(updateServiceProvider.notifier).checkForUpdates(context);
+    });
   }
 
   @override
