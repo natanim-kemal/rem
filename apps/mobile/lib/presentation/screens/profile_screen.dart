@@ -670,7 +670,9 @@ class ProfileScreen extends ConsumerWidget {
                           context: context,
                           builder: (context) => CupertinoActionSheet(
                             title: Text('Account'),
-                            message: Text('Signed in as ${authState.displayName}'),
+                            message: Text(
+                              'Signed in as ${authState.displayName}',
+                            ),
                             actions: [
                               CupertinoActionSheetAction(
                                 onPressed: () => Navigator.pop(context, true),
@@ -694,7 +696,10 @@ class ProfileScreen extends ConsumerWidget {
                           clerkAuth.signOut();
                         }
                       },
-                      icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
+                      icon: const Icon(
+                        CupertinoIcons.ellipsis_circle,
+                        size: 22,
+                      ),
                     ),
                 ],
               ),
