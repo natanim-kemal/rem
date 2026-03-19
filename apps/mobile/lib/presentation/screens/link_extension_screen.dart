@@ -50,6 +50,11 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
       return;
     }
 
+    if (!RegExp(r'^[A-Z0-9]{4}-[A-Z0-9]{4}$').hasMatch(code)) {
+      setState(() => _error = 'Invalid code format. Expected: XXXX-XXXX');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -68,11 +73,19 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
         return;
       }
 
-      await convex.mutation('pairing:approvePairing', {
+      final result = await convex.mutation('pairing:approvePairing', {
         'code': code,
         'deviceName': 'Browser Extension',
         'token': token,
       });
+
+      if (result is Map && result.containsKey('error')) {
+        setState(() {
+          _isLoading = false;
+          _error = result['error']?.toString() ?? 'Pairing failed';
+        });
+        return;
+      }
 
       setState(() {
         _isLoading = false;
@@ -87,9 +100,16 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
         setState(() => _successMessage = null);
       }
     } catch (e) {
+      String errorMsg = e.toString();
+      if (errorMsg.toLowerCase().contains('invalid') ||
+          errorMsg.toLowerCase().contains('not found') ||
+          errorMsg.toLowerCase().contains('expired') ||
+          errorMsg.toLowerCase().contains('already')) {
+        errorMsg = 'Invalid or expired code. Please check and try again.';
+      }
       setState(() {
         _isLoading = false;
-        _error = e.toString();
+        _error = errorMsg;
       });
     }
   }
@@ -158,73 +178,6 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
           child: ListView(
             padding: const EdgeInsets.all(24.0),
             children: [
-              if (_linkedDevices.isNotEmpty) ...[
-                Text(
-                  'Connected Devices',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      ...List.generate(_linkedDevices.length, (index) {
-                        final device = _linkedDevices[index];
-                        return ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 20,
-                            ),
-                          ),
-                          title: const Text('Browser Extension'),
-                          subtitle: Text(
-                            'Expires: ${_formatExpiry(device['expiresAt'] as int)}',
-                          ),
-                        );
-                      }),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.error.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.delete_outline,
-                            color: Theme.of(context).colorScheme.error,
-                            size: 20,
-                          ),
-                        ),
-                        title: Text(
-                          'Revoke All Devices',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                        onTap: _isRevoking ? null : _revokeAllDevices,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                const Divider(),
-                const SizedBox(height: 24),
-              ],
               Text(
                 'Link New Device',
                 style: Theme.of(context).textTheme.titleMedium,
@@ -271,6 +224,73 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
                       : const Text('Link Device'),
                 ),
               ),
+              if (_linkedDevices.isNotEmpty) ...[
+                const SizedBox(height: 32),
+                const Divider(),
+                const SizedBox(height: 24),
+                Text(
+                  'Connected Devices',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      ...List.generate(_linkedDevices.length, (index) {
+                        final device = _linkedDevices[index];
+                        return ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 20,
+                            ),
+                          ),
+                          title: const Text('Browser Extension'),
+                          subtitle: Text(
+                            'Expires: ${_formatExpiry((device['expiresAt'] as num).toInt())}',
+                          ),
+                        );
+                      }),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.error.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.delete_outline,
+                            color: Theme.of(context).colorScheme.error,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          'Revoke All Devices',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                        onTap: _isRevoking ? null : _revokeAllDevices,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
