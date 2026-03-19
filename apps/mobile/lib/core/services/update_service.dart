@@ -103,7 +103,7 @@ class UpdateService extends _$UpdateService {
 
   void _startUpdate(BuildContext context, String url) {
     try {
-        OtaUpdate().execute(url, destinationFilename: 'rem.apk').listen((
+      OtaUpdate().execute(url, destinationFilename: 'rem.apk').listen((
         OtaEvent event,
       ) {
         if (event.status == OtaStatus.DOWNLOADING) {
