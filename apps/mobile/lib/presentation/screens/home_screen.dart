@@ -455,7 +455,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     Row(
                       children: [
                         Image.asset(
-                          'assets/images/rem_logo.png',
+                          'assets/images/icon.png',
                           width: 28,
                           height: 28,
                         ),
