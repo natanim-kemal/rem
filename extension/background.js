@@ -188,11 +188,16 @@ async function saveToRem(itemData) {
 }
 
 async function fetchMetadata(url) {
+    const isTwitterOrX = /x\.com|twitter\.com/i.test(url);
+    const fetchUrl = isTwitterOrX
+        ? `https://r.jina.ai/http://${url.replace(/^https?:\/\//, '')}`
+        : url;
+
     try {
-        const response = await fetch(url, {
+        const response = await fetch(fetchUrl, {
             method: 'GET',
             headers: {
-                'Accept': 'text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8',
+                'Accept': isTwitterOrX ? 'text/plain' : 'text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8',
             },
         });
 
@@ -200,7 +205,7 @@ async function fetchMetadata(url) {
             throw new Error(`HTTP ${response.status}`);
         }
 
-        const html = await response.text();
+        let html = await response.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
@@ -214,18 +219,22 @@ async function fetchMetadata(url) {
             return '';
         };
 
-        const title = getMeta([
-            'meta[property="og:title"]',
-            'meta[name="twitter:title"]',
-            'meta[property="twitter:title"]',
-        ]) || doc.title || '';
+        const title = isTwitterOrX
+            ? (doc.body?.textContent?.split('\n').find(line => line.trim()) || '').slice(0, 200)
+            : (getMeta([
+                'meta[property="og:title"]',
+                'meta[name="twitter:title"]',
+                'meta[property="twitter:title"]',
+            ]) || doc.title || '');
 
-        const description = getMeta([
-            'meta[name="description"]',
-            'meta[property="og:description"]',
-            'meta[name="twitter:description"]',
-            'meta[property="twitter:description"]',
-        ]);
+        const description = isTwitterOrX
+            ? (doc.body?.textContent || '').slice(0, 500)
+            : getMeta([
+                'meta[name="description"]',
+                'meta[property="og:description"]',
+                'meta[name="twitter:description"]',
+                'meta[property="twitter:description"]',
+            ]);
 
         let thumbnailUrl = getMeta([
             'meta[property="og:image:secure_url"]',
