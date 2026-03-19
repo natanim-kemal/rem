@@ -22,7 +22,9 @@ class AuthScreen extends ConsumerWidget {
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: size.height - MediaQuery.paddingOf(context).top),
+                constraints: BoxConstraints(
+                  minHeight: size.height - MediaQuery.paddingOf(context).top,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
@@ -55,9 +57,7 @@ class _BackgroundDecoration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned.fill(
-      child: CustomPaint(
-        painter: _AuthBackgroundPainter(isDark: isDark),
-      ),
+      child: CustomPaint(painter: _AuthBackgroundPainter(isDark: isDark)),
     );
   }
 }
@@ -107,14 +107,11 @@ class _BrandingSection extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 80,
-          height: 80,
-          padding: const EdgeInsets.all(8),
-          child: Image.asset(
-            'assets/images/icon.png',
-            fit: BoxFit.contain,
-          ),
-        )
+              width: 80,
+              height: 80,
+              padding: const EdgeInsets.all(8),
+              child: Image.asset('assets/images/icon.png', fit: BoxFit.contain),
+            )
             .animate()
             .fadeIn(duration: 600.ms, curve: Curves.easeOut)
             .scale(
@@ -125,30 +122,40 @@ class _BrandingSection extends StatelessWidget {
             ),
         const SizedBox(height: 24),
         Text(
-          'rem',
-          style: theme.textTheme.displayLarge?.copyWith(
-            fontSize: 36,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1.5,
-          ),
-          textAlign: TextAlign.center,
-        )
+              'rem',
+              style: theme.textTheme.displayLarge?.copyWith(
+                fontSize: 36,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1.5,
+              ),
+              textAlign: TextAlign.center,
+            )
             .animate(delay: 200.ms)
             .fadeIn(duration: 500.ms)
-            .slideY(begin: 0.2, end: 0, duration: 500.ms, curve: Curves.easeOut),
+            .slideY(
+              begin: 0.2,
+              end: 0,
+              duration: 500.ms,
+              curve: Curves.easeOut,
+            ),
         const SizedBox(height: 8),
         Text(
-          'read everything, mindfully',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: context.textSecondary,
-            fontSize: 15,
-            letterSpacing: 0.3,
-          ),
-          textAlign: TextAlign.center,
-        )
+              'read everything, mindfully',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: context.textSecondary,
+                fontSize: 15,
+                letterSpacing: 0.3,
+              ),
+              textAlign: TextAlign.center,
+            )
             .animate(delay: 350.ms)
             .fadeIn(duration: 500.ms)
-            .slideY(begin: 0.2, end: 0, duration: 500.ms, curve: Curves.easeOut),
+            .slideY(
+              begin: 0.2,
+              end: 0,
+              duration: 500.ms,
+              curve: Curves.easeOut,
+            ),
       ],
     );
   }
@@ -163,45 +170,44 @@ class _AuthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF141414)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? const Color(0xFF1E1E1E)
-              : const Color(0xFFE8E6E1),
-          width: 0.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-            spreadRadius: 0,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF141414) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE8E6E1),
+              width: 0.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+                spreadRadius: 0,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+                spreadRadius: 0,
+              ),
+            ],
           ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: ClerkErrorListener(child: ClerkAuthentication()),
+            ),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: ClerkErrorListener(
-            child: ClerkAuthentication(),
-          ),
-        ),
-      ),
-    )
+        )
         .animate(delay: 500.ms)
         .fadeIn(duration: 600.ms)
-        .slideY(begin: 0.15, end: 0, duration: 600.ms, curve: Curves.easeOutCubic);
+        .slideY(
+          begin: 0.15,
+          end: 0,
+          duration: 600.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 }
 
@@ -217,11 +223,7 @@ class _FooterSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 32,
-              height: 0.5,
-              color: context.divider,
-            ),
+            Container(width: 32, height: 0.5, color: context.divider),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Icon(
@@ -230,11 +232,7 @@ class _FooterSection extends StatelessWidget {
                 color: context.textTertiary,
               ),
             ),
-            Container(
-              width: 32,
-              height: 0.5,
-              color: context.divider,
-            ),
+            Container(width: 32, height: 0.5, color: context.divider),
           ],
         ),
         const SizedBox(height: 12),
@@ -247,8 +245,6 @@ class _FooterSection extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
-    )
-        .animate(delay: 800.ms)
-        .fadeIn(duration: 500.ms);
+    ).animate(delay: 800.ms).fadeIn(duration: 500.ms);
   }
 }
