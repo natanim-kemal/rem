@@ -1,5 +1,4 @@
-# Release Android to Play Store
-name: Release Android
+name: release android
 
 on:
   push:
@@ -20,7 +19,7 @@ on:
 
 jobs:
   build:
-    name: Build Release APK
+    name: build release apk
     runs-on: ubuntu-latest
     defaults:
       run:
