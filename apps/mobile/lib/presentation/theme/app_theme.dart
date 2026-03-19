@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:clerk_flutter/clerk_flutter.dart';
 
 class AppTheme {
   AppTheme._();
@@ -165,6 +166,20 @@ class AppTheme {
       brightness: Brightness.dark,
       primaryColor: accent,
     ),
+    extensions: <ThemeExtension<dynamic>>[
+      ClerkThemeExtension(
+        colors: const ClerkThemeColors(
+          background: _darkBackground,
+          altBackground: _darkSurfaceElevated,
+          borderSide: _darkDivider,
+          text: _darkTextPrimary,
+          icon: _darkTextPrimary,
+          lightweightText: _darkTextSecondary,
+          error: destructive,
+          accent: accent,
+        ),
+      ),
+    ],
   );
 
   static ThemeData get light => ThemeData(
@@ -229,6 +244,20 @@ class AppTheme {
       brightness: Brightness.light,
       primaryColor: accent,
     ),
+    extensions: <ThemeExtension<dynamic>>[
+      ClerkThemeExtension(
+        colors: const ClerkThemeColors(
+          background: _lightBackground,
+          altBackground: _lightSurfaceElevated,
+          borderSide: _lightDivider,
+          text: _lightTextPrimary,
+          icon: _lightTextPrimary,
+          lightweightText: _lightTextSecondary,
+          error: destructive,
+          accent: accent,
+        ),
+      ),
+    ],
   );
 }
 
