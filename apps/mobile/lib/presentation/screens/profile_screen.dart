@@ -1,5 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
+import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:clerk_flutter/src/widgets/ui/clerk_page.dart';
+import 'package:clerk_flutter/src/widgets/user/clerk_user_profile.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,6 +14,8 @@ import '../../providers/theme_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/data_providers.dart';
+import '../../core/services/update_service.dart';
+import '../../core/services/notification_service.dart';
 import '../../data/models/notification_preferences.dart';
 import '../../data/sync/sync_engine.dart';
 import 'auth_screen.dart';
@@ -596,6 +602,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final themeNotifier = ref.read(themeModeProvider.notifier);
     final isDarkMode = ref.watch(themeModeProvider) == ThemeMode.dark;
     final authState = ref.watch(authProvider);
@@ -606,6 +613,9 @@ class ProfileScreen extends ConsumerWidget {
     final userFuture = authState.userId != null
         ? ref.watch(userByClerkIdStreamProvider(authState.userId!))
         : const AsyncValue.data(null);
+
+    final clerkAuth = ClerkAuth.of(context);
+    final clerkUser = clerkAuth.user;
 
     final cachedPrefs = ref.watch(notificationPrefsCacheProvider);
     final NotificationPreferences preferences =
@@ -653,51 +663,39 @@ class ProfileScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const SizedBox.shrink(),
-                  IconButton(
-                    onPressed: () {
-                      if (authState.isAuthenticated) {
-                        showCupertinoModalPopup(
+                  if (authState.isAuthenticated)
+                    IconButton(
+                      onPressed: () async {
+                        final result = await showCupertinoModalPopup<bool>(
                           context: context,
                           builder: (context) => CupertinoActionSheet(
-                            title: Text(
-                              'Signed in as ${authState.displayName}',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
+                            title: Text('Account'),
+                            message: Text('Signed in as ${authState.displayName}'),
                             actions: [
                               CupertinoActionSheetAction(
-                                onPressed: () {
-                                  ref.read(authProvider.notifier).signOut();
-                                  Navigator.pop(context);
-                                },
-                                child: Text(
-                                  'Sign Out',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.orange.shade700),
-                                ),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Manage Account'),
                               ),
                             ],
                             cancelButton: CupertinoActionSheetAction(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text(
-                                'Cancel',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
+                              isDestructiveAction: true,
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Sign Out'),
                             ),
                           ),
                         );
-                      } else {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const AuthScreen()),
-                        );
-                      }
-                    },
-                    icon: Icon(
-                      authState.isAuthenticated
-                          ? CupertinoIcons.square_arrow_right
-                          : CupertinoIcons.person,
-                      size: 20,
+
+                        if (result == true && context.mounted) {
+                          ClerkPage.show(
+                            context,
+                            builder: (context) => ClerkUserProfile(),
+                          );
+                        } else if (result == false && context.mounted) {
+                          clerkAuth.signOut();
+                        }
+                      },
+                      icon: const Icon(CupertinoIcons.ellipsis_circle, size: 22),
                     ),
-                  ),
                 ],
               ),
               GestureDetector(
@@ -711,8 +709,16 @@ class ProfileScreen extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: context.divider, width: 0.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
@@ -950,6 +956,15 @@ class ProfileScreen extends ConsumerWidget {
                     value: '1.0.0',
                   ),
                   _SettingsTile(
+                    icon: CupertinoIcons.arrow_2_circlepath,
+                    title: 'Check for Updates',
+                    onTap: () {
+                      ref
+                          .read(updateServiceProvider.notifier)
+                          .checkForUpdates(context, silent: false);
+                    },
+                  ),
+                  _SettingsTile(
                     icon: CupertinoIcons.doc_text,
                     title: 'Privacy Policy',
                     onTap: () {
@@ -1119,6 +1134,19 @@ class _SettingsTile extends StatelessWidget {
                 )
               : null),
       onTap: onTap,
+    );
+  }
+}
+
+class _FallbackAvatar extends StatelessWidget {
+  const _FallbackAvatar({required this.gender});
+  final String gender;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      gender == 'F' ? 'assets/images/female.png' : 'assets/images/male.png',
+      fit: BoxFit.cover,
     );
   }
 }
