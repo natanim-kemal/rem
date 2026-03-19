@@ -93,3 +93,38 @@ jobs:
           releaseFiles: app-release.aab
           track: ${{ github.event.inputs.track || 'internal' }}
           status: completed
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.track == 'production')
+
+    steps:
+      - name: Download App Bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: release-aab
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app-release.aab
+          generate_release_notes: true
+          draft: ${{ github.event.inputs.track != 'production' && github.event_name == 'workflow_dispatch' }}
+          prerelease: ${{ github.event.inputs.track == 'alpha' || github.event.inputs.track == 'beta' }}
+          body: |
+            ## Changes in this release
+            See the [changelog](https://github.com/${{ github.repository }}/releases) for details.
+
+            ### Installation
+            Download the `app-release.aab` bundle and sideload it, or use the Play Store track: `${{ github.event.inputs.track || 'internal' }}`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Draft Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        run: |
+          gh release edit ${{ github.ref_name }} --draft=false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
