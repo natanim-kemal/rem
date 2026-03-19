@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +7,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:ota_update/ota_update.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:collection/collection.dart';
 
 part 'update_service.g.dart';
 
@@ -41,9 +41,12 @@ class UpdateService extends _$UpdateService {
 
       if (latestVersion > currentVersion) {
         final assets = data['assets'] as List;
-        final asset = assets.firstWhereOrNull((a) => a['name'] == 'rem.apk');
+        final asset = assets.cast<Map<String, dynamic>>().firstWhere(
+          (a) => a['name'] == 'rem.apk',
+          orElse: () => <String, dynamic>{},
+        );
 
-        if (asset != null && context.mounted) {
+        if (asset.isNotEmpty && context.mounted) {
           final downloadUrl = asset['browser_download_url'];
           _showUpdateDialog(
             context,
@@ -107,7 +110,7 @@ class UpdateService extends _$UpdateService {
         OtaEvent event,
       ) {
         if (event.status == OtaStatus.DOWNLOADING) {
-          print('Downloading: ${event.value}%');
+          developer.log('Downloading: ${event.value}%', name: 'UpdateService');
         }
       });
     } catch (e) {
