@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:clerk_flutter/src/widgets/ui/clerk_page.dart';
-import 'package:clerk_flutter/src/widgets/user/clerk_user_profile.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:clerk_flutter/src/widgets/ui/clerk_page.dart'; // ignore: implementation_imports
+import 'package:clerk_flutter/src/widgets/user/clerk_user_profile.dart'; // ignore: implementation_imports
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,7 +14,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/data_providers.dart';
 import '../../core/services/update_service.dart';
-import '../../core/services/notification_service.dart';
 import '../../data/models/notification_preferences.dart';
 import '../../data/sync/sync_engine.dart';
 import 'auth_screen.dart';
@@ -615,7 +613,6 @@ class ProfileScreen extends ConsumerWidget {
         : const AsyncValue.data(null);
 
     final clerkAuth = ClerkAuth.of(context);
-    final clerkUser = clerkAuth.user;
 
     final cachedPrefs = ref.watch(notificationPrefsCacheProvider);
     final NotificationPreferences preferences =
@@ -1139,19 +1136,6 @@ class _SettingsTile extends StatelessWidget {
                 )
               : null),
       onTap: onTap,
-    );
-  }
-}
-
-class _FallbackAvatar extends StatelessWidget {
-  const _FallbackAvatar({required this.gender});
-  final String gender;
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      gender == 'F' ? 'assets/images/female.png' : 'assets/images/male.png',
-      fit: BoxFit.cover,
     );
   }
 }
