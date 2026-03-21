@@ -84,7 +84,7 @@ jobs:
 
           # Create dummy google-services.json if missing (required by Firebase plugin)
           if [ ! -f android/app/google-services.json ]; then
-            echo '{"project_info":{"project_number":"0","project_id":"mock","storage_bucket":"mock"},"client":[{"client_info":{"mobilesdk_app_id":"mock"},"api_key":[{"current_key":"mock"}]}]}' > android/app/google-services.json
+            echo '{"project_info":{"project_number":"0","project_id":"mock","storage_bucket":"mock"},"client":[{"client_info":{"mobilesdk_app_id":"mock","android_client_info":{"package_name":"com.rem.rem"}},"api_key":[{"current_key":"mock"}]}]}' > android/app/google-services.json
             echo "Mock google-services.json created for compilation."
           fi
 
