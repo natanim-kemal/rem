@@ -74,7 +74,7 @@ jobs:
           # Collect Android Assets
           mkdir -p dist
           cp build/app/outputs/bundle/release/app-release.aab dist/
-          cp build/app/outputs/flutter-apk/app-release.apk dist/rem.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dist/rem-android.apk
         env:
           CONVEX_URL: ${{ secrets.CONVEX_URL }}
           CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
@@ -83,9 +83,9 @@ jobs:
         working-directory: .
         run: |
           # Zip extension folder from project root
-          zip -r extension.zip extension/
+          zip -r rem-extension.zip extension/
           # Move it to the dist folder inside apps/mobile
-          cp extension.zip apps/mobile/dist/
+          cp rem-extension.zip apps/mobile/dist/
 
       - name: Upload Release Assets
         uses: actions/upload-artifact@v4
@@ -110,8 +110,8 @@ jobs:
         with:
           files: |
             app-release.aab
-            rem-android.apk
-            rem-extension.zip
+            rem.apk
+            extension.zip
           generate_release_notes: true
           draft: ${{ github.event.inputs.track != 'production' && github.event_name == 'workflow_dispatch' }}
           prerelease: ${{ github.event.inputs.track == 'alpha' || github.event.inputs.track == 'beta' }}

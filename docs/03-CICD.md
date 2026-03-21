@@ -336,11 +336,11 @@ jobs:
           flutter build apk --release
           mkdir -p dist
           cp build/app/outputs/bundle/release/app-release.aab dist/
-          cp build/app/outputs/flutter-apk/app-release.apk dist/rem.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dist/rem-android.apk
           
           # Zip Extension
-          zip -r extension.zip ../../extension/
-          cp extension.zip dist/
+          zip -r rem-extension.zip ../../extension/
+          cp rem-extension.zip dist/
 
       - name: Upload Release Assets
         uses: actions/upload-artifact@v4
@@ -361,8 +361,8 @@ jobs:
         with:
           files: |
             app-release.aab
-            rem.apk
-            extension.zip
+            rem-android.apk
+            rem-extension.zip
 ```
 
 ---
