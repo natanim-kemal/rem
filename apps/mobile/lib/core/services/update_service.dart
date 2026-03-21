@@ -42,7 +42,7 @@ class UpdateService extends _$UpdateService {
       if (latestVersion > currentVersion) {
         final assets = data['assets'] as List;
         final asset = assets.cast<Map<String, dynamic>>().firstWhere(
-          (a) => a['name'] == 'rem.apk',
+          (a) => a['name'] == 'rem-android.apk',
           orElse: () => <String, dynamic>{},
         );
 
@@ -106,7 +106,7 @@ class UpdateService extends _$UpdateService {
 
   void _startUpdate(BuildContext context, String url) {
     try {
-      OtaUpdate().execute(url, destinationFilename: 'rem.apk').listen((
+      OtaUpdate().execute(url, destinationFilename: 'rem-android.apk').listen((
         OtaEvent event,
       ) {
         if (event.status == OtaStatus.DOWNLOADING) {
