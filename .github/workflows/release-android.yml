@@ -75,15 +75,18 @@ jobs:
 
       - name: Build Android Release Assets
         run: |
-          # Build App Bundle for Play Store
-          flutter build appbundle --release --obfuscate --split-debug-info=build/debug-info
-          
+          # Create dummy .env if missing (required by pubspec.yaml assets)
+          if [ ! -f .env ]; then
+            echo "CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}" > .env
+            echo "CONVEX_URL=${{ secrets.CONVEX_URL }}" >> .env
+            echo "Mock .env created for compilation."
+          fi
+
           # Build APK for direct download
           flutter build apk --release --obfuscate --split-debug-info=build/debug-info
           
           # Collect Android Assets
           mkdir -p dist
-          cp build/app/outputs/bundle/release/app-release.aab dist/
           cp build/app/outputs/flutter-apk/app-release.apk dist/rem-android.apk
         env:
           CONVEX_URL: ${{ secrets.CONVEX_URL }}
@@ -119,9 +122,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            app-release.aab
-            rem.apk
-            extension.zip
+            rem-android.apk
+            rem-extension.zip
           generate_release_notes: true
           draft: ${{ github.event.inputs.track != 'production' && github.event_name == 'workflow_dispatch' }}
           prerelease: ${{ github.event.inputs.track == 'alpha' || github.event.inputs.track == 'beta' }}
@@ -130,7 +132,7 @@ jobs:
             See the [changelog](https://github.com/${{ github.repository }}/releases) for details.
 
             ### Installation
-            Download the `app-release.aab` bundle and sideload it, or use the Play Store track: `${{ github.event.inputs.track || 'internal' }}`
+            Download the `rem-android.apk` for Android or unzip `rem-extension.zip` for Chrome.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
