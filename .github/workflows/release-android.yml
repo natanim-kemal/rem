@@ -70,6 +70,9 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Setup Real Configs
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
         run: |
           # Create real .env from secrets
           echo "CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}" > .env
@@ -77,12 +80,12 @@ jobs:
           echo "CLERK_ISSUER_URL=${{ secrets.CLERK_ISSUER_URL }}" >> .env
           echo "YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}" >> .env
           
-          # Create real google-services.json from secrets
-          echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+          # Create real google-services.json from env var
+          echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
           
-          # Create firebase_options.dart if provided in secrets
-          if [ ! -z "${{ secrets.FIREBASE_OPTIONS_DART }}" ]; then
-            echo '${{ secrets.FIREBASE_OPTIONS_DART }}' > lib/firebase_options.dart
+          # Create firebase_options.dart if provided in env var
+          if [ ! -z "$FIREBASE_OPTIONS_DART" ]; then
+            echo "$FIREBASE_OPTIONS_DART" > lib/firebase_options.dart
           fi
 
       - name: Build Android Release Assets
