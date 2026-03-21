@@ -17,6 +17,9 @@ on:
           - beta
           - production
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: build release apk
