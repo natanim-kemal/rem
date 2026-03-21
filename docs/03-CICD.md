@@ -313,91 +313,56 @@ jobs:
           working-directory: web-dist
 ```
 
-### 2.2 Release Workflow (App Stores)
+### 2.2 Release Workflow (Android)
 
 ```yaml
-# .github/workflows/release.yml
-name: Release
+# .github/workflows/release-android.yml
+name: release android
 
 on:
   push:
     tags:
       - 'v*'
 
-env:
-  FLUTTER_VERSION: '3.19.0'
-
 jobs:
-  release-android:
-    name: Release Android
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/mobile
+  build:
+    name: build release apk
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-
-      - name: Decode Keystore
-        run: echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > android/app/keystore.jks
-
-      - name: Build App Bundle
+      # ... setup ...
+      - name: Build Release Assets
         run: |
-          flutter pub get
-          dart run build_runner build --delete-conflicting-outputs
+          # Build Android
           flutter build appbundle --release
-        env:
-          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          flutter build apk --release
+          mkdir -p dist
+          cp build/app/outputs/bundle/release/app-release.aab dist/
+          cp build/app/outputs/flutter-apk/app-release.apk dist/rem.apk
+          
+          # Zip Extension
+          zip -r extension.zip ../../extension/
+          cp extension.zip dist/
 
-      - name: Upload to Play Store
-        uses: r0adkll/upload-google-play@v1
+      - name: Upload Release Assets
+        uses: actions/upload-artifact@v4
         with:
-          serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT }}
-          packageName: dev.rem.app
-          releaseFiles: apps/mobile/build/app/outputs/bundle/release/app-release.aab
-          track: internal
+          name: release-assets
+          path: apps/mobile/dist/
 
-  release-ios:
-    name: Release iOS
-    runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: apps/mobile
+  release:
+    name: Create GitHub Release
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - name: Download Release Assets
+        uses: actions/download-artifact@v4
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          name: release-assets
 
-      - name: Install Fastlane
-        run: gem install fastlane
-
-      - name: Build & Upload to TestFlight
-        run: |
-          flutter pub get
-          dart run build_runner build --delete-conflicting-outputs
-          flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
-          cd ios && fastlane upload_testflight
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app-release.aab
+            rem.apk
+            extension.zip
 ```
 
 ---
@@ -438,7 +403,6 @@ Protect matching branches:
 | `KEY_STORE_PASSWORD` | Keystore password | Your password |
 | `KEY_PASSWORD` | Key password | Your password |
 | `KEY_ALIAS` | Key alias | Your alias |
-| `PLAY_STORE_SERVICE_ACCOUNT` | Google Play JSON | GCP Console |
 | `APPLE_ID` | Apple ID email | Apple Account |
 | `APP_STORE_CONNECT_API_KEY` | App Store key | App Store Connect |
 
