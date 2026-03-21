@@ -82,6 +82,12 @@ jobs:
             echo "Mock .env created for compilation."
           fi
 
+          # Create dummy google-services.json if missing (required by Firebase plugin)
+          if [ ! -f android/app/google-services.json ]; then
+            echo '{"project_info":{"project_number":"0","project_id":"mock","storage_bucket":"mock"},"client":[{"client_info":{"mobilesdk_app_id":"mock"},"api_key":[{"current_key":"mock"}]}]}' > android/app/google-services.json
+            echo "Mock google-services.json created for compilation."
+          fi
+
           # Build APK for direct download
           flutter build apk --release --obfuscate --split-debug-info=build/debug-info
           
