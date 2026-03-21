@@ -63,6 +63,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Generate Code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Setup Firebase Options (Mock)
+        run: |
+          if [ ! -f lib/firebase_options.dart ]; then
+            echo "class DefaultFirebaseOptions { static var currentPlatform; }" > lib/firebase_options.dart
+            echo "Warning: firebase_options.dart was missing. Created a mock for compilation."
+          fi
+
       - name: Build Android Release Assets
         run: |
           # Build App Bundle for Play Store
