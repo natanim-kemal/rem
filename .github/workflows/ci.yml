@@ -159,7 +159,7 @@ jobs:
     if: vars.PREVIEW_URL != ''
     steps:
       - name: OWASP ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.13.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: ${{ vars.PREVIEW_URL }}
           fail_action: false 
