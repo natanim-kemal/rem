@@ -109,7 +109,7 @@ jobs:
           cp rem-extension.zip apps/mobile/dist/
 
       - name: Upload Release Assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-assets
           path: apps/mobile/dist/
