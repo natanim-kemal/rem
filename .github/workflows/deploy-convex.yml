@@ -1,4 +1,4 @@
-name: 
+name: rem-convex
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Convex
+    name: deploy to convex
     runs-on: ubuntu-latest
 
     steps:
