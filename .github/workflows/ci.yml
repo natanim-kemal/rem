@@ -7,6 +7,13 @@ on:
   workflow_dispatch:
 
 jobs:
+  coderabbit:
+    name: coderabbit review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: coderabbit/action-setup@v1
+
   flutter:
     name: flutter 
     runs-on: ubuntu-latest
