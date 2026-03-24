@@ -91,14 +91,15 @@ jobs:
       - name: Build Android Release Assets
         run: |
           # Build APK for direct download
-          flutter build apk --release --obfuscate --split-debug-info=build/debug-info
+          flutter build apk --release \
+            --dart-define=CONVEX_URL=${{ secrets.CONVEX_URL }} \
+            --dart-define=CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }} \
+            --dart-define=CLERK_ISSUER_URL=${{ secrets.CLERK_ISSUER_URL }} \
+            --obfuscate --split-debug-info=build/debug-info
           
           # Collect Android Assets
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk dist/rem-android.apk
-        env:
-          CONVEX_URL: ${{ secrets.CONVEX_URL }}
-          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
 
       - name: Zip Chrome Extension
         working-directory: .
