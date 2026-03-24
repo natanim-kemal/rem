@@ -10,6 +10,10 @@ chat:
   auto_reply: true
 
 pull_request_workflow: enabled
+push:
+  branches:
+    - main
+    - develop
 
 paths:
   exclude:
