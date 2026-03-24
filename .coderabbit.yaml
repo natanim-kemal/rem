@@ -1,0 +1,16 @@
+language: en
+reviews:
+  high_level_summary: true
+  auto_title-placeholder: ""
+  auto_review_enabled: true
+  collapse_walkthrough: false
+  labeling_enabled: true
+  complexity_threshold: 65
+chat:
+  auto_reply: true
+
+pull_request_workflow: enabled
+
+paths:
+  exclude:
+    - "**/android/app/src/main/kotlin/**"
