@@ -87,7 +87,7 @@ class NotificationService {
     );
 
     await _localNotifications.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
@@ -173,10 +173,10 @@ class NotificationService {
 
     try {
       await _localNotifications.show(
-        message.hashCode,
-        notification.title,
-        notification.body,
-        platformDetails,
+        id: message.hashCode,
+        title: notification.title,
+        body: notification.body,
+        notificationDetails: platformDetails,
         payload: message.data['itemId'],
       );
     } catch (e) {
@@ -192,14 +192,14 @@ class NotificationService {
     required int hour,
     required int minute,
   }) async {
-    await _localNotifications.cancel(0);
+    await _localNotifications.cancel(id: 0);
 
     await _localNotifications.zonedSchedule(
-      0,
-      'Daily Reminder',
-      'Time to catch up on your saved items!',
-      _nextInstanceOfTime(hour, minute),
-      const NotificationDetails(
+      id: 0,
+      title: 'Daily Reminder',
+      body: 'Time to catch up on your saved items!',
+      scheduledDate: _nextInstanceOfTime(hour, minute),
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_reminder_channel',
           'Daily Reminders',
@@ -208,11 +208,9 @@ class NotificationService {
           priority: Priority.defaultPriority,
           icon: '@drawable/ic_launcher',
         ),
-        iOS: DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
@@ -241,11 +239,13 @@ class NotificationService {
         : DateTime.now().millisecondsSinceEpoch % 100000;
 
     await _localNotifications.zonedSchedule(
-      id,
-      'Reminder',
-      'Don\'t forget to check this item!',
-      tz.TZDateTime.now(tz.local).add(Duration(minutes: minutes)),
-      const NotificationDetails(
+      id: id,
+      title: 'Reminder',
+      body: 'Don\'t forget to check this item!',
+      scheduledDate: tz.TZDateTime.now(
+        tz.local,
+      ).add(Duration(minutes: minutes)),
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'snooze_channel',
           'Snoozed Reminders',
@@ -257,8 +257,6 @@ class NotificationService {
         iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       payload: itemId,
     );
   }
@@ -268,7 +266,7 @@ class NotificationService {
   }
 
   Future<void> cancelNotification(int id) async {
-    await _localNotifications.cancel(id);
+    await _localNotifications.cancel(id: id);
   }
 
   Future<void> dispose() async {
