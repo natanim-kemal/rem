@@ -15,85 +15,33 @@ class AuthScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: Stack(
-        children: [
-          _BackgroundDecoration(isDark: isDark),
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: size.height - MediaQuery.paddingOf(context).top,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(height: size.height * 0.08),
-                      _BrandingSection(theme: theme, isDark: isDark),
-                      const SizedBox(height: 48),
-                      _AuthCard(theme: theme, isDark: isDark),
-                      const SizedBox(height: 32),
-                      _FooterSection(theme: theme),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: size.height - MediaQuery.paddingOf(context).top,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(height: size.height * 0.08),
+                  _BrandingSection(theme: theme, isDark: isDark),
+                  const SizedBox(height: 32),
+                  _AuthCard(theme: theme, isDark: isDark),
+                  const SizedBox(height: 32),
+                  _FooterSection(theme: theme),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
-}
-
-class _BackgroundDecoration extends StatelessWidget {
-  const _BackgroundDecoration({required this.isDark});
-
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: CustomPaint(painter: _AuthBackgroundPainter(isDark: isDark)),
-    );
-  }
-}
-
-class _AuthBackgroundPainter extends CustomPainter {
-  _AuthBackgroundPainter({required this.isDark});
-
-  final bool isDark;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final accentColor = AppTheme.accent.withValues(alpha: isDark ? 0.06 : 0.04);
-
-    final topCirclePaint = Paint()
-      ..color = accentColor
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(
-      Offset(size.width * 0.85, size.height * 0.05),
-      size.width * 0.45,
-      topCirclePaint,
-    );
-
-    final bottomCirclePaint = Paint()
-      ..color = AppTheme.accent.withValues(alpha: isDark ? 0.03 : 0.02)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(
-      Offset(size.width * 0.1, size.height * 0.85),
-      size.width * 0.55,
-      bottomCirclePaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _BrandingSection extends StatelessWidget {
@@ -121,24 +69,6 @@ class _BrandingSection extends StatelessWidget {
               curve: Curves.easeOutBack,
             ),
         const SizedBox(height: 24),
-        Text(
-              'rem',
-              style: theme.textTheme.displayLarge?.copyWith(
-                fontSize: 36,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -1.5,
-              ),
-              textAlign: TextAlign.center,
-            )
-            .animate(delay: 200.ms)
-            .fadeIn(duration: 500.ms)
-            .slideY(
-              begin: 0.2,
-              end: 0,
-              duration: 500.ms,
-              curve: Curves.easeOut,
-            ),
-        const SizedBox(height: 8),
         Text(
               'read everything, mindfully',
               style: theme.textTheme.bodyMedium?.copyWith(
