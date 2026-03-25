@@ -52,42 +52,7 @@ class _BrandingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-              width: 80,
-              height: 80,
-              padding: const EdgeInsets.all(8),
-              child: Image.asset('assets/images/icon.png', fit: BoxFit.contain),
-            )
-            .animate()
-            .fadeIn(duration: 600.ms, curve: Curves.easeOut)
-            .scale(
-              begin: const Offset(0.8, 0.8),
-              end: const Offset(1.0, 1.0),
-              duration: 600.ms,
-              curve: Curves.easeOutBack,
-            ),
-        const SizedBox(height: 24),
-        Text(
-              'read everything, mindfully',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: context.textSecondary,
-                fontSize: 15,
-                letterSpacing: 0.3,
-              ),
-              textAlign: TextAlign.center,
-            )
-            .animate(delay: 350.ms)
-            .fadeIn(duration: 500.ms)
-            .slideY(
-              begin: 0.2,
-              end: 0,
-              duration: 500.ms,
-              curve: Curves.easeOut,
-            ),
-      ],
-    );
+    return const SizedBox.shrink();
   }
 }
 
