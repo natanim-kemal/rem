@@ -123,7 +123,9 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
   Widget build(BuildContext context) {
     return ClerkAuthBuilder(
       signedInBuilder: (context, authState) {
-        _syncAuthState(context);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _syncAuthState(context);
+        });
         return const ShellScreen();
       },
       signedOutBuilder: (context, authState) {

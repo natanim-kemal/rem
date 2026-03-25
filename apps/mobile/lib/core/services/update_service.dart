@@ -52,7 +52,6 @@ class UpdateService extends _$UpdateService {
             context,
             latestTag,
             downloadUrl,
-            data['body'] ?? '',
           );
         }
       } else if (!silent && context.mounted) {
@@ -69,21 +68,16 @@ class UpdateService extends _$UpdateService {
     BuildContext context,
     String version,
     String url,
-    String notes,
   ) {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: Text('Update Available ($version)'),
-        content: Column(
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 8),
-            Text(
-              notes.isNotEmpty
-                  ? notes
-                  : 'A new version is available. Would you like to update now?',
-            ),
+            SizedBox(height: 8),
+            Text('A new version is available. Would you like to update now?'),
           ],
         ),
         actions: [

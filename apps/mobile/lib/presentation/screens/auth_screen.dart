@@ -25,15 +25,16 @@ class AuthScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: size.height * 0.08),
+                  const Spacer(),
                   _BrandingSection(theme: theme, isDark: isDark),
                   const SizedBox(height: 32),
                   _AuthCard(theme: theme, isDark: isDark),
                   const SizedBox(height: 32),
                   _FooterSection(theme: theme),
-                  const SizedBox(height: 24),
+                  const Spacer(),
                 ],
               ),
             ),
