@@ -48,11 +48,7 @@ class UpdateService extends _$UpdateService {
 
         if (asset.isNotEmpty && context.mounted) {
           final downloadUrl = asset['browser_download_url'];
-          _showUpdateDialog(
-            context,
-            latestTag,
-            downloadUrl,
-          );
+          _showUpdateDialog(context, latestTag, downloadUrl);
         }
       } else if (!silent && context.mounted) {
         _showNoUpdateSnackBar(context);
@@ -64,11 +60,7 @@ class UpdateService extends _$UpdateService {
     }
   }
 
-  void _showUpdateDialog(
-    BuildContext context,
-    String version,
-    String url,
-  ) {
+  void _showUpdateDialog(BuildContext context, String version, String url) {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
