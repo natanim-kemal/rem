@@ -92,7 +92,7 @@ jobs:
         run: flutter test --coverage || true
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           files: apps/mobile/coverage/lcov.info
           fail_ci_if_error: false
