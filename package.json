@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "convex": "^1.36.1",
-    "lefthook": "^2.1.5"
+    "lefthook": "^2.1.6"
   },
   "engines": {
     "node": ">=20.0.0"
