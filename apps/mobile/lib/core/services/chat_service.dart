@@ -141,6 +141,8 @@ class ChatService {
       return;
     }
 
+    if (_streamingMessageId != assistantId) return;
+
     if (result.statusCode != 200) {
       await _finalize(
         assistantId,

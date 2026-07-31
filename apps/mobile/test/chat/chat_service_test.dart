@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -85,6 +87,40 @@ void main() {
     expect(messages[1].role, 'assistant');
     expect(messages[1].status, 'failed');
     expect(messages[1].content, contains('configuration'));
+  });
+
+  test('stop during in-flight request leaves message failed', () async {
+    final requestStarted = Completer<void>();
+    final releaseResponse = Completer<void>();
+    final mock = MockClient((request) async {
+      requestStarted.complete();
+      await releaseResponse.future;
+      return http.Response(
+        'data: {"choices":[{"delta":{"content":"Ghost"}}]}\n\n'
+        'data: [DONE]\n\n',
+        200,
+      );
+    });
+    service = ChatService(db: db, streamClient: clientWith(mock));
+
+    final conversationId = await seedConversation();
+    final sendFuture = service.sendMessage(
+      conversationId: conversationId,
+      itemId: 'item_1',
+      text: 'Hello',
+    );
+
+    await requestStarted.future;
+    await service.stopStreaming();
+    releaseResponse.complete();
+    await sendFuture;
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    final messages = await db.getLastMessages(conversationId, limit: 10);
+    expect(messages[1].role, 'assistant');
+    expect(messages[1].status, 'failed');
+    expect(messages[1].content, 'Stopped.');
+    expect(service.isStreaming, isFalse);
   });
 
   test('retryLast deletes failed message and re-streams', () async {
