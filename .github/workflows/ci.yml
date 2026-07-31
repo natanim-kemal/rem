@@ -15,7 +15,7 @@ jobs:
         working-directory: apps/mobile
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -102,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -126,7 +126,7 @@ jobs:
         working-directory: extension
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Validate manifest
         run: |
@@ -141,7 +141,7 @@ jobs:
     name: security-sast
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/setup@master
@@ -173,7 +173,7 @@ jobs:
         working-directory: apps/mobile
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
