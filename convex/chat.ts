@@ -111,6 +111,9 @@ export const chatStream = httpAction(async (ctx, request) => {
     if (!contextText) {
       contextText = [item.title, item.description].filter(Boolean).join("\n");
       if (!contextText) {
+        await ctx
+          .runMutation(internal.chat.internal.endChatStream, { id: streamId })
+          .catch(() => {});
         return json(500, "No content available for this item.");
       }
     }
@@ -132,6 +135,9 @@ export const chatStream = httpAction(async (ctx, request) => {
         }
       } catch {
       }
+      await ctx
+        .runMutation(internal.chat.internal.endChatStream, { id: streamId })
+        .catch(() => {});
       return json(upstream.status, message || "Upstream chat service error");
     }
     const passthrough = new TransformStream<Uint8Array, Uint8Array>();
