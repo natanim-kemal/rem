@@ -20,7 +20,7 @@ export const chatStream = httpAction(async (ctx, request) => {
     return json(401, "Invalid token");
   }
 
-  const user = await ctx.runQuery(internal.chat.getUserByClerkId, {
+  const user = await ctx.runQuery(internal.chat.internal.getUserByClerkId, {
     clerkId: identity.subject,
   });
   if (!user) {
@@ -63,7 +63,7 @@ export const chatStream = httpAction(async (ctx, request) => {
     return json(503, "Chat is not configured yet");
   }
 
-  const item = await ctx.runQuery(internal.chat.getItemById, {
+  const item = await ctx.runQuery(internal.chat.internal.getItemById, {
     itemId: body.itemId,
   });
   if (!item) {
@@ -74,14 +74,14 @@ export const chatStream = httpAction(async (ctx, request) => {
   }
 
   const maxStreams = Number(process.env.CHAT_MAX_STREAMS_PER_USER || "2") || 2;
-  const active = await ctx.runQuery(internal.chat.countActiveStreams, {
+  const active = await ctx.runQuery(internal.chat.internal.countActiveStreams, {
     userId: user._id,
     cutoff: Date.now() - 2 * 60 * 1000,
   });
   if (active >= maxStreams) {
     return json(429, "Too many active chats. Try again in a moment.");
   }
-  const streamId = await ctx.runMutation(internal.chat.startChatStream, {
+  const streamId = await ctx.runMutation(internal.chat.internal.startChatStream, {
     userId: user._id,
   });
 
@@ -90,14 +90,14 @@ export const chatStream = httpAction(async (ctx, request) => {
     let limited = false;
     const url = item.url;
     if (url && /^https?:\/\//i.test(url)) {
-      const cached = await ctx.runQuery(internal.chat.getChatContent, { url });
+      const cached = await ctx.runQuery(internal.chat.internal.getChatContent, { url });
       if (cached) {
         contextText = cached.text;
       } else {
         const result = await fetchUrlContent(url);
         if (result.text) {
           contextText = result.text;
-          await ctx.runMutation(internal.chat.setChatContent, {
+          await ctx.runMutation(internal.chat.internal.setChatContent, {
             url,
             text: result.text,
           });
@@ -121,6 +121,19 @@ export const chatStream = httpAction(async (ctx, request) => {
     ];
 
     const upstream = await streamChatCompletion({ messages });
+    if (upstream.status >= 400) {
+      const raw = await upstream.text().catch(() => "");
+      let message: string | undefined;
+      try {
+        const parsed = JSON.parse(raw) as { error?: unknown };
+        const error = parsed?.error;
+        if (typeof error === "string") {
+          message = error;
+        }
+      } catch {
+      }
+      return json(upstream.status, message || "Upstream chat service error");
+    }
     const passthrough = new TransformStream<Uint8Array, Uint8Array>();
     const writer = passthrough.writable.getWriter();
     const reader = upstream.body?.getReader();
@@ -140,7 +153,7 @@ export const chatStream = httpAction(async (ctx, request) => {
       } finally {
         await writer.close().catch(() => {});
         await ctx
-          .runMutation(internal.chat.endChatStream, { id: streamId })
+          .runMutation(internal.chat.internal.endChatStream, { id: streamId })
           .catch(() => {});
       }
     })();
@@ -148,14 +161,13 @@ export const chatStream = httpAction(async (ctx, request) => {
     return new Response(passthrough.readable, {
       status: upstream.status,
       headers: {
-        "Content-Type":
-          upstream.status >= 400 ? "application/json" : "text/event-stream",
+        "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
       },
     });
   } catch (error) {
     await ctx
-      .runMutation(internal.chat.endChatStream, { id: streamId })
+      .runMutation(internal.chat.internal.endChatStream, { id: streamId })
       .catch(() => {});
     return json(500, "Chat failed. Try again.");
   }
