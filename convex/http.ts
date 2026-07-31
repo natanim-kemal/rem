@@ -1,5 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
+import { chatStream } from "./chat";
 
 const http = httpRouter();
 
@@ -337,6 +338,12 @@ http.route({
             );
         }
     }),
+});
+
+http.route({
+    path: "/chat/stream",
+    method: "POST",
+    handler: chatStream,
 });
 
 export default http;
