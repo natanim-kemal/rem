@@ -47,7 +47,7 @@ dependencies:
 
   clerk_flutter: ^0.0.14-beta
   metadata_fetch: ^0.4.2
-  receive_sharing_intent: ^1.8.1
+  receive_sharing_intent: 1.8.1
   image_picker: ^1.2.1
   firebase_core: ^4.6.0
   firebase_messaging: ^16.1.3
