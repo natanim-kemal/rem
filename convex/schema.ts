@@ -135,4 +135,15 @@ export default defineSchema({
         expiresAt: v.number(),
         createdAt: v.number(),
     }).index("by_code", ["code"]),
+
+    chatContent: defineTable({
+        url: v.string(),
+        text: v.string(),
+        fetchedAt: v.number(),
+    }).index("by_url", ["url"]),
+
+    chatStreams: defineTable({
+        userId: v.id("users"),
+        startedAt: v.number(),
+    }).index("by_user_started", ["userId", "startedAt"]),
 });
