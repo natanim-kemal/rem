@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 part 'database.g.dart';
 
@@ -98,14 +99,45 @@ class PendingNotifications extends Table {
   IntColumn get createdAt => integer()();
 }
 
-@DriftDatabase(
-  tables: [Users, Items, Tags, SyncQueue, ItemsFts, PendingNotifications],
-)
-class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+class Conversations extends Table {
+  TextColumn get id => text()();
+  TextColumn get itemId => text()();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
 
   @override
-  int get schemaVersion => 4;
+  Set<Column> get primaryKey => {id};
+}
+
+class ChatMessages extends Table {
+  TextColumn get id => text()();
+  TextColumn get conversationId => text()();
+  TextColumn get role => text()();
+  TextColumn get content => text()();
+  TextColumn get status => text().withDefault(const Constant('complete'))();
+  IntColumn get createdAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(
+  tables: [
+    Users,
+    Items,
+    Tags,
+    SyncQueue,
+    ItemsFts,
+    PendingNotifications,
+    Conversations,
+    ChatMessages,
+  ],
+)
+class AppDatabase extends _$AppDatabase {
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
+
+  @override
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -193,6 +225,10 @@ class AppDatabase extends _$AppDatabase {
             DELETE FROM items_fts WHERE item_id = old.id;
           END;
         ''');
+      }
+      if (from < 5) {
+        await m.createTable(conversations);
+        await m.createTable(chatMessages);
       }
     },
   );
@@ -529,6 +565,87 @@ class AppDatabase extends _$AppDatabase {
     return (delete(
       pendingNotifications,
     )..where((n) => n.scheduledAt.isSmallerThanValue(beforeTimestamp))).go();
+  }
+
+  Future<Conversation?> getConversationByItem(String itemId) {
+    return (select(
+      conversations,
+    )..where((c) => c.itemId.equals(itemId))).getSingleOrNull();
+  }
+
+  Future<Conversation> getOrCreateConversationForItem(String itemId) async {
+    final existing = await getConversationByItem(itemId);
+    if (existing != null) return existing;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await into(conversations).insert(
+      ConversationsCompanion.insert(
+        id: const Uuid().v4(),
+        itemId: itemId,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    return (await getConversationByItem(itemId))!;
+  }
+
+  Stream<List<Conversation>> watchConversations() {
+    return (select(
+      conversations,
+    )..orderBy([(c) => OrderingTerm.desc(c.updatedAt)])).watch();
+  }
+
+  Future<void> touchConversation(String id) {
+    return (update(conversations)..where((c) => c.id.equals(id))).write(
+      ConversationsCompanion(
+        updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+      ),
+    );
+  }
+
+  Stream<List<ChatMessage>> watchMessages(String conversationId) {
+    return (select(chatMessages)
+          ..where((m) => m.conversationId.equals(conversationId))
+          ..orderBy([(m) => OrderingTerm.asc(m.createdAt)]))
+        .watch();
+  }
+
+  Future<List<ChatMessage>> getLastMessages(
+    String conversationId, {
+    int limit = 20,
+  }) async {
+    final rows =
+        await (select(chatMessages)
+              ..where((m) => m.conversationId.equals(conversationId))
+              ..orderBy([(m) => OrderingTerm.desc(m.createdAt)])
+              ..limit(limit))
+            .get();
+    return rows.reversed.toList();
+  }
+
+  Future<ChatMessage?> getLastMessage(String conversationId) {
+    return (select(chatMessages)
+          ..where((m) => m.conversationId.equals(conversationId))
+          ..orderBy([(m) => OrderingTerm.desc(m.createdAt)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  Future<int> insertMessage(ChatMessagesCompanion message) {
+    return into(chatMessages).insert(message);
+  }
+
+  Future<int> updateMessage(
+    String id, {
+    required String content,
+    required String status,
+  }) {
+    return (update(chatMessages)..where((m) => m.id.equals(id))).write(
+      ChatMessagesCompanion(content: Value(content), status: Value(status)),
+    );
+  }
+
+  Future<int> deleteMessage(String id) {
+    return (delete(chatMessages)..where((m) => m.id.equals(id))).go();
   }
 }
 
