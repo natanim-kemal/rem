@@ -116,12 +116,12 @@ final itemsStreamProvider = StreamProvider.family<List<Item>, String>((
   return db.watchItemsByUserId(userId);
 });
 
-final itemsProvider = FutureProvider.family<List<Item>, String>((
+final itemsProvider = StreamProvider.family<List<Item>, String>((
   ref,
   userId,
-) async {
+) {
   final db = ref.watch(databaseProvider);
-  return db.getItemsByUserId(userId);
+  return db.watchItemsByUserId(userId);
 });
 
 final tagsProvider = FutureProvider.family<List<Tag>, String>((

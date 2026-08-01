@@ -224,11 +224,11 @@ class SyncEngine {
             await _convex.mutation('items:deleteItem', {'itemId': convexId});
           } catch (e) {
             final message = e.toString().toLowerCase();
-            if (message.contains('nonexistent document')) {
-              return;
+            if (!message.contains('nonexistent document')) {
+              rethrow;
             }
-            rethrow;
           }
+          await _db.removeSyncItem(syncItem.id);
         }
         break;
     }

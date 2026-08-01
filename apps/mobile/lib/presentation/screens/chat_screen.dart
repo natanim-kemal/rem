@@ -24,6 +24,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   String get _itemId => widget.item['id'] as String? ?? '';
 
+  String get _serverItemId =>
+      widget.item['convexId'] as String? ?? widget.item['id'] as String? ?? '';
+
   @override
   void dispose() {
     _input.dispose();
@@ -50,7 +53,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .read(chatServiceProvider)
         .sendMessage(
           conversationId: conversation.id,
-          itemId: _itemId,
+          itemId: _serverItemId,
           text: text,
         );
   }
@@ -62,7 +65,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _retry(Conversation conversation) async {
     await ref
         .read(chatServiceProvider)
-        .retryLast(conversationId: conversation.id, itemId: _itemId);
+        .retryLast(conversationId: conversation.id, itemId: _serverItemId);
   }
 
   @override

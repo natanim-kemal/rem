@@ -259,7 +259,10 @@ export const snoozeItem = mutation({
 export const deleteItem = mutation({
   args: { itemId: v.id("items") },
   handler: async (ctx, args) => {
-    await ctx.db.delete(args.itemId);
+    const existing = await ctx.db.get(args.itemId);
+    if (existing) {
+      await ctx.db.delete(args.itemId);
+    }
   },
 });
 
