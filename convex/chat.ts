@@ -132,6 +132,12 @@ export const chatStream = httpAction(async (ctx, request) => {
         const error = parsed?.error;
         if (typeof error === "string") {
           message = error;
+        } else if (
+          typeof error === "object" &&
+          error !== null &&
+          typeof (error as { message?: unknown }).message === "string"
+        ) {
+          message = (error as { message: string }).message;
         }
       } catch {
       }

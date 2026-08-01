@@ -20,10 +20,10 @@ describe("extractTextFromHtml", () => {
 
 describe("truncateToChars", () => {
   it("caps long text at max", () => {
-    expect(truncateToChars("a".repeat(30000), 20000).length).toBe(20000);
+    expect(truncateToChars("a".repeat(30000), 8000).length).toBe(8000);
   });
 
   it("keeps short text unchanged", () => {
-    expect(truncateToChars("hi", 20000)).toBe("hi");
+    expect(truncateToChars("hi", 8000)).toBe("hi");
   });
 });

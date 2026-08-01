@@ -1,4 +1,4 @@
-const MAX_CONTENT_CHARS = 20000;
+const MAX_CONTENT_CHARS = 8000;
 
 export function truncateToChars(text: string, max: number): string {
   return text.length <= max ? text : text.slice(0, max);
