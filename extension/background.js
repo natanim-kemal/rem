@@ -60,8 +60,35 @@ async function decryptToken(encryptedToken) {
     }
 }
 
+async function encryptToken(token) {
+    if (!token) return null;
+    const key = await getOrCreateEncryptionKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoder = new TextEncoder();
+    const data = encoder.encode(token);
+
+    const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        data
+    );
+
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(encrypted), iv.length);
+
+    return btoa(String.fromCharCode(...combined));
+}
+
 chrome.runtime.onInstalled.addListener((details) => {
     setupContextMenus();
+    chrome.alarms.create('refresh-token', { periodInMinutes: 30 });
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === 'refresh-token') {
+        refreshTokenFromPairing();
+    }
 });
 
 function setupContextMenus() {
@@ -203,7 +230,7 @@ async function saveToRem(itemData) {
         throw new Error('Not authenticated. Please configure the extension.');
     }
 
-    const authToken = await decryptToken(storage.authToken);
+    let authToken = await decryptToken(storage.authToken);
     const convexUrl = storage.convexUrl;
 
     if (!authToken) {
@@ -224,14 +251,15 @@ async function saveToRem(itemData) {
         if (payload[key] === undefined) delete payload[key];
     });
 
-    const response = await fetch(`${convexUrl}${CONFIG.API_ENDPOINTS.items}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify(payload),
-    });
+    let response = await postItem(convexUrl, authToken, payload);
+
+    if (response.status === 401) {
+        const refreshed = await refreshTokenFromPairing();
+        if (refreshed) {
+            authToken = refreshed;
+            response = await postItem(convexUrl, authToken, payload);
+        }
+    }
 
     if (response.status === 401) {
         throw new Error('Authentication expired. Please sign in again.');
@@ -247,6 +275,44 @@ async function saveToRem(itemData) {
     }
 
     return await response.json();
+}
+
+async function postItem(convexUrl, authToken, payload) {
+    return fetch(`${convexUrl}${CONFIG.API_ENDPOINTS.items}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(payload),
+    });
+}
+
+async function refreshTokenFromPairing() {
+    const storage = await chrome.storage.local.get(['refreshSecret', 'convexUrl']);
+
+    if (!storage.refreshSecret || !storage.convexUrl) return null;
+
+    try {
+        const response = await fetch(`${storage.convexUrl}/api/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'pairing:getPairingToken',
+                args: { refreshSecret: storage.refreshSecret }
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success' && data.value && data.value.valid && data.value.token) {
+            const encryptedToken = await encryptToken(data.value.token);
+            await chrome.storage.local.set({ authToken: encryptedToken });
+            return data.value.token;
+        }
+    } catch (e) {}
+
+    return null;
 }
 
 async function fetchMetadata(url) {

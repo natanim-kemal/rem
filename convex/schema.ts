@@ -130,11 +130,19 @@ export default defineSchema({
     pairingCodes: defineTable({
         code: v.string(),
         userId: v.id("users"),
-        status: v.union(v.literal("pending"), v.literal("approved"), v.literal("expired")),
+        status: v.union(
+            v.literal("pending"),
+            v.literal("approved"),
+            v.literal("claimed"),
+            v.literal("expired")
+        ),
         token: v.optional(v.string()),
+        refreshSecret: v.optional(v.string()),
         expiresAt: v.number(),
         createdAt: v.number(),
-    }).index("by_code", ["code"]),
+    })
+        .index("by_code", ["code"])
+        .index("by_refresh_secret", ["refreshSecret"]),
 
     chatContent: defineTable({
         url: v.string(),

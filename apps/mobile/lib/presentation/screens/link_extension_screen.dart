@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +45,12 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
     }
   }
 
+  String _generateRefreshSecret() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
   Future<void> _approvePairing() async {
     final code = _codeController.text.trim().toUpperCase();
     if (code.isEmpty) {
@@ -77,6 +85,7 @@ class _LinkExtensionScreenState extends ConsumerState<LinkExtensionScreen> {
         'code': code,
         'deviceName': 'Browser Extension',
         'token': token,
+        'refreshSecret': _generateRefreshSecret(),
       });
 
       if (result is Map && result.containsKey('error')) {

@@ -138,6 +138,15 @@ async function initializeExtension() {
 
     const result = await verifyAuthToken();
     if (!result.success) {
+        const refreshed = await refreshTokenFromPairing();
+        if (refreshed) {
+            const retry = await verifyAuthToken();
+            if (retry.success) {
+                await loadPageInfo();
+                showView('main');
+                return;
+            }
+        }
         showView('auth');
         return;
     }
@@ -175,6 +184,36 @@ async function verifyAuthToken() {
     } catch (error) {
         return { success: false, message: error.message };
     }
+}
+
+async function refreshTokenFromPairing() {
+    if (!authState.convexUrl) return null;
+
+    const storage = await chrome.storage.local.get(['refreshSecret']);
+
+    if (!storage.refreshSecret) return null;
+
+    try {
+        const response = await fetch(`${authState.convexUrl}/api/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'pairing:getPairingToken',
+                args: { refreshSecret: storage.refreshSecret }
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success' && data.value && data.value.valid && data.value.token) {
+            const encryptedToken = await encryptToken(data.value.token);
+            await chrome.storage.local.set({ authToken: encryptedToken });
+            authState.token = data.value.token;
+            return data.value.token;
+        }
+    } catch (e) {}
+
+    return null;
 }
 
 async function loadPageInfo() {
@@ -513,7 +552,30 @@ async function saveItem() {
             })
         });
 
-        const data = await response.json();
+        let data;
+
+        if (response.status === 401) {
+            const refreshed = await refreshTokenFromPairing();
+            if (!refreshed) {
+                throw new Error('Authentication expired. Please re-link the extension.');
+            }
+
+            const retryResponse = await fetch(`${authState.convexUrl}/api/mutation`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authState.token}`,
+                },
+                body: JSON.stringify({
+                    path: 'items:createItem',
+                    args: payload
+                })
+            });
+
+            data = await retryResponse.json();
+        } else {
+            data = await response.json();
+        }
 
         if (data.status === 'success') {
             showView('success');
@@ -613,12 +675,12 @@ function startPolling() {
 
             if (data.status === 'success' && data.value) {
                 const status = data.value.status;
-                const token = data.value.token;
 
-                if (status === 'approved' && token) {
+                if (status === 'approved') {
+                    const linkedCode = currentPairingCode;
                     stopPolling();
                     document.getElementById('pairing-status').textContent = 'Approved! Linking...';
-                    await saveTokenAndLogin(token);
+                    await claimAndSaveToken(linkedCode);
                 } else if (status === 'expired') {
                     stopPolling();
                     document.getElementById('pairing-status').textContent = 'Code expired.';
@@ -630,6 +692,37 @@ function startPolling() {
     }, 2000);
 }
 
+async function claimAndSaveToken(code) {
+    if (!authState.convexUrl) return;
+
+    const failLink = () => {
+        document.getElementById('pairing-status').textContent = 'Link failed. Please re-link.';
+        setTimeout(() => showView('auth'), 2000);
+    };
+
+    try {
+        const response = await fetch(`${authState.convexUrl}/api/mutation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: 'pairing:claimPairingCredentials',
+                args: { code }
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success' && data.value && data.value.token && data.value.refreshSecret) {
+            await saveTokenAndLogin(data.value.token, code, data.value.refreshSecret);
+            return;
+        }
+
+        failLink();
+    } catch (e) {
+        failLink();
+    }
+}
+
 function stopPolling() {
     if (pairingInterval) {
         clearInterval(pairingInterval);
@@ -638,10 +731,20 @@ function stopPolling() {
     currentPairingCode = null;
 }
 
-async function saveTokenAndLogin(token) {
+async function saveTokenAndLogin(token, code, refreshSecret) {
     try {
         const encryptedToken = await encryptToken(token);
-        await chrome.storage.local.set({ authToken: encryptedToken });
+        const storageData = { authToken: encryptedToken };
+
+        if (code) {
+            storageData.pairingCode = code;
+        }
+
+        if (refreshSecret) {
+            storageData.refreshSecret = refreshSecret;
+        }
+
+        await chrome.storage.local.set(storageData);
         authState.token = token;
         
         for (let i = 0; i < 3; i++) {

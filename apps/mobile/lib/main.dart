@@ -62,6 +62,7 @@ class _AuthStateSync extends ConsumerStatefulWidget {
 class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
   final NotificationService _notificationService = NotificationService();
   StreamSubscription? _tokenSub;
+  String? _lastPushedPairingToken;
 
   @override
   void initState() {
@@ -208,6 +209,18 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
     final sessionToken = await clerkAuth.sessionToken(templateName: 'convex');
     final token = sessionToken.jwt;
     ref.read(authProvider.notifier).updateConvexToken(token);
+    _pushPairingToken(token);
     return token;
+  }
+
+  void _pushPairingToken(String token) {
+    if (_lastPushedPairingToken == token) return;
+    _lastPushedPairingToken = token;
+    try {
+      final convex = ref.read(convexClientProvider);
+      convex
+          .mutation('pairing:refreshPairingTokens', {'token': token})
+          .catchError((_) {});
+    } catch (_) {}
   }
 }
