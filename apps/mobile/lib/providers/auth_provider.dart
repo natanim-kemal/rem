@@ -87,6 +87,10 @@ class AuthNotifier extends Notifier<AuthState> {
     });
   }
 
+  void updateConvexToken(String token) {
+    _convex.setAuthToken(token);
+  }
+
   Future<void> signOut() async {
     _convex.setAuthToken(null);
     state = const AuthState();
