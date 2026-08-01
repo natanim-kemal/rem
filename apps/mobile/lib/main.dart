@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:clerk_flutter/clerk_flutter.dart';
@@ -59,12 +61,19 @@ class _AuthStateSync extends ConsumerStatefulWidget {
 
 class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
   final NotificationService _notificationService = NotificationService();
+  StreamSubscription? _tokenSub;
 
   @override
   void initState() {
     super.initState();
     _notificationService.initialize();
     _notificationService.onAction = _handleNotificationAction;
+  }
+
+  @override
+  void dispose() {
+    _tokenSub?.cancel();
+    super.dispose();
   }
 
   void _handleNotificationAction(String? payload) {
@@ -145,11 +154,20 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
     final user = clerkAuth.user;
 
     if (user != null) {
+      // Start listening to token refreshes
+      _tokenSub?.cancel();
+      _tokenSub = clerkAuth.sessionTokenStream.listen((sessionToken) {
+        ref.read(authProvider.notifier).updateConvexToken(sessionToken.jwt);
+      });
+
+      // Ensure initial token is fresh
       clerkAuth
           .sessionToken(templateName: 'convex')
           .then((sessionToken) {
             final token = sessionToken.jwt;
             final currentState = ref.read(authProvider);
+            ref.read(authProvider.notifier).updateConvexToken(token);
+
             if (!currentState.isAuthenticated ||
                 currentState.userId != user.id) {
               ref

@@ -47,6 +47,30 @@ class _ChatSessionsScreenState extends ConsumerState<ChatSessionsScreen> {
     };
   }
 
+  Future<void> _confirmDelete(String conversationId) async {
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Delete chat?'),
+        content: const Text('This chat and its messages will be removed.'),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final db = ref.read(databaseProvider);
+    await db.deleteConversation(conversationId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -106,6 +130,8 @@ class _ChatSessionsScreenState extends ConsumerState<ChatSessionsScreen> {
                             title: item?.title ?? 'Unknown item',
                             preview: summary.lastMessage?.content,
                             isFailed: summary.lastMessage?.status == 'failed',
+                            onDelete: () =>
+                                _confirmDelete(summary.conversation.id),
                             onTap: item == null
                                 ? null
                                 : () {
@@ -178,12 +204,14 @@ class _ConversationTile extends StatelessWidget {
   final String? preview;
   final bool isFailed;
   final VoidCallback? onTap;
+  final VoidCallback? onDelete;
 
   const _ConversationTile({
     required this.title,
     this.preview,
     this.isFailed = false,
     this.onTap,
+    this.onDelete,
   });
 
   @override
@@ -227,11 +255,42 @@ class _ConversationTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                CupertinoIcons.chevron_right,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              if (onDelete != null)
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    CupertinoIcons.ellipsis,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  onSelected: (value) {
+                    if (value == 'delete') onDelete!();
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.trash,
+                            size: 18,
+                            color: theme.colorScheme.error,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Delete',
+                            style: TextStyle(color: theme.colorScheme.error),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
             ],
           ),
         ),

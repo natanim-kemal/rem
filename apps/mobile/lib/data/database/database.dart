@@ -647,6 +647,17 @@ class AppDatabase extends _$AppDatabase {
   Future<int> deleteMessage(String id) {
     return (delete(chatMessages)..where((m) => m.id.equals(id))).go();
   }
+
+  Future<void> deleteConversation(String conversationId) {
+    return transaction(() async {
+      await (delete(
+        chatMessages,
+      )..where((m) => m.conversationId.equals(conversationId))).go();
+      await (delete(
+        conversations,
+      )..where((c) => c.id.equals(conversationId))).go();
+    });
+  }
 }
 
 LazyDatabase _openConnection() {

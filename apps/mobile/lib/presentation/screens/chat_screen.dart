@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database/database.dart';
@@ -199,6 +200,47 @@ class _MessageBubble extends StatelessWidget {
                     ),
                   ),
           ),
+          if (!isUser && message.content.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () async {
+                  await Clipboard.setData(ClipboardData(text: message.content));
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(
+                        content: const Text('Copied'),
+                        duration: const Duration(seconds: 2),
+                        width: 160,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    );
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      CupertinoIcons.doc_on_doc,
+                      size: 14,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Copy',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           if (isFailed)
             Padding(
               padding: const EdgeInsets.only(top: 6),
@@ -269,42 +311,63 @@ class _InputBar extends StatelessWidget {
           ),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: CupertinoTextField(
-              controller: textController,
-              placeholder: 'Ask about this item...',
-              minLines: 1,
-              maxLines: 4,
-              onSubmitted: (_) {
-                if (enabled) onSend();
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (enabled)
-            FilledButton(
-              onPressed: onSend,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(48, 40),
-                padding: EdgeInsets.zero,
-              ),
-              child: const Icon(CupertinoIcons.arrow_up, size: 18),
-            )
-          else
-            IconButton(
-              onPressed: onStop,
-              style: IconButton.styleFrom(
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              ),
-              icon: Icon(
-                CupertinoIcons.stop_circle,
-                size: 22,
-                color: theme.colorScheme.onSurfaceVariant,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 4, 4, 4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: CupertinoTextField(
+                controller: textController,
+                placeholder: 'Ask about this item...',
+                placeholderStyle: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontSize: 15,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 10,
+                ),
+                decoration: const BoxDecoration(),
+                minLines: 1,
+                maxLines: 4,
+                onSubmitted: (_) {
+                  if (enabled) onSend();
+                },
               ),
             ),
-        ],
+            const SizedBox(width: 8),
+            if (enabled)
+              FilledButton(
+                onPressed: onSend,
+                style: FilledButton.styleFrom(
+                  shape: const CircleBorder(),
+                  padding: const EdgeInsets.all(12),
+                  minimumSize: const Size(0, 0),
+                ),
+                child: const Icon(CupertinoIcons.paperplane, size: 18),
+              )
+            else
+              IconButton(
+                onPressed: onStop,
+                style: IconButton.styleFrom(
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                ),
+                icon: Icon(
+                  CupertinoIcons.stop_circle,
+                  size: 22,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

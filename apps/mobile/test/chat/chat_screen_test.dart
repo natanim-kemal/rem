@@ -70,7 +70,7 @@ void main() {
     expect(find.byType(CupertinoTextField), findsOneWidget);
 
     await tester.enterText(find.byType(CupertinoTextField), 'Hello');
-    await tester.tap(find.byIcon(CupertinoIcons.arrow_up));
+    await tester.tap(find.byIcon(CupertinoIcons.paperplane));
     await tester.pumpAndSettle();
 
     expect(find.text('Hello'), findsOneWidget);
@@ -111,7 +111,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(CupertinoTextField), 'Hello');
-    await tester.tap(find.byIcon(CupertinoIcons.arrow_up));
+    await tester.tap(find.byIcon(CupertinoIcons.paperplane));
     await tester.pumpAndSettle();
 
     expect(find.text('Retry'), findsOneWidget);
