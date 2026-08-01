@@ -42,6 +42,8 @@ class ChatService {
     required String conversationId,
     required String itemId,
     required String text,
+    String? modelId,
+    bool webSearch = false,
   }) async {
     if (isStreaming) return;
     await db.insertMessage(
@@ -54,12 +56,19 @@ class ChatService {
       ),
     );
     await db.touchConversation(conversationId);
-    await _streamAssistantReply(conversationId: conversationId, itemId: itemId);
+    await _streamAssistantReply(
+      conversationId: conversationId,
+      itemId: itemId,
+      modelId: modelId,
+      webSearch: webSearch,
+    );
   }
 
   Future<void> retryLast({
     required String conversationId,
     required String itemId,
+    String? modelId,
+    bool webSearch = false,
   }) async {
     if (isStreaming) return;
     final recent = await db.getLastMessages(conversationId, limit: 10);
@@ -68,7 +77,12 @@ class ChatService {
         .firstOrNull;
     if (failed == null) return;
     await db.deleteMessage(failed.id);
-    await _streamAssistantReply(conversationId: conversationId, itemId: itemId);
+    await _streamAssistantReply(
+      conversationId: conversationId,
+      itemId: itemId,
+      modelId: modelId,
+      webSearch: webSearch,
+    );
   }
 
   Future<void> stopStreaming() async {
@@ -98,6 +112,8 @@ class ChatService {
   Future<void> _streamAssistantReply({
     required String conversationId,
     required String itemId,
+    String? modelId,
+    bool webSearch = false,
   }) async {
     final assistantId = const Uuid().v4();
     await db.insertMessage(
@@ -130,6 +146,8 @@ class ChatService {
       result = await streamClient.streamCompletions(
         itemId: itemId,
         history: historyPayload,
+        modelId: modelId,
+        webSearch: webSearch,
       );
     } catch (_) {
       await _finalize(

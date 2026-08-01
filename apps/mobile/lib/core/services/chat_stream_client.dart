@@ -29,6 +29,8 @@ class ChatStreamClient {
   Future<ChatStreamResult> streamCompletions({
     required String itemId,
     required List<Map<String, String>> history,
+    String? modelId,
+    bool webSearch = false,
   }) async {
     final token = tokenProvider();
     if (token == null || token.isEmpty) {
@@ -42,7 +44,12 @@ class ChatStreamClient {
     final request = http.Request('POST', uri)
       ..headers['Content-Type'] = 'application/json'
       ..headers['Authorization'] = 'Bearer $token'
-      ..body = jsonEncode({'itemId': itemId, 'history': history});
+      ..body = jsonEncode({
+        'itemId': itemId,
+        'history': history,
+        if (modelId != null && modelId.isNotEmpty) 'modelId': modelId,
+        'webSearch': webSearch,
+      });
 
     final http.StreamedResponse response;
     try {

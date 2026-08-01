@@ -8,6 +8,7 @@ export default defineSchema({
         displayName: v.optional(v.string()),
         avatarUrl: v.optional(v.string()),
         isPremium: v.boolean(),
+        defaultModel: v.optional(v.string()),
         notificationPreferences: v.object({
             enabled: v.boolean(),
             dailyDigestTime: v.string(),

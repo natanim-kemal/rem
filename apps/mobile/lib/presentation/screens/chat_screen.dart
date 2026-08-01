@@ -49,12 +49,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final text = _input.text.trim();
     if (text.isEmpty) return;
     _input.clear();
+    final modelId = ref.read(modelSelectionProvider);
+    final webSearch = ref.read(webSearchProvider);
     await ref
         .read(chatServiceProvider)
         .sendMessage(
           conversationId: conversation.id,
           itemId: _serverItemId,
           text: text,
+          modelId: modelId?.isEmpty == true ? null : modelId,
+          webSearch: webSearch,
         );
   }
 
@@ -63,9 +67,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _retry(Conversation conversation) async {
+    final modelId = ref.read(modelSelectionProvider);
+    final webSearch = ref.read(webSearchProvider);
     await ref
         .read(chatServiceProvider)
-        .retryLast(conversationId: conversation.id, itemId: _serverItemId);
+        .retryLast(
+          conversationId: conversation.id,
+          itemId: _serverItemId,
+          modelId: modelId?.isEmpty == true ? null : modelId,
+          webSearch: webSearch,
+        );
+  }
+
+  void _showModelsSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (context) => const _ModelsSheet(),
+    );
   }
 
   @override
@@ -120,6 +141,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
           ],
         ),
+        actions: [
+          IconButton(
+            onPressed: _showModelsSheet,
+            tooltip: 'Models',
+            icon: const Icon(CupertinoIcons.slider_horizontal_3),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -361,6 +389,131 @@ class _InputBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ModelsSheet extends ConsumerWidget {
+  const _ModelsSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final catalogAsync = ref.watch(chatModelsProvider);
+    final catalog = catalogAsync.value;
+    final selected = ref.watch(modelSelectionProvider);
+    final webSearch = ref.watch(webSearchProvider);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Models', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Flexible(
+              child: catalog == null
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: CupertinoActivityIndicator()),
+                    )
+                  : ListView(
+                      shrinkWrap: true,
+                      children: [
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Auto (default)'),
+                          trailing: selected == null || selected.isEmpty
+                              ? Icon(
+                                  CupertinoIcons.check_mark,
+                                  size: 18,
+                                  color: theme.colorScheme.primary,
+                                )
+                              : null,
+                          onTap: () => ref
+                              .read(modelSelectionProvider.notifier)
+                              .select(''),
+                        ),
+                        for (final provider in catalog.providers)
+                          _ProviderSection(
+                            provider: provider,
+                            models: catalog.models
+                                .where((m) => m.provider == provider.id)
+                                .toList(),
+                            selectedId: selected,
+                            onSelect: (id) => ref
+                                .read(modelSelectionProvider.notifier)
+                                .select(id),
+                          ),
+                      ],
+                    ),
+            ),
+            const Divider(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Search the web',
+                    style: theme.textTheme.bodyLarge,
+                  ),
+                ),
+                Switch(
+                  value: webSearch,
+                  onChanged: (value) =>
+                      ref.read(webSearchProvider.notifier).set(value),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProviderSection extends StatelessWidget {
+  final ChatProviderInfo provider;
+  final List<ChatModelInfo> models;
+  final String? selectedId;
+  final ValueChanged<String> onSelect;
+
+  const _ProviderSection({
+    required this.provider,
+    required this.models,
+    this.selectedId,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ExpansionTile(
+      shape: const Border(),
+      collapsedShape: const Border(),
+      leading: Icon(
+        CupertinoIcons.sparkles,
+        size: 18,
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+      title: Text(provider.label),
+      children: [
+        for (final model in models)
+          ListTile(
+            dense: true,
+            contentPadding: const EdgeInsets.only(left: 32, right: 8),
+            title: Text(model.label),
+            trailing: selectedId == model.id
+                ? Icon(
+                    CupertinoIcons.check_mark,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  )
+                : null,
+            onTap: () => onSelect(model.id),
+          ),
+      ],
     );
   }
 }

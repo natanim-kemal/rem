@@ -1,0 +1,160 @@
+import { query } from "../_generated/server";
+
+export type ProviderModel = {
+  id: string;
+  label: string;
+  model: string;
+  provider: string;
+  providerLabel: string;
+  baseUrl: string;
+  tools: boolean;
+};
+
+export const MODEL_CATALOG: ProviderModel[] = [
+  {
+    id: "groq:llama-3.3-70b-versatile",
+    label: "Llama 3.3 70B Versatile",
+    model: "llama-3.3-70b-versatile",
+    provider: "groq",
+    providerLabel: "Groq",
+    baseUrl: "https://api.groq.com/openai/v1",
+    tools: true,
+  },
+  {
+    id: "groq:llama-3.1-8b-instant",
+    label: "Llama 3.1 8B Instant",
+    model: "llama-3.1-8b-instant",
+    provider: "groq",
+    providerLabel: "Groq",
+    baseUrl: "https://api.groq.com/openai/v1",
+    tools: true,
+  },
+  {
+    id: "gemini:gemini-2.0-flash",
+    label: "Gemini 2.0 Flash",
+    model: "gemini-2.0-flash",
+    provider: "gemini",
+    providerLabel: "Gemini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    tools: true,
+  },
+  {
+    id: "gemini:gemini-2.5-flash-lite",
+    label: "Gemini 2.5 Flash-Lite",
+    model: "gemini-2.5-flash-lite",
+    provider: "gemini",
+    providerLabel: "Gemini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    tools: true,
+  },
+  {
+    id: "openrouter:deepseek/deepseek-chat-v3-0324:free",
+    label: "DeepSeek Chat V3 (free)",
+    model: "deepseek/deepseek-chat-v3-0324:free",
+    provider: "openrouter",
+    providerLabel: "OpenRouter",
+    baseUrl: "https://openrouter.ai/api/v1",
+    tools: true,
+  },
+  {
+    id: "openrouter:mistralai/mistral-small-3.1-24b-instruct:free",
+    label: "Mistral Small 3.1 (free)",
+    model: "mistralai/mistral-small-3.1-24b-instruct:free",
+    provider: "openrouter",
+    providerLabel: "OpenRouter",
+    baseUrl: "https://openrouter.ai/api/v1",
+    tools: true,
+  },
+  {
+    id: "mistral:mistral-small-latest",
+    label: "Mistral Small Latest",
+    model: "mistral-small-latest",
+    provider: "mistral",
+    providerLabel: "Mistral",
+    baseUrl: "https://api.mistral.ai/v1",
+    tools: true,
+  },
+  {
+    id: "mistral:mistral-large-latest",
+    label: "Mistral Large Latest",
+    model: "mistral-large-latest",
+    provider: "mistral",
+    providerLabel: "Mistral",
+    baseUrl: "https://api.mistral.ai/v1",
+    tools: true,
+  },
+  {
+    id: "sambanova:Meta-Llama-3.3-70B-Instruct",
+    label: "Meta Llama 3.3 70B Instruct",
+    model: "Meta-Llama-3.3-70B-Instruct",
+    provider: "sambanova",
+    providerLabel: "SambaNova",
+    baseUrl: "https://api.sambanova.ai/v1",
+    tools: false,
+  },
+];
+
+const MODEL_LOOKUP = new Map(MODEL_CATALOG.map((m) => [m.id, m]));
+
+export const DEFAULT_MODEL_ID = "groq:llama-3.3-70b-versatile";
+
+export type ResolvedModel = {
+  model: string;
+  baseUrl: string;
+  tools: boolean;
+  provider: string;
+};
+
+export function resolveModel(modelId?: string): ResolvedModel | null {
+  if (!modelId) {
+    const baseUrl = process.env.CHAT_GATEWAY_URL;
+    const model = process.env.CHAT_MODEL || "auto";
+    if (!baseUrl) return null;
+    return { model, baseUrl, tools: false, provider: "default" };
+  }
+  const entry = MODEL_LOOKUP.get(modelId);
+  if (!entry) return null;
+  return {
+    model: entry.model,
+    baseUrl: entry.baseUrl,
+    tools: entry.tools,
+    provider: entry.provider,
+  };
+}
+
+export function providerApiKey(provider: string): string | undefined {
+  switch (provider) {
+    case "groq":
+      return process.env.CHAT_GATEWAY_KEY;
+    case "gemini":
+      return process.env.GEMINI_API_KEY;
+    case "openrouter":
+      return process.env.OPENROUTER_API_KEY;
+    case "mistral":
+      return process.env.MISTRAL_API_KEY;
+    case "sambanova":
+      return process.env.SAMBANOVA_API_KEY;
+    default:
+      return process.env.CHAT_GATEWAY_KEY;
+  }
+}
+
+export const listModels = query({
+  args: {},
+  handler: () => {
+    const providers = new Map<string, string>();
+    for (const model of MODEL_CATALOG) {
+      providers.set(model.provider, model.providerLabel);
+    }
+    const providerList = Array.from(providers.entries()).map(
+      ([id, label]) => ({ id, label }),
+    );
+    const models = MODEL_CATALOG.map((m) => ({
+      id: m.id,
+      label: m.label,
+      provider: m.provider,
+      tools: m.tools,
+    }));
+    return { providers: providerList, models };
+  },
+});
