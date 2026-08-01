@@ -57,7 +57,10 @@ class UpdateService extends _$UpdateService {
       if (!silent && context.mounted) {
         final errorStr = e.toString();
         if (errorStr.contains('404') || errorStr.contains('rate limit')) {
-          _showErrorSnackBar(context, 'Unable to check for updates. Please try again later.');
+          _showErrorSnackBar(
+            context,
+            'Unable to check for updates. Please try again later.',
+          );
         } else {
           _showErrorSnackBar(context, 'Error checking for updates');
         }

@@ -955,7 +955,7 @@ class ProfileScreen extends ConsumerWidget {
                   _SettingsTile(
                     icon: CupertinoIcons.info_circle,
                     title: 'Version',
-                    value: '1.0.0',
+                    value: '1.1.0',
                   ),
                   _SettingsTile(
                     icon: CupertinoIcons.arrow_2_circlepath,
