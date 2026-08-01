@@ -116,10 +116,7 @@ final itemsStreamProvider = StreamProvider.family<List<Item>, String>((
   return db.watchItemsByUserId(userId);
 });
 
-final itemsProvider = StreamProvider.family<List<Item>, String>((
-  ref,
-  userId,
-) {
+final itemsProvider = StreamProvider.family<List<Item>, String>((ref, userId) {
   final db = ref.watch(databaseProvider);
   return db.watchItemsByUserId(userId);
 });
