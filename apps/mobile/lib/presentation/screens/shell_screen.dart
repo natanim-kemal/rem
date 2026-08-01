@@ -113,9 +113,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   final _pages = const [
     HomeScreen(),
+    ChatSessionsScreen(),
     StatsScreen(),
     ProfileScreen(),
-    ChatSessionsScreen(),
   ];
 
   int _pageIndexForNavIndex(int navIndex) {
@@ -264,23 +264,23 @@ class _FloatingNavBar extends StatelessWidget {
                             onTap: () => onTap(0),
                           ),
                           _NavItem(
+                            icon: CupertinoIcons.bubble_left,
+                            activeIcon: CupertinoIcons.bubble_left_fill,
+                            label: 'Chat',
+                            isActive: currentIndex == 1,
+                            onTap: () => onTap(1),
+                          ),
+                          _NavItem(
                             icon: CupertinoIcons.chart_bar,
                             activeIcon: CupertinoIcons.chart_bar_fill,
                             label: 'Stats',
-                            isActive: currentIndex == 1,
-                            onTap: () => onTap(1),
+                            isActive: currentIndex == 2,
+                            onTap: () => onTap(2),
                           ),
                           _NavItem(
                             icon: CupertinoIcons.person,
                             activeIcon: CupertinoIcons.person_fill,
                             label: 'Profile',
-                            isActive: currentIndex == 2,
-                            onTap: () => onTap(2),
-                          ),
-                          _NavItem(
-                            icon: CupertinoIcons.bubble_left,
-                            activeIcon: CupertinoIcons.bubble_left_fill,
-                            label: 'Chat',
                             isActive: currentIndex == 3,
                             onTap: () => onTap(3),
                           ),
