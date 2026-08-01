@@ -37,10 +37,7 @@ final messagesProvider = StreamProvider.family<List<ChatMessage>, String>((
   return db.watchMessages(conversationId);
 });
 
-final itemByIdProvider = FutureProvider.family<Item?, String>((
-  ref,
-  itemId,
-) {
+final itemByIdProvider = FutureProvider.family<Item?, String>((ref, itemId) {
   final db = ref.watch(databaseProvider);
   return db.getItemById(itemId);
 });
