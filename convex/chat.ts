@@ -15,7 +15,12 @@ export const chatStream = httpAction(async (ctx, request) => {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return json(401, "Unauthorized");
   }
-  const identity = await ctx.auth.getUserIdentity();
+  let identity;
+  try {
+    identity = await ctx.auth.getUserIdentity();
+  } catch {
+    return json(401, "Invalid or expired token");
+  }
   if (!identity) {
     return json(401, "Invalid token");
   }
@@ -81,16 +86,21 @@ export const chatStream = httpAction(async (ctx, request) => {
   if (active >= maxStreams) {
     return json(429, "Too many active chats. Try again in a moment.");
   }
-  const streamId = await ctx.runMutation(internal.chat.internal.startChatStream, {
-    userId: user._id,
-  });
+  const streamId = await ctx.runMutation(
+    internal.chat.internal.startChatStream,
+    {
+      userId: user._id,
+    },
+  );
 
   try {
     let contextText = "";
     let limited = false;
     const url = item.url;
     if (url && /^https?:\/\//i.test(url)) {
-      const cached = await ctx.runQuery(internal.chat.internal.getChatContent, { url });
+      const cached = await ctx.runQuery(internal.chat.internal.getChatContent, {
+        url,
+      });
       if (cached) {
         contextText = cached.text;
       } else {
@@ -139,8 +149,7 @@ export const chatStream = httpAction(async (ctx, request) => {
         ) {
           message = (error as { message: string }).message;
         }
-      } catch {
-      }
+      } catch {}
       await ctx
         .runMutation(internal.chat.internal.endChatStream, { id: streamId })
         .catch(() => {});
