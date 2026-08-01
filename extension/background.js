@@ -5,6 +5,61 @@ const CONFIG = {
     },
 };
 
+const ENCRYPTION_KEY_NAME = 'rem_encryption_key';
+let cryptoKey = null;
+
+async function getOrCreateEncryptionKey() {
+    if (cryptoKey) return cryptoKey;
+
+    const stored = await chrome.storage.local.get([ENCRYPTION_KEY_NAME]);
+
+    if (stored[ENCRYPTION_KEY_NAME]) {
+        const keyData = Uint8Array.from(atob(stored[ENCRYPTION_KEY_NAME]), c => c.charCodeAt(0));
+        cryptoKey = await crypto.subtle.importKey(
+            'raw',
+            keyData,
+            { name: 'AES-GCM' },
+            false,
+            ['encrypt', 'decrypt']
+        );
+        return cryptoKey;
+    }
+
+    cryptoKey = await crypto.subtle.generateKey(
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+    );
+
+    const exportedKey = await crypto.subtle.exportKey('raw', cryptoKey);
+    const keyBase64 = btoa(String.fromCharCode(...new Uint8Array(exportedKey)));
+    await chrome.storage.local.set({ [ENCRYPTION_KEY_NAME]: keyBase64 });
+
+    return cryptoKey;
+}
+
+async function decryptToken(encryptedToken) {
+    if (!encryptedToken) return null;
+    try {
+        const key = await getOrCreateEncryptionKey();
+        const combined = Uint8Array.from(atob(encryptedToken), c => c.charCodeAt(0));
+
+        const iv = combined.slice(0, 12);
+        const data = combined.slice(12);
+
+        const decrypted = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: iv },
+            key,
+            data
+        );
+
+        const decoder = new TextDecoder();
+        return decoder.decode(decrypted);
+    } catch (e) {
+        return null;
+    }
+}
+
 chrome.runtime.onInstalled.addListener((details) => {
     setupContextMenus();
 });
@@ -142,10 +197,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function saveToRem(itemData) {
-    const { authToken, convexUrl } = await chrome.storage.sync.get(['authToken', 'convexUrl']);
+    const storage = await chrome.storage.local.get(['authToken', 'convexUrl']);
 
-    if (!authToken || !convexUrl) {
+    if (!storage.authToken || !storage.convexUrl) {
         throw new Error('Not authenticated. Please configure the extension.');
+    }
+
+    const authToken = await decryptToken(storage.authToken);
+    const convexUrl = storage.convexUrl;
+
+    if (!authToken) {
+        throw new Error('Not authenticated. Please sign in again.');
     }
 
     const payload = {
