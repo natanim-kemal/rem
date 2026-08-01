@@ -30,24 +30,6 @@ export const MODEL_CATALOG: ProviderModel[] = [
     tools: true,
   },
   {
-    id: "gemini:gemini-2.5-pro",
-    label: "Gemini 2.5 Pro",
-    model: "gemini-2.5-pro",
-    provider: "gemini",
-    providerLabel: "Gemini",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    tools: true,
-  },
-  {
-    id: "gemini:gemini-2.0-flash",
-    label: "Gemini 2.0 Flash",
-    model: "gemini-2.0-flash",
-    provider: "gemini",
-    providerLabel: "Gemini",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    tools: true,
-  },
-  {
     id: "openrouter:openai/gpt-oss-20b:free",
     label: "OpenAI GPT OSS 20B (free)",
     model: "openai/gpt-oss-20b:free",
@@ -93,15 +75,6 @@ export const MODEL_CATALOG: ProviderModel[] = [
     tools: false,
   },
   {
-    id: "sambanova:MiniMax-M2.7",
-    label: "MiniMax M2.7",
-    model: "MiniMax-M2.7",
-    provider: "sambanova",
-    providerLabel: "SambaNova",
-    baseUrl: "https://api.sambanova.ai/v1",
-    tools: false,
-  },
-  {
     id: "sambanova:DeepSeek-V3.2",
     label: "DeepSeek V3.2",
     model: "DeepSeek-V3.2",
@@ -109,33 +82,6 @@ export const MODEL_CATALOG: ProviderModel[] = [
     providerLabel: "SambaNova",
     baseUrl: "https://api.sambanova.ai/v1",
     tools: false,
-  },
-  {
-    id: "cerebras:gpt-oss-120b",
-    label: "OpenAI GPT OSS 120B",
-    model: "gpt-oss-120b",
-    provider: "cerebras",
-    providerLabel: "Cerebras",
-    baseUrl: "https://api.cerebras.ai/v1",
-    tools: true,
-  },
-  {
-    id: "cerebras:gemma-4-31b",
-    label: "Gemma 4 31B",
-    model: "gemma-4-31b",
-    provider: "cerebras",
-    providerLabel: "Cerebras",
-    baseUrl: "https://api.cerebras.ai/v1",
-    tools: true,
-  },
-  {
-    id: "cerebras:zai-glm-4.7",
-    label: "Z.ai GLM 4.7",
-    model: "zai-glm-4.7",
-    provider: "cerebras",
-    providerLabel: "Cerebras",
-    baseUrl: "https://api.cerebras.ai/v1",
-    tools: true,
   },
 ];
 
@@ -171,16 +117,12 @@ export function providerApiKey(provider: string): string | undefined {
   switch (provider) {
     case "groq":
       return process.env.CHAT_GATEWAY_KEY;
-    case "gemini":
-      return process.env.GEMINI_API_KEY;
     case "openrouter":
       return process.env.OPENROUTER_API_KEY;
     case "mistral":
       return process.env.MISTRAL_API_KEY;
     case "sambanova":
       return process.env.SAMBANOVA_API_KEY;
-    case "cerebras":
-      return process.env.CEREBRAS_API_KEY;
     default:
       return process.env.CHAT_GATEWAY_KEY;
   }
