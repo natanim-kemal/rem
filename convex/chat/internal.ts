@@ -51,11 +51,12 @@ export const setChatContent = internalMutation({
 export const countActiveStreams = internalQuery({
   args: { userId: v.id("users"), cutoff: v.number() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const streams = await ctx.db
       .query("chatStreams")
       .withIndex("by_user_started", (q) => q.eq("userId", args.userId))
       .filter((q) => q.gt(q.field("startedAt"), args.cutoff))
-      .count();
+      .collect();
+    return streams.length;
   },
 });
 
