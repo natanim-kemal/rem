@@ -92,6 +92,24 @@ export const MODEL_CATALOG: ProviderModel[] = [
     baseUrl: "https://api.sambanova.ai/v1",
     tools: false,
   },
+  {
+    id: "cerebras:llama-3.3-70b",
+    label: "Llama 3.3 70B",
+    model: "llama-3.3-70b",
+    provider: "cerebras",
+    providerLabel: "Cerebras",
+    baseUrl: "https://api.cerebras.ai/v1",
+    tools: true,
+  },
+  {
+    id: "cerebras:llama-3.1-8b",
+    label: "Llama 3.1 8B",
+    model: "llama-3.1-8b",
+    provider: "cerebras",
+    providerLabel: "Cerebras",
+    baseUrl: "https://api.cerebras.ai/v1",
+    tools: true,
+  },
 ];
 
 const MODEL_LOOKUP = new Map(MODEL_CATALOG.map((m) => [m.id, m]));
@@ -134,6 +152,8 @@ export function providerApiKey(provider: string): string | undefined {
       return process.env.MISTRAL_API_KEY;
     case "sambanova":
       return process.env.SAMBANOVA_API_KEY;
+    case "cerebras":
+      return process.env.CEREBRAS_API_KEY;
     default:
       return process.env.CHAT_GATEWAY_KEY;
   }
