@@ -162,6 +162,9 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
                     lastName: user.lastName,
                     imageUrl: user.imageUrl,
                   );
+              Future.delayed(const Duration(milliseconds: 500), () {
+                ref.read(syncEngineProvider).syncNow();
+              });
             }
           })
           .catchError((e) {
@@ -178,6 +181,9 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
                     lastName: user.lastName,
                     imageUrl: user.imageUrl,
                   );
+              Future.delayed(const Duration(milliseconds: 500), () {
+                ref.read(syncEngineProvider).syncNow();
+              });
             }
           });
     }

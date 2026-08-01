@@ -55,7 +55,12 @@ class UpdateService extends _$UpdateService {
       }
     } catch (e) {
       if (!silent && context.mounted) {
-        _showErrorSnackBar(context, e.toString());
+        final errorStr = e.toString();
+        if (errorStr.contains('404') || errorStr.contains('rate limit')) {
+          _showErrorSnackBar(context, 'Unable to check for updates. Please try again later.');
+        } else {
+          _showErrorSnackBar(context, 'Error checking for updates');
+        }
       }
     }
   }
