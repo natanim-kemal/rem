@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/database/database.dart';
 import '../../providers/chat_providers.dart';
@@ -223,12 +225,30 @@ class _MessageBubble extends StatelessWidget {
                     padding: EdgeInsets.all(6),
                     child: CupertinoActivityIndicator(),
                   )
-                : Text(
+                : isUser
+                ? Text(
                     message.content,
                     style: TextStyle(
                       color: textColor,
                       fontSize: 15,
                       height: 1.35,
+                    ),
+                  )
+                : MarkdownBody(
+                    data: message.content,
+                    onTapLink: (text, href, title) {
+                      final uri = Uri.tryParse(href ?? '');
+                      if (uri != null && uri.hasScheme) {
+                        launchUrl(uri);
+                      }
+                    },
+                    styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                      p: TextStyle(
+                        fontSize: 15,
+                        height: 1.35,
+                        color: textColor,
+                      ),
+                      a: TextStyle(color: theme.colorScheme.primary),
                     ),
                   ),
           ),
