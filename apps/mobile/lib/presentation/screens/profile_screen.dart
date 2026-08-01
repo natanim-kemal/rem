@@ -666,20 +666,30 @@ class ProfileScreen extends ConsumerWidget {
                         final result = await showCupertinoModalPopup<bool>(
                           context: context,
                           builder: (context) => CupertinoActionSheet(
-                            title: Text('Account'),
+                            title: const Text(
+                              'Account',
+                              style: TextStyle(fontSize: 15),
+                            ),
                             message: Text(
                               'Signed in as ${authState.displayName}',
+                              style: const TextStyle(fontSize: 15),
                             ),
                             actions: [
                               CupertinoActionSheetAction(
                                 onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Manage Account'),
+                                child: const Text(
+                                  'Manage Account',
+                                  style: TextStyle(fontSize: 15),
+                                ),
                               ),
                             ],
                             cancelButton: CupertinoActionSheetAction(
                               isDestructiveAction: true,
                               onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Sign Out'),
+                              child: const Text(
+                                'Sign Out',
+                                style: TextStyle(fontSize: 15),
+                              ),
                             ),
                           ),
                         );
@@ -955,7 +965,7 @@ class ProfileScreen extends ConsumerWidget {
                   _SettingsTile(
                     icon: CupertinoIcons.info_circle,
                     title: 'Version',
-                    value: '1.1.0',
+                    value: '1.2.0',
                   ),
                   _SettingsTile(
                     icon: CupertinoIcons.arrow_2_circlepath,

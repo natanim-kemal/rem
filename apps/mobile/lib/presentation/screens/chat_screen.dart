@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database/database.dart';
 import '../../providers/chat_providers.dart';
+import '../widgets/confirmation_snackbar.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> item;
@@ -208,19 +209,7 @@ class _MessageBubble extends StatelessWidget {
                 onTap: () async {
                   await Clipboard.setData(ClipboardData(text: message.content));
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(
-                      SnackBar(
-                        content: const Text('Copied'),
-                        duration: const Duration(seconds: 2),
-                        width: 160,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
+                  showConfirmationSnackBar(context, 'Copied');
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

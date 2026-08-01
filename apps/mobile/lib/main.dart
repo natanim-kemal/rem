@@ -154,19 +154,16 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
     final user = clerkAuth.user;
 
     if (user != null) {
-      // Start listening to token refreshes
       _tokenSub?.cancel();
-      _tokenSub = clerkAuth.sessionTokenStream.listen((sessionToken) {
-        ref.read(authProvider.notifier).updateConvexToken(sessionToken.jwt);
+      _tokenSub = clerkAuth.sessionTokenStream.listen((_) async {
+        try {
+          await _refreshConvexToken(clerkAuth);
+        } catch (_) {}
       });
 
-      // Ensure initial token is fresh
-      clerkAuth
-          .sessionToken(templateName: 'convex')
-          .then((sessionToken) {
-            final token = sessionToken.jwt;
+      _refreshConvexToken(clerkAuth)
+          .then((token) {
             final currentState = ref.read(authProvider);
-            ref.read(authProvider.notifier).updateConvexToken(token);
 
             if (!currentState.isAuthenticated ||
                 currentState.userId != user.id) {
@@ -205,5 +202,12 @@ class _AuthStateSyncState extends ConsumerState<_AuthStateSync> {
             }
           });
     }
+  }
+
+  Future<String> _refreshConvexToken(ClerkAuthState clerkAuth) async {
+    final sessionToken = await clerkAuth.sessionToken(templateName: 'convex');
+    final token = sessionToken.jwt;
+    ref.read(authProvider.notifier).updateConvexToken(token);
+    return token;
   }
 }
