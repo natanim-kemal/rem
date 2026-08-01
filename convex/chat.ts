@@ -78,7 +78,7 @@ export const chatStream = httpAction(async (ctx, request) => {
     return json(403, "Not authorized");
   }
 
-  const maxStreams = Number(process.env.CHAT_MAX_STREAMS_PER_USER || "2") || 2;
+  const maxStreams = Number(process.env.CHAT_MAX_STREAMS_PER_USER || "30") || 30;
   const active = await ctx.runQuery(internal.chat.internal.countActiveStreams, {
     userId: user._id,
     cutoff: Date.now() - 2 * 60 * 1000,
