@@ -1,7 +1,7 @@
 name: rem
 description: "rem - read everything minder"
 publish_to: 'none'
-version: 1.2.0+1
+version: 1.2.1+1
 
 environment:
   sdk: ^3.10.4

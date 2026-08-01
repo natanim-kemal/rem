@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "rem - read everything minder",
     "description": "Save content to your rem vault with one click",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "permissions": [
         "activeTab",
         "storage",
