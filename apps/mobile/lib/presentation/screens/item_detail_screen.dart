@@ -7,6 +7,7 @@ import 'package:rem/providers/data_providers.dart';
 import 'package:dio/dio.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'web_view_screen.dart';
+import 'chat_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirmation_snackbar.dart';
 import '../../models/content_block.dart';
@@ -998,6 +999,21 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen> {
                   )
                 : null,
             actions: [
+              IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatScreen(item: widget.item),
+                    ),
+                  );
+                },
+                style: IconButton.styleFrom(
+                  backgroundColor: actionBackground,
+                  foregroundColor: actionForeground,
+                ),
+                icon: const Icon(CupertinoIcons.bubble_left),
+              ),
               IconButton(
                 onPressed: _toggleArchive,
                 style: IconButton.styleFrom(

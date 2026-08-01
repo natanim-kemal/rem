@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'home_screen.dart';
 import 'stats_screen.dart';
 import 'profile_screen.dart';
+import 'chat_sessions_screen.dart';
 import '../widgets/add_item_sheet.dart';
 
 import '../../core/services/share_service.dart';
@@ -32,7 +33,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     _shareService.contentStream.listen(_handleSharedContent);
     final notificationService = ref.read(notificationServiceProvider);
     notificationService.onAction = _handleNotificationAction;
-    ref.read(syncEngineProvider);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(updateServiceProvider.notifier).checkForUpdates(context);
@@ -111,7 +111,12 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     }
   }
 
-  final _pages = const [HomeScreen(), StatsScreen(), ProfileScreen()];
+  final _pages = const [
+    HomeScreen(),
+    StatsScreen(),
+    ProfileScreen(),
+    ChatSessionsScreen(),
+  ];
 
   int _pageIndexForNavIndex(int navIndex) {
     switch (navIndex) {
@@ -121,6 +126,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         return 1;
       case 2:
         return 2;
+      case 3:
+        return 3;
       default:
         return 0;
     }
@@ -134,6 +141,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         return 1;
       case 2:
         return 2;
+      case 3:
+        return 3;
       default:
         return 0;
     }
@@ -267,6 +276,13 @@ class _FloatingNavBar extends StatelessWidget {
                             label: 'Profile',
                             isActive: currentIndex == 2,
                             onTap: () => onTap(2),
+                          ),
+                          _NavItem(
+                            icon: CupertinoIcons.bubble_left,
+                            activeIcon: CupertinoIcons.bubble_left_fill,
+                            label: 'Chat',
+                            isActive: currentIndex == 3,
+                            onTap: () => onTap(3),
                           ),
                         ],
                       ),
