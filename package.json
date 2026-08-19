@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "convex": "^1.43.0",
+    "convex": "^1.44.0",
     "lefthook": "^2.1.10",
     "vitest": "^4.1.10"
   },
