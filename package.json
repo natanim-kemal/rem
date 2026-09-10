@@ -12,7 +12,7 @@
   "devDependencies": {
     "convex": "^1.44.0",
     "lefthook": "^2.1.10",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=20.0.0"
