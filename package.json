@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "convex": "^1.46.0",
-    "lefthook": "^2.1.14",
+    "lefthook": "^2.1.16",
     "vitest": "^5.0.1"
   },
   "engines": {
