@@ -34,7 +34,7 @@ dependencies:
   ota_update: ^7.1.0
   pub_semver: ^2.1.4
   google_fonts: ^8.0.0
-  cupertino_icons: ^1.0.6
+  cupertino_icons: ^2.0.0
   shimmer: ^4.0.0
 
   url_launcher: ^6.2.0
