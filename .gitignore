@@ -94,3 +94,7 @@ lefthook-local.yml
 .gradle/
 local.properties
 
+# ----- Superpowers (local agent working files) -----
+.superpowers/
+docs/superpowers/plans/
+
