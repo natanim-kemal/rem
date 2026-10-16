@@ -33,7 +33,7 @@ dependencies:
   package_info_plus: ^9.0.0
   ota_update: ^7.1.0
   pub_semver: ^2.1.4
-  google_fonts: ^8.0.0
+  google_fonts: ^9.0.0
   cupertino_icons: ^2.0.0
   shimmer: ^4.0.0
 

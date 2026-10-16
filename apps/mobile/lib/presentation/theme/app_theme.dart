@@ -26,7 +26,23 @@ class AppTheme {
   static const destructive = Color(0xFF1A8A6E);
 
   static TextTheme _buildTextTheme(TextTheme base, Color textColor) {
-    final geistTheme = GoogleFonts.dmSansTextTheme(base);
+    final geistTheme = TextTheme(
+      displayLarge: GoogleFonts.dmSans(textStyle: base.displayLarge),
+      displayMedium: GoogleFonts.dmSans(textStyle: base.displayMedium),
+      displaySmall: GoogleFonts.dmSans(textStyle: base.displaySmall),
+      headlineLarge: GoogleFonts.dmSans(textStyle: base.headlineLarge),
+      headlineMedium: GoogleFonts.dmSans(textStyle: base.headlineMedium),
+      headlineSmall: GoogleFonts.dmSans(textStyle: base.headlineSmall),
+      titleLarge: GoogleFonts.dmSans(textStyle: base.titleLarge),
+      titleMedium: GoogleFonts.dmSans(textStyle: base.titleMedium),
+      titleSmall: GoogleFonts.dmSans(textStyle: base.titleSmall),
+      bodyLarge: GoogleFonts.dmSans(textStyle: base.bodyLarge),
+      bodyMedium: GoogleFonts.dmSans(textStyle: base.bodyMedium),
+      bodySmall: GoogleFonts.dmSans(textStyle: base.bodySmall),
+      labelLarge: GoogleFonts.dmSans(textStyle: base.labelLarge),
+      labelMedium: GoogleFonts.dmSans(textStyle: base.labelMedium),
+      labelSmall: GoogleFonts.dmSans(textStyle: base.labelSmall),
+    );
 
     return geistTheme.copyWith(
       displayLarge: geistTheme.displayLarge?.copyWith(
